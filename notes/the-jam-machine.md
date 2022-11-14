@@ -1,9 +1,45 @@
-# Objective
+[Github](https://github.com/m41w4r3exe/the-jam-machine)
+
+# Description
 We aim to provide the creative spark to help artists overcome the writer's block at the beginning of a project
 
 The jam machine dreams up techno music compositions through deep neural hallucinations. Just import the raw inspiration into your favorite DAW using the generated MIDI file to finish producing your original tracks.
 
+The jam machine is the copilot for artists.
+
 # Plan
+
+## Objectives
+1. Create new music genres by cross-breeding techo samples with other genre tracks
+2. Create pure techno tracks
+
+## Steps
+- Encoder / decoder for the midi data, use data exactly like tristan
+- statistics on dataset
+	- e.g. number of tracks, instruments for each feature
+	- calculate note density
+	- finding similarity between genres / midi
+	- statistics time signature (also per genre)
+- have a first pipeline ready
+	- gpt-2 train on low number of songs and try to generate one instrument, one bar of one genre (e.g. famous rock songs)
+- data augmentation / feature engineering
+	- include note density, velocity, 
+
+## Features
+- 2 models
+	- continuation
+	- track-level inpainting
+- polyphony
+- attribute control
+	- instruments
+	- mood (valence)
+	- section (chorus, bridge)
+	- genre
+
+## encoding
+- midi-like first
+- try rest vs time-shift
+
 ## overall
 - Create a model
 	- select compute platform
@@ -20,6 +56,11 @@ The jam machine dreams up techno music compositions through deep neural hallucin
 	- playback midi files in lakh & other datasets to get a feel fore the quality
 	- read/find papers about this business
 	- read/run tristan notebookw
+
+## statistics on data
+- statistics on number of instruments, bars, tracks, voices per file
+- how many tokens needed for data?
+	- mmm used 128 note_on and note_off, 48 time_shift tokens
 
 # Resources
 ## datasets
@@ -58,6 +99,33 @@ The jam machine dreams up techno music compositions through deep neural hallucin
 - [MusicVAE](https://arxiv.org/abs/1803.05428) A Hierarchical Latent Vector Model for Learning Long-Term Structure in Music
 	- [summary page with all resources](https://magenta.tensorflow.org/music-vae)
 - [MMM : Multi-Track Music Machine](https://metacreation.net/mmm-multi-track-music-machine/) used by tristan for generative work
+	- [[MMM - Multi-Track Music Machine]]
+	- [Transformer-XL](https://arxiv.org/abs/1901.02860) The architecture recommended by MMM
+	- [Calliope](https://metacreation.net/calliope/) music generation interface based on mmm paper
+	- [PreGLAM-MMM: Using MMM in video games](https://metacreation.net/preglam-mmm-using-mmm-in-video-games/) Applied in a video game for live music generation based on a model evaluating valence, arousal and tension
+- [MidiTok introduction paper at ismir](https://archives.ismir.net/ismir2021/latebreaking/000005.pdf)
+- [Piano inpainting application](https://ghadjeres.github.io/piano-inpainting-application/)
+- [Multi-instrument Music Synthesis with Spectrogram Diffusion](https://github.com/magenta/music-spectrogram-diffusion) shared by Tristan
+- [ismir 2021 papers](https://ismir2021.ismir.net/papers/)
+
+## music analysis
+- Spotify APIs
+	- [Track Audio Analysis](https://developer.spotify.com/documentation/web-api/reference/#/operations/get-audio-analysis) Low-level audio analysis
+		- [Tool based on this API](https://spotify-audio-analysis.glitch.me/analysis.html) Looks at sections part ! 👀 
+	- [Track Audio Features](https://developer.spotify.com/documentation/web-api/reference/#/operations/get-several-audio-features) danceability, valence etc
+
+## Music generation companies
+- https://splashhq.com
+- https://www.ampermusic.com/
+- magenta
+	- https://experiments.withgoogle.com/nsynth-super
+- https://www.evabeat.com/ looks kinda pro
+- https://www.loudly.com/aimusicstudio advanced ?
+- https://soundraw.io/ has a cheap plan, website looks broken
+- https://www.bandlab.com/songstarter ai powered daw
+- https://www.orbplugins.com/orb-producer-suite/ ai plugin
+- https://soundful.com/ cheap, working product
+ for musicians
 
 # Mentorship
 ## 11.04 Meeting
@@ -81,7 +149,7 @@ The jam machine dreams up techno music compositions through deep neural hallucin
 	- gpt is already well trained 
 	- training big model then fine tuning is out of scope for this project
 	- just use the full notebook with simply replacing input data to get first baseline
-- midi packs with no song structure are problematic: model infers symphomy only with full structure
+- midi packs with no song structure are problematic: model infers symphony only with full structure
 - trouble with transformers is sequence length: compromise between bars and number of instruments
 	- normal length is 4 bars for training
 	- try adding tokens before generation (to tell genre apart)
