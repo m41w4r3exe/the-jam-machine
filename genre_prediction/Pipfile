@@ -7,7 +7,7 @@ name = "pypi"
 pandas = "*"
 streamlit = "*"
 pretty_midi = "*"
-
+sklearn = "*"
 
 [requires]
 python_version = "3.8"

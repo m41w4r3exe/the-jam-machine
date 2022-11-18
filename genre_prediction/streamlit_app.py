@@ -8,6 +8,63 @@ import os
 import streamlit as st
 import pandas as pd
 import pretty_midi
+import pandas as pd
+from sklearn.preprocessing import LabelEncoder
+from midi_preprocessing import DataPreprocessing
+
+
+def load_pickles(
+    model_pickle_path, label_encoder_pickle_path, label_target_encoder_pickle_path
+):
+    model_pickle_opener = open(model_pickle_path, "rb")
+    model = pickle.load(model_pickle_opener)
+
+    label_encoder_pickle_opener = open(label_encoder_pickle_path, "rb")
+    label_encoder_dict = pickle.load(label_encoder_pickle_opener)
+
+    label_target_encoder_pickle_opener = open(label_target_encoder_pickle_path, "rb")
+    label_target_encoder = pickle.load(label_target_encoder_pickle_opener)
+
+    return model, label_encoder_dict, label_target_encoder
+
+
+def pre_process_data(df, label_encoder_dict):
+
+    loaded_data = DataPreprocessing(df, just_predict=True)
+    df = loaded_data.process()
+
+    for col in df.columns:
+        if col in list(label_encoder_dict.keys()):
+            column_le = label_encoder_dict[col]
+            df.loc[:, col] = column_le.transform(df.loc[:, col])
+        else:
+            continue
+    return df
+
+
+def pre_process_target(target, label_target_encoder):
+    target = label_target_encoder.transform(target)
+    return target
+
+
+def make_predictions(processed_df, model):
+    prediction = model.predict(processed_df)
+    return prediction
+
+
+def generate_predictions(test_df):
+    model_pickle_path = "./midi_prediction_model.pkl"
+    label_encoder_pickle_path = "./midi_prediction_label_encoders.pkl"
+    label_target_encoder_pickle_path = "./midi_prediction_label_target_encoder.pkl"
+
+    model, label_encoder_dict, nlah = load_pickles(
+        model_pickle_path, label_encoder_pickle_path, label_target_encoder_pickle_path
+    )
+    # decode prediction using encode
+
+    processed_df = pre_process_data(test_df, label_encoder_dict)
+    prediction = make_predictions(processed_df, model)
+    return nlah.inverse_transform(prediction)[0]
 
 
 def compute_list_average(l):
@@ -95,8 +152,8 @@ def compute_statistics(midi_file):
     pm = pretty_midi.PrettyMIDI(midi_file)
     # Extract informative events from the MIDI file
     statistics = {
-        # track md5 hash name without extension
-        "track_name": os.path.basename(midi_file).split(".")[0],
+        # get name of file
+        "md5": midi_file.name,
         # instruments
         "n_instruments": len(pm.instruments),
         "n_unique_instruments": len(set([i.program for i in pm.instruments])),
@@ -189,18 +246,17 @@ if __name__ == "__main__":
     if st.button("Predict genre"):
         # Compute statistics on the midi file
         if uploaded_file is not None:
-            try:
-                statistics = compute_statistics(uploaded_file)
-                # Convert statistics to dataframe
-                statistics = pd.DataFrame(statistics, index=[0])
-                # Load the pipeline
-                pipeline = pickle.load(open("pipeline.pkl", "rb"))
-                # Predict genre
-                prediction = pipeline.predict(statistics)
-                # Display prediction
-                st.subheader("Predicted genre:")
-                st.write(prediction)
-            except Exception:
-                st.write("Error: invalid MIDI file")
+            # try:
+            statistics = compute_statistics(uploaded_file)
+            # Convert statistics to dataframe
+            statistics = pd.DataFrame(statistics, index=[0])
+            # Predict genre
+            prediction = generate_predictions(statistics)
+            # Display prediction
+            st.subheader("Predicted genre:")
+            st.write(prediction)
+            # except Exception as e:
+            #     st.write("Error: {}".format(e))
+            #     # st.write("Error: invalid MIDI file")
         else:
             st.write("No file uploaded")
