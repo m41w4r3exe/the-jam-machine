@@ -8,6 +8,7 @@ pandas = "*"
 streamlit = "*"
 pretty_midi = "*"
 sklearn = "*"
+scikit-learn = "*"
 
 [requires]
 python_version = "3.8"
