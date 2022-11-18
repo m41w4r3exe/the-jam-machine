@@ -127,3 +127,13 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# genre prediction folder trash
+genre_prediction/midi_preprocessing_with_rachel_data.py
+genre_prediction/midi_train_with_rachelP_data.py
+genre_prediction/midi_training.py
+genre_prediction/data/statistics.csv
+genre_prediction/midi_prediction_label_encoders_20.pkl
+genre_prediction/midi_prediction_label_target_encoders_20.pkl
+genre_prediction/midi_prediction_model_20.pkl
+genre_prediction/midi_pipeline.py
