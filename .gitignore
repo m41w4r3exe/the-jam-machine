@@ -130,3 +130,6 @@ dmypy.json
 
 # Dataset
 lmd_full
+data
+
+.vscode
