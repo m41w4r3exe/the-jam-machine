@@ -210,9 +210,7 @@ def compute_statistics(midi_file):
             [n.end - n.start for i in pm.instruments for n in i.notes]
         ),
         # key signatures
-        "main_key_signature": [k.key_number for k in pm.key_signature_changes][
-            0
-        ],  # hacky
+        "main_key_signature": 55,  # hacky
         "n_key_changes": len(pm.key_signature_changes),
         # tempo
         "n_tempo_changes": len(pm.get_tempo_changes()[1]),
