@@ -17,7 +17,9 @@ def load_pickles(
     label_encoder_pickle_opener = open(label_encoder_pickle_path, "rb")
     label_encoder_dict = pickle.load(label_encoder_pickle_opener)
 
-    label_target_encoder_pickle_opener = open(label_target_encoder_pickle_path, "rb")
+    label_target_encoder_pickle_opener = open(
+        label_target_encoder_pickle_path, "rb"
+    )
     label_target_encoder = pickle.load(label_target_encoder_pickle_opener)
 
     return model, label_encoder_dict, label_target_encoder
@@ -25,7 +27,7 @@ def load_pickles(
 
 def pre_process_data(df, label_encoder_dict):
 
-    loaded_data = DataPreprocessing(df)
+    loaded_data = DataPreprocessing(df, just_predict=True)
     df = loaded_data.process()
 
     for col in df.columns:
@@ -49,13 +51,24 @@ def make_predictions(processed_df, model):
 
 def generate_predictions(test_df):
     model_pickle_path = "./midi_prediction_model.pkl"
-    label_encoder_pickle_path = "./midi_prediction_label_encoders.pkl.pkl"
-    label_target_encoder_pickle_path = "./midi_prediction_label_target_encoder.pkl"
+    label_encoder_pickle_path = "./midi_prediction_label_encoders.pkl"
+    label_target_encoder_pickle_path = "./midi_prediction_label_target_encoders.pkl"
 
-    model, label_encoder_dict, bla = load_pickles(
+    model, label_encoder_dict, label_target_encoder = load_pickles(
         model_pickle_path, label_encoder_pickle_path, label_target_encoder_pickle_path
     )
 
     processed_df = pre_process_data(test_df, label_encoder_dict)
+    # processed_target = pre_process_target(target, label_target_encoder)
     prediction = make_predictions(processed_df, model)
+    prediction = label_target_encoder.inverse_transform(prediction)
     return prediction
+
+
+# test
+datapath = "./data/onelinedata3.csv"
+# load data and get training and test data
+test_df = pd.read_csv(datapath, index_col=0)
+test_df = test_df.reset_index(drop=True)
+prediction = generate_predictions(test_df)
+print(prediction)

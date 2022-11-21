@@ -1,5 +1,7 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.impute import SimpleImputer
 
 # reads the datafiles and generate train and test sets
 
@@ -30,15 +32,18 @@ class DataPreprocessing:
 
     def def_categorical(self):
         if self.data.empty != True:
-            print(self.data.columns)
+            # print(self.data.columns)
 
-        # self.categorical_var = ["main_time_signature", "lyrics_bool"]
+            # self.categorical_var = ["main_time_signature", "lyrics_bool"]
+            pass
+
         self.categorical_var = ["lyrics_bool"]
         return self.categorical_var
 
     def def_numerical(self):
         if self.data.empty != True:
-            print(self.data.columns)
+            # print(self.data.columns)
+            pass
 
         self.numerical_var = [
             "n_instruments",
@@ -88,6 +93,34 @@ class DataPreprocessing:
             self.data.loc[:, feat] = self.data.loc[:, feat].astype(str)
         # return self.data
 
+    # def transform_train_data(self):
+    #     self.col_mapper = {}
+    #     for col in self.categorical_var:
+    #         le = LabelEncoder()
+    #         le.fit(self.x_train.loc[:, col])
+    #         class_names = le.classes_
+    #         self.x_train.loc[:, col] = le.transform(
+    #             self.x_train.loc[:, col])
+    #         # saving encoder for each column to be able to inverse-transform later
+    #         self.col_mapper.update({col: le})
+
+    #     return self.x_train, self.col_mapper
+
+    # def transform_pred_data(data, col_mapper):
+    #     # for testing set or prediction\
+    #     for col, le in col_mapper.keys(), col_mapper.values():
+    #         data.loc[:, col] = le.transform(data.loc[:, col])
+    #     return data
+
+    # def impute_data(self):
+    #     imputer = SimpleImputer(strategy="most_frequent")
+    #     imputer.fit(self.x_train)
+    #     self.x_train = imputer.transform(self.x_train)
+    #     pass
+
+    # def transfrom_target(self):
+    #     pass
+
     def process(self):
         self.def_numerical()
         self.def_categorical()
@@ -96,36 +129,8 @@ class DataPreprocessing:
         if self.just_predict == False:
             self.drop_target()
             self.split_data()
+            # self.transform_train_data()
             return self.x_train, self.x_test, self.y_train, self.y_test
         else:
+            # self.transform_pred_data(data=self.data)
             return self.data
-
-
-"""
-track_name	
-instruments
-instrument_families
-number_of_instrument_families	
-n_notes	
-n_unique_notes	
-average_n_unique_notes_per_instrument	
-average_note_duration	
-average_note_velocity
-average_note_pitch	
-range_of_note_pitches	
-average_range_of_note_pitches_per_instrument	
-number_of_note_pitch_classes	
-average_number_of_note_pitch_classes_per_instrument
-number_of_octaves
-average_number_of_octaves_per_instrument	
-number_of_notes_per_second	
-shortest_note_length	
-longest_note_length	
-main_key_signature	
-n_key_changes	
-n_tempo_changes	
-tempo_estimate	
-main_time_signature	
-n_time_signature_changes	
-track_length_in_seconds	lyrics_nb_words	lyrics_unique_words	lyrics_bool
-"""
