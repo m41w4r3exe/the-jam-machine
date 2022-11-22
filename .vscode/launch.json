@@ -5,6 +5,14 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Run decoder_mlike.py",
+      "type": "python",
+      "request": "launch",
+      "program": "./decoder_mlike.py",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
       "name": "Run encoder_mlike.py",
       "type": "python",
       "request": "launch",
