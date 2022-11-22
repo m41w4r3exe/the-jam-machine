@@ -31,7 +31,7 @@ tokens = tokenizer.midi_to_tokens(midi)
 event_to_text = EventToText()
 
 piece_encoded_text = "PIECE_START"
-
+piece_events_in_bars = []
 for instrument in midi.instruments:
     inst_tokens = tokenizer.track_to_tokens(instrument)
     midi_events = tokenizer.tokens_to_events(inst_tokens)
@@ -46,21 +46,19 @@ for instrument in midi.instruments:
             values = list(map(int, event.value.split(".")))
             beat_count += values[0] + (values[1] / 8)
 
-            # TODO: Deal with notes clashing with bar finishings here
             while beat_count >= 4:
                 beat_count -= 4
                 values[0] = int(beat_count)
+                event.value = ".".join(map(str, values))
                 bar_count += 1
                 if bar_count == 8:
                     break
                 track_encoded += "BAR_END BAR_START "
 
-            # Update beat count of next timeshift
-            event.value = ".".join(map(str, values))
-
             if bar_count == 8:
                 bar_count = 0
-                track_encoded += event_to_text.string(event)
+                if beat_count == 0:
+                    track_encoded += event_to_text.string(event)
                 track_encoded += "BAR_END TRACK_END"
                 inst_events_in_bars.append(track_encoded)
                 track_encoded = f"TRACK_START INST={instrument.program} BAR_START "
@@ -69,10 +67,13 @@ for instrument in midi.instruments:
         track_encoded += event_to_text.string(event)
 
     if bar_count != 0:
-        track_encoded += "BAR_END BAR_START" * (8 - bar_count)
+        track_encoded += "BAR_END BAR_START " * (8 - bar_count)
         track_encoded += "BAR_END TRACK_END"
         inst_events_in_bars.append(track_encoded)
-    print(inst_events_in_bars)
+
+    piece_events_in_bars.append(inst_events_in_bars)
+
+print(piece_events_in_bars)
 
 
 # writeToFile(f"./midi/{midi_filename}_text_mlike.txt", piece_encoded_text)
