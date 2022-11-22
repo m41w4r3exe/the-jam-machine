@@ -27,8 +27,8 @@ def load_pickles(
 
 def pre_process_data(df, label_encoder_dict):
 
-    loaded_data = DataPreprocessing(df, just_predict=True)
-    df = loaded_data.process()
+    loaded_data = DataPreprocessing(df, target_name="genre")
+    df = loaded_data.process_predict_only(df)
 
     for col in df.columns:
         if col in list(label_encoder_dict.keys()):

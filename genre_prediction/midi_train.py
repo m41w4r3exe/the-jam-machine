@@ -1,6 +1,5 @@
 # python imports
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import LabelEncoder
 from midi_preprocessing import DataPreprocessing
 from sklearn.metrics import precision_recall_fscore_support, accuracy_score
@@ -10,32 +9,32 @@ import warnings
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
-# local imports
+# previous version of the stat file
+# datapath = "./data/statistics_with_genre_clean.csv"
+# data = pd.read_csv(datapath, index_col=0)
+# data = data.reset_index(drop=True)
+# target_name = "genre"
 
-# from midi_pipeline import TheMidiPipeline
+# current version of the stat file
+datapath = "./data/statistics_v2.csv"
+data = pd.read_csv(datapath)
+target_name = "genre"
 
-datapath = "./data/statistics_with_genre_clean.csv"
-# load data and get training and test data
-data = pd.read_csv(datapath, index_col=0)
-data = data.reset_index(drop=True)
-
-
+# generating an example line to test the predict function
 example_to_predict = data.iloc[3000:3001]
-example_to_predict.pop("genre_discogs")
+example_to_predict.pop(target_name)
 columns = set(example_to_predict.columns)
 example_to_predict.to_csv("./data/onelinedata3.csv", columns=columns)
 
-loaded_data = DataPreprocessing(data=data, target_name="genre_discogs")
+loaded_data = DataPreprocessing(data=data, target_name=target_name)
 
 print(loaded_data.data.head())
 print(loaded_data.data.info())
 print(data.info())
 
-x_train, x_test, y_train, y_test = loaded_data.process()
+x_train, x_test, y_train, y_test = loaded_data.process_fit()
 
-
-print(x_train.head())
-# target_dtype = DefineDataTypes.def_target_dtype
+# print(x_train.head())
 
 # converting all the categorical columns to numeric
 col_mapper = {}
