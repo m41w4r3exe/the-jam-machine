@@ -5,6 +5,14 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Run encoder_mlike.py",
+      "type": "python",
+      "request": "launch",
+      "program": "./encoder_mlike.py",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
       "name": "Run encoder_oct.py",
       "type": "python",
       "request": "launch",

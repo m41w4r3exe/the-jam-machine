@@ -35,18 +35,20 @@ for instrument in midi.instruments:
     piece_encoded_text += f" TRACK_START INST={instrument.program} BAR_START "
     inst_tokens = tokenizer.track_to_tokens(midi.instruments[0])
     tokens_events = tokenizer.tokens_to_events(inst_tokens)
-    total_time_shift = 0
+    beat_count = 0
 
     for index, event in enumerate(tokens_events):
 
         if event.type == "Time-Shift":
             values = list(map(int, event.value.split(".")))
-            total_time_shift += values[0] + (values[1] / 8)
+            beat_count += int(values[0] + (values[1] / 8))
 
             # TODO: Deal with notes clashing with bar finishings here
-            if total_time_shift >= 4:
+            while beat_count >= 4:
                 piece_encoded_text += "BAR_END BAR_START "
-                total_time_shift = 0
+                beat_count -= 4
+
+            event.value = beat_count + "." + str(values[1]) + "." + str(values[2])
 
         piece_encoded_text += event_to_text.string(event)
 
