@@ -48,7 +48,8 @@ for instrument in midi.instruments:
                 piece_encoded_text += "BAR_END BAR_START "
                 beat_count -= 4
 
-            event.value = beat_count + "." + str(values[1]) + "." + str(values[2])
+            event.value = str(beat_count) + "." + \
+                str(values[1]) + "." + str(values[2])
 
         piece_encoded_text += event_to_text.string(event)
 
