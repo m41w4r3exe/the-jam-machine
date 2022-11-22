@@ -6,6 +6,10 @@ name = "pypi"
 [packages]
 miditok = "*"
 miditoolkit = "*"
+scikit-learn = "*"
+pylab-sdk = "*"
+matplotlib = "*"
+numpy = "*"
 
 [dev-packages]
 
