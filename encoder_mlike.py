@@ -1,6 +1,7 @@
 from miditoolkit import MidiFile
 from miditok import MIDILike
 from utils import writeToFile, EventToText
+from track_stats_for_encoding import stats_on_track
 
 # TODO: Unfinished file! Bar calculations are wrong
 
@@ -20,8 +21,9 @@ tokenizer = MIDILike(pitch_range, beat_res, nb_velocities, additional_tokens)
 
 midi_filename = "the_strokes-reptilia"
 midi = MidiFile(f"./midi/{midi_filename}.mid")
+stats = stats_on_track(midi_filename, verbose=True)
 
-tokenizer.current_midi_metadata = {
+statstokenizer.current_midi_metadata = {
     "time_division": midi.ticks_per_beat,
     "tempo_changes": midi.tempo_changes,
 }
@@ -61,7 +63,7 @@ for instrument in midi.instruments:
             if bar_count == 8:
                 bar_count = 0
                 track_encoded += event_to_text.string(event)
-                track_encoded += "BAR_END TRACK_END"
+                track_encoded += "BAR_END TRACK_END "
                 inst_events_in_bars.append(track_encoded)
                 track_encoded = f"TRACK_START INST={instrument.program} BAR_START "
                 continue
@@ -69,8 +71,8 @@ for instrument in midi.instruments:
         track_encoded += event_to_text.string(event)
 
     if bar_count != 0:
-        track_encoded += "BAR_END BAR_START" * (8 - bar_count)
-        track_encoded += "BAR_END TRACK_END"
+        track_encoded += "BAR_END BAR_START " * (8 - bar_count)
+        track_encoded += "BAR_END TRACK_END "
         inst_events_in_bars.append(track_encoded)
     print(inst_events_in_bars)
 

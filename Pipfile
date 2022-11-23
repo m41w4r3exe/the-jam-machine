@@ -10,6 +10,7 @@ scikit-learn = "*"
 pylab-sdk = "*"
 matplotlib = "*"
 numpy = "*"
+pandas = "*"
 
 [dev-packages]
 
