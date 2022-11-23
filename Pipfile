@@ -11,6 +11,10 @@ pylab-sdk = "*"
 matplotlib = "*"
 numpy = "*"
 pandas = "*"
+mido = "*"
+python-rtmidi = "*"
+pretty-midi = "*"
+note-seq = "*"
 
 [dev-packages]
 
