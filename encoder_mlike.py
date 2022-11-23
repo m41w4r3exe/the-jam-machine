@@ -4,7 +4,7 @@ from utils import writeToFile, EventToText
 from miditok import Event
 
 midi_filename = "the_strokes-reptilia"
-midi_filename = "1st Guitar"
+# midi_filename = "1st Guitar"
 midi = MidiFile(f"./midi/{midi_filename}.mid")
 
 pitch_range = range(21, 109)
@@ -13,6 +13,20 @@ tokenizer = MIDILike(pitch_range, beat_res)
 
 midi_tokens = tokenizer.midi_to_tokens(midi)
 midi_events = [tokenizer.tokens_to_events(inst_tokens) for inst_tokens in midi_tokens]
+
+
+def to_beat_str(value, base=8):
+    values = [int(int(value * base) / base), int(int(value * base) % base), base]
+    return ".".join(map(str, values))
+
+
+def to_base10(value):
+    integer, decimal, base = split_dots(value)
+    return integer + decimal / base
+
+
+def split_dots(value):
+    return list(map(int, value.split(".")))
 
 
 def remove_velocity(midi_events):
@@ -28,7 +42,7 @@ def divide_timeshifts_by_bar(midi_events):
         new_inst_events = []
         for event in inst_events:
             if event.type == "Time-Shift":
-                values = list(map(int, event.value.split(".")))
+                values = split_dots(event.value)
                 while values[0] > 4:
                     values[0] -= 4
                     new_inst_events.append(Event("Time-Shift", "4.0." + str(values[2])))
@@ -50,7 +64,11 @@ def add_bars(midi_events):
         remainder_timeshift = None
         for i, event in enumerate(inst_events):
 
-            if bar_end is True and event.type == "Note-Off":
+            if (
+                bar_end is True
+                and event.type == "Note-Off"
+                and remainder_timeshift is None
+            ):
                 new_inst_events.append(event)
                 continue
 
@@ -65,8 +83,8 @@ def add_bars(midi_events):
                         remainder_timeshift = None
 
             if event.type == "Time-Shift":
-                values = list(map(int, event.value.split(".")))
-                beat_count += values[0] + (values[1] / values[2])
+                timeshift_in_beats = to_base10(event.value)
+                beat_count += timeshift_in_beats
 
                 if beat_count == 4:
                     beat_count = 0
@@ -74,87 +92,82 @@ def add_bars(midi_events):
 
                 if beat_count > 4:
                     beat_count -= 4
-                    remainder_values = ".".join(
-                        map(str, [int(beat_count), values[1], values[2]])
-                    )
-                    remainder_timeshift = Event("Time-Shift", remainder_values)
-                    values[0] -= int(beat_count)
-                    event.value = ".".join(map(str, values))
+                    event.value = to_beat_str(timeshift_in_beats - beat_count)
                     bar_end = True
+                    remainder_timeshift = Event("Time-Shift", to_beat_str(beat_count))
 
-                new_inst_events.append(event)
-
-            else:
-                new_inst_events.append(event)
+            new_inst_events.append(event)
         new_midi_events.append(new_inst_events)
     return new_midi_events
+
+
+def get_text(event):
+    match event.type:
+        case "Track-Start":
+            return "TRACK_START "
+        case "Track-End":
+            return "TRACK_END "
+        case "Instrument":
+            return f"INST={event.value} "
+        case "Bar-Start":
+            return "BAR_START "
+        case "Bar-End":
+            return "BAR_END "
+        case "Time-Shift":
+            return f"TIME_SHIFT={event.value} "
+        case "Note-On":
+            return f"NOTE_ON={event.value} "
+        case "Note-Off":
+            return f"NOTE_OFF={event.value} "
+        case _:
+            return ""
+
+
+def make_sections(midi_events, instruments, n_bar=8):
+    midi_sections = []
+    for i, inst_events in enumerate(midi_events):
+        inst_sections = []
+        track_count = 1
+        inst_sections += [
+            Event("Track-Start", track_count),
+            Event("Instrument", instruments[i].program),
+        ]
+        for event in inst_events:
+            inst_sections.append(event)
+            if event.type == "Bar-End" and int(event.value) % n_bar == 0:
+                inst_sections += [
+                    Event("Track-End", track_count),
+                    Event("Track-Start", track_count + 1),
+                    Event("Instrument", instruments[i].program),
+                ]
+                track_count += 1
+
+        midi_sections.append(inst_sections)
+
+    return midi_sections
+
+
+def midi_events_to_text(midi_events):
+    midi_section_texts = []
+    for inst_events in midi_events:
+        inst_sections = []
+        track_text = ""
+        for event in inst_events:
+            track_text += get_text(event)
+            if event.type == "Track-End":
+                inst_sections.append(track_text)
+                track_text = ""
+        midi_section_texts.append(inst_sections)
+
+    return midi_section_texts
 
 
 midi_events = remove_velocity(midi_events)
 midi_events = divide_timeshifts_by_bar(midi_events)
 midi_events = add_bars(midi_events)
-# midi_events = get_section_texts(midi_events)
+midi_events = make_sections(midi_events, midi.instruments)
+midi_text = midi_events_to_text(midi_events)
 
-event_to_text = EventToText()
-piece_encoded_text = "PIECE_START"
-piece_text_in_bars = []
-
-for instrument in midi.instruments:
-    inst_tokens = tokenizer.track_to_tokens(instrument)
-    midi_events = tokenizer.tokens_to_events(inst_tokens)
-
-    track_encoded = f"TRACK_START INST={instrument.program} BAR_START "
-    inst_events_in_bars = []
-    bar_count = 0
-    beat_count = 0
-    bar_end = False
-    for index, event in enumerate(midi_events):
-
-        if event.type == "Time-Shift":
-            values = list(map(int, event.value.split(".")))
-            beat_count += values[0] + (values[1] / 8)
-
-            # TODO: Deal with notes clashing with bar finishings here
-            while beat_count >= 4:
-                beat_count -= 4
-                values[0] = int(beat_count)
-                bar_count += 1
-                if bar_count == 8:
-                    break
-                track_encoded += "BAR_END BAR_START "
-
-            # Update beat count of next timeshift
-            event.value = ".".join(map(str, values))
-
-            if bar_count == 8:
-                bar_count = 0
-                bar_end = True
-                if beat_count == 0:
-                    track_encoded += event_to_text.string(event)
-                # TODO: What happens when beat count > 4? problem: BAR_END is not added?
-                if beat_count > 0:
-                    remainder_timeshift = event_to_text.string(event)
-                continue
-
-        if remainder_timeshift is None:
-            track_encoded += event_to_text.string(event)
-
-        if bar_end is True and event.type == "Note-On":
-            track_encoded += "BAR_END TRACK_END"
-            inst_events_in_bars.append(track_encoded)
-            bar_end = False
-            track_encoded = f"TRACK_START INST={instrument.program} BAR_START "
-            if remainder_timeshift is not None:
-                track_encoded += remainder_timeshift + event_to_text.string(event)
-                remainder_timeshift = None
-
-    if bar_count != 0:
-        track_encoded += "BAR_END BAR_START " * (8 - bar_count)
-        track_encoded += "BAR_END TRACK_END "
-        inst_events_in_bars.append(track_encoded)
-    piece_text_in_bars.append(inst_events_in_bars)
-
-print(piece_text_in_bars)
-
+print(midi_text)
 
 # writeToFile(f"./midi/{midi_filename}_text_mlike.txt", piece_encoded_text)
