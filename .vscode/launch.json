@@ -4,6 +4,9 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
+
+    
+
     {
       "name": "Run decoder_mlike.py",
       "type": "python",
@@ -33,6 +36,14 @@
       "type": "python",
       "request": "launch",
       "program": "./encoder_mumidi.py",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "track_stats_for_encoding.py",
+      "type": "python",
+      "request": "launch",
+      "program": "./track_stats_for_encoding.py",
       "console": "integratedTerminal",
       "justMyCode": false
     }
