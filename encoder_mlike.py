@@ -21,9 +21,8 @@ tokenizer = MIDILike(pitch_range, beat_res, nb_velocities, additional_tokens)
 
 midi_filename = "the_strokes-reptilia"
 midi = MidiFile(f"./midi/{midi_filename}.mid")
-stats = stats_on_track(midi_filename, verbose=True)
 
-statstokenizer.current_midi_metadata = {
+tokenizer.current_midi_metadata = {
     "time_division": midi.ticks_per_beat,
     "tempo_changes": midi.tempo_changes,
 }
