@@ -9,13 +9,9 @@ beat_res = {(0, 400): 8}
 tokenizer = MIDILike(pitch_range, beat_res)
 encoder = MIDIEncoder(tokenizer)
 
-# midi_files = [
-#     f"midi/chosen/electronic_artists/{f}"
-#     for f in os.listdir("midi/chosen/electronic_artists/")
-#     if f.endswith(".mid")
-# ]
+midi_files = [f"midi/{f}" for f in os.listdir("midi/") if f.endswith(".mid")]
 
-midi_files = []
+# midi_files = []
 
 for file in midi_files:
     midi = MidiFile(file)
