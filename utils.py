@@ -1,9 +1,11 @@
 from miditok import Event
+import os
 
 
 def writeToFile(path, content):
     if type(content) is not str:
         content = str(content)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
         f.write(content)
 
@@ -40,6 +42,30 @@ def to_base10(beat_str):
 
 def split_dots(value):
     return list(map(int, value.split(".")))
+
+
+def get_text(event):
+    match event.type:
+        case "Piece-Start":
+            return "PIECE_START "
+        case "Track-Start":
+            return "TRACK_START "
+        case "Track-End":
+            return "TRACK_END "
+        case "Instrument":
+            return f"INST={event.value} "
+        case "Bar-Start":
+            return "BAR_START "
+        case "Bar-End":
+            return "BAR_END "
+        case "Time-Shift":
+            return f"TIME_SHIFT={event.value} "
+        case "Note-On":
+            return f"NOTE_ON={event.value} "
+        case "Note-Off":
+            return f"NOTE_OFF={event.value} "
+        case _:
+            return ""
 
 
 class TextToEvent:

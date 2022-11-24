@@ -1,6 +1,10 @@
 from miditoolkit import MidiFile
 from miditok import MIDILike, Event
-from utils import writeToFile, to_base10, to_beat_str, split_dots, chain
+from utils import writeToFile, to_base10, to_beat_str, split_dots, chain, get_text
+
+# TODO: Move remainder_ts logic to timeshift method
+# TODO: Add comments
+# TODO: Move midi read and text write to a seperate file
 
 
 class MIDIEncoder:
@@ -74,80 +78,48 @@ class MIDIEncoder:
         return new_midi_events
 
     @staticmethod
-    def get_text(event):
-        match event.type:
-            case "Track-Start":
-                return "TRACK_START "
-            case "Track-End":
-                return "TRACK_END "
-            case "Instrument":
-                return f"INST={event.value} "
-            case "Bar-Start":
-                return "BAR_START "
-            case "Bar-End":
-                return "BAR_END "
-            case "Time-Shift":
-                return f"TIME_SHIFT={event.value} "
-            case "Note-On":
-                return f"NOTE_ON={event.value} "
-            case "Note-Off":
-                return f"NOTE_OFF={event.value} "
-            case _:
-                return ""
-
-    @staticmethod
     def make_sections(midi_events, instruments, n_bar=8):
         midi_sections = []
         for i, inst_events in enumerate(midi_events):
             inst_sections = []
             track_count = 1
-            inst_sections += [
+            section = [
                 Event("Track-Start", track_count),
                 Event("Instrument", instruments[i].program),
             ]
             for event in inst_events:
-                inst_sections.append(event)
+                section.append(event)
                 if event.type == "Bar-End" and int(event.value) % n_bar == 0:
-                    inst_sections += [
-                        Event("Track-End", track_count),
-                        Event("Track-Start", track_count + 1),
+                    section.append(Event("Track-End", track_count))
+                    inst_sections.append(section)
+                    track_count += 1
+                    section = [
+                        Event("Track-Start", track_count),
                         Event("Instrument", instruments[i].program),
                     ]
-                    track_count += 1
 
             midi_sections.append(inst_sections)
 
         return midi_sections
 
-    def events_to_text(self, midi_events):
-        midi_section_texts = []
-        for inst_events in midi_events:
-            inst_sections = []
-            track_text = ""
-            for event in inst_events:
-
-                if event.type == "Time-Shift" and event.value == "4.0.8":
-                    continue
-
-                track_text += self.get_text(event)
-
-                if event.type == "Track-End":
-                    inst_sections.append(track_text)
-                    track_text = ""
-
-            midi_section_texts.append(inst_sections)
-
-        return midi_section_texts
+    @staticmethod
+    def sections_to_piece(midi_events):
+        piece = [Event("Piece-Start", 1)]
+        max_total_sections = max(map(len, midi_events))
+        for i in range(max_total_sections):
+            for inst_events in midi_events:
+                if i < len(inst_events):
+                    piece += inst_events[i]
+        return piece
 
     @staticmethod
-    def sections_to_piece(midi_text):
-        piece_text = "PIECE_START "
-        max_section_length = max(map(len, midi_text))
-        for i in range(max_section_length):
-            for inst_text in midi_text:
-                if i < len(inst_text):
-                    piece_text += inst_text[i]
+    def events_to_text(piece_events):
+        piece_text = ""
+        for event in piece_events:
+            if event.type == "Time-Shift" and event.value == "4.0.8":
+                continue
 
+            piece_text += get_text(event)
         return piece_text
 
     def get_midi_events(self, midi):
@@ -166,8 +138,8 @@ class MIDIEncoder:
                 self.divide_timeshifts_by_bar,
                 self.add_bars,
                 self.make_sections,
-                self.events_to_text,
                 self.sections_to_piece,
+                self.events_to_text,
             ],
             midi.instruments,
         )
