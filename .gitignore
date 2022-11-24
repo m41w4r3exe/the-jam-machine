@@ -127,6 +127,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# genre_prediction stuff
 genre_prediction/midi_pipeline.py
 genre_prediction/midi_prediction_label_encoders_20.pkl
 genre_prediction/midi_prediction_label_target_encoders_20.pkl
@@ -139,4 +141,10 @@ genre_prediction/data/list_midi_sorted_by_genre.csv
 genre_prediction/data/mmd_discogs_genre_with_artists.csv
 genre_prediction/data/mmd_scraped_artist_genre.csv
 genre_prediction/data/statistics.csv
-.vscode/settings.json
+
+# Dataset
+lmd_full
+data
+
+# VSCode
+.vscode
