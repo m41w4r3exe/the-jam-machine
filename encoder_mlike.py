@@ -194,6 +194,4 @@ midi_sections = make_sections(midi_events, midi.instruments)
 midi_text = midi_to_text(midi_sections)
 piece_text = get_piece_text(midi_text)
 
-print(midi_text)
-
-# writeToFile(f"./midi/{midi_filename}_text_mlike.txt", piece_encoded_text)
+writeToFile(f"./midi/{midi_filename}_text_mlike.txt", piece_text)
