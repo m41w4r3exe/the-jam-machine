@@ -14,6 +14,34 @@ def readFromFile(path):
         return f.read()
 
 
+def chain(input, funcs, *params):
+    res = input
+    for func in funcs:
+        try:
+            res = func(res, *params)
+        except TypeError:
+            res = func(res)
+    return res
+
+
+def to_beat_str(value, beat_res=8):
+    values = [
+        int(int(value * beat_res) / beat_res),
+        int(int(value * beat_res) % beat_res),
+        beat_res,
+    ]
+    return ".".join(map(str, values))
+
+
+def to_base10(beat_str):
+    integer, decimal, base = split_dots(beat_str)
+    return integer + decimal / base
+
+
+def split_dots(value):
+    return list(map(int, value.split(".")))
+
+
 class TextToEvent:
     def getlist(self, type, value):
         event_type = str(type).lower()
