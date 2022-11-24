@@ -14,31 +14,6 @@ def readFromFile(path):
         return f.read()
 
 
-class EventToText:
-    def string(self, event):
-        event_type = str(event.type).lower().replace("-", "_")
-        try:
-            return getattr(self, event_type, "")(event.value)
-        except Exception as e:
-            print("Error: Unknown event", event)
-            raise e
-
-    def time_shift(self, value):
-        return f"TIME_SHIFT={value} "
-
-    def note_on(self, value):
-        return f"NOTE_ON={value} "
-
-    def note_off(self, value):
-        return f"NOTE_OFF={value} "
-
-    def velocity(self, value):
-        return ""
-
-    def chord(self, value):
-        return ""
-
-
 class TextToEvent:
     def getlist(self, type, value):
         event_type = str(type).lower()

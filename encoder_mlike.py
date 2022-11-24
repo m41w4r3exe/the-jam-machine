@@ -1,10 +1,9 @@
 from miditoolkit import MidiFile
 from miditok import MIDILike
-from utils import writeToFile, EventToText
+from utils import writeToFile
 from miditok import Event
 
 midi_filename = "the_strokes-reptilia"
-# midi_filename = "1st Guitar"
 midi = MidiFile(f"./midi/{midi_filename}.mid")
 
 pitch_range = range(21, 109)
@@ -147,26 +146,53 @@ def make_sections(midi_events, instruments, n_bar=8):
     return midi_sections
 
 
-def midi_events_to_text(midi_events):
+def midi_to_text(midi_events):
     midi_section_texts = []
     for inst_events in midi_events:
         inst_sections = []
         track_text = ""
         for event in inst_events:
+
+            if event.type == "Time-Shift" and event.value == "4.0.8":
+                continue
+
             track_text += get_text(event)
+
             if event.type == "Track-End":
                 inst_sections.append(track_text)
                 track_text = ""
+
         midi_section_texts.append(inst_sections)
 
     return midi_section_texts
 
 
-midi_events = remove_velocity(midi_events)
-midi_events = divide_timeshifts_by_bar(midi_events)
-midi_events = add_bars(midi_events)
-midi_events = make_sections(midi_events, midi.instruments)
-midi_text = midi_events_to_text(midi_events)
+def get_piece_text(midi_text):
+    piece_text = "PIECE_START "
+    max_section_length = max(map(len, midi_text))
+    for i in range(max_section_length):
+        for inst_text in midi_text:
+            if i < len(inst_text):
+                piece_text += inst_text[i]
+
+    return piece_text
+
+
+def chain(start, *funcs):
+    res = start
+    for func in funcs:
+        res = func(res)
+    return res
+
+
+# midi_events = remove_velocity(midi_events)
+# midi_events = divide_timeshifts_by_bar(midi_events)
+# midi_events = add_bars(midi_events)
+
+midi_events = chain(midi_events, remove_velocity, divide_timeshifts_by_bar, add_bars)
+midi_sections = make_sections(midi_events, midi.instruments)
+midi_text = midi_to_text(midi_sections)
+piece_text = get_piece_text(midi_text)
 
 print(midi_text)
 
