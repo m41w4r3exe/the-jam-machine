@@ -2,9 +2,8 @@ from miditoolkit import MidiFile
 from miditok import MIDILike, Event
 from utils import writeToFile, to_base10, to_beat_str, split_dots, chain, get_text
 
-# TODO: Move remainder_ts logic to timeshift method
-# TODO: Add comments
-# TODO: Move midi read and text write to a seperate file
+# TODO: Move remainder_ts logic to divide_timeshift method
+# TODO: Add method comments
 
 
 class MIDIEncoder:
@@ -147,6 +146,7 @@ class MIDIEncoder:
         return piece_text
 
 
+# Encode Strokes for debugging purposes:
 midi_filename = "the_strokes-reptilia"
 midi = MidiFile(f"midi/{midi_filename}.mid")
 
@@ -155,5 +155,4 @@ beat_res = {(0, 400): 8}
 tokenizer = MIDILike(pitch_range, beat_res)
 
 piece_text = MIDIEncoder(tokenizer).get_piece_text(midi)
-
 writeToFile(f"midi/encoded_txts/{midi_filename}.txt", piece_text)

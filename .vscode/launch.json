@@ -5,7 +5,15 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Run decoder.py",
+      "name": "process_chosen.py",
+      "type": "python",
+      "request": "launch",
+      "program": "source/process_chosen.py",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "decoder.py",
       "type": "python",
       "request": "launch",
       "program": "source/decoder.py",
@@ -13,7 +21,7 @@
       "justMyCode": false
     },
     {
-      "name": "Run encoder.py",
+      "name": "encoder.py",
       "type": "python",
       "request": "launch",
       "program": "source/encoder.py",
