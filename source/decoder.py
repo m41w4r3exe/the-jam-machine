@@ -36,5 +36,5 @@ def add_emtpy_bars(beat_values, empty_bar_count):
     return ".".join(map(str, beat_values))
 
 
-encoded_text = readFromFile("../midi/encoded_txts/the_strokes-reptilia.txt")
+encoded_text = readFromFile("midi/encoded_txts/the_strokes-reptilia.txt")
 decode_mlike(encoded_text)

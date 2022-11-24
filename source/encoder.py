@@ -148,7 +148,7 @@ class MIDIEncoder:
 
 
 midi_filename = "the_strokes-reptilia"
-midi = MidiFile(f"../midi/{midi_filename}.mid")
+midi = MidiFile(f"midi/{midi_filename}.mid")
 
 pitch_range = range(21, 109)
 beat_res = {(0, 400): 8}
@@ -156,4 +156,4 @@ tokenizer = MIDILike(pitch_range, beat_res)
 
 piece_text = MIDIEncoder(tokenizer).get_piece_text(midi)
 
-writeToFile(f"../midi/encoded_txts/{midi_filename}.txt", piece_text)
+writeToFile(f"midi/encoded_txts/{midi_filename}.txt", piece_text)

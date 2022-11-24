@@ -4,38 +4,19 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
-
-    
-
     {
-      "name": "Run decoder_mlike.py",
+      "name": "Run decoder.py",
       "type": "python",
       "request": "launch",
-      "program": "./decoder_mlike.py",
+      "program": "source/decoder.py",
       "console": "integratedTerminal",
       "justMyCode": false
     },
     {
-      "name": "Run encoder_mlike.py",
+      "name": "Run encoder.py",
       "type": "python",
       "request": "launch",
-      "program": "./encoder_mlike.py",
-      "console": "integratedTerminal",
-      "justMyCode": false
-    },
-    {
-      "name": "Run encoder_oct.py",
-      "type": "python",
-      "request": "launch",
-      "program": "./encoder_oct.py",
-      "console": "integratedTerminal",
-      "justMyCode": false
-    },
-    {
-      "name": "Run encoder_mumidi.py",
-      "type": "python",
-      "request": "launch",
-      "program": "./encoder_mumidi.py",
+      "program": "source/encoder.py",
       "console": "integratedTerminal",
       "justMyCode": false
     },
@@ -43,7 +24,7 @@
       "name": "track_stats_for_encoding.py",
       "type": "python",
       "request": "launch",
-      "program": "./track_stats_for_encoding.py",
+      "program": "source/track_stats_for_encoding.py",
       "console": "integratedTerminal",
       "justMyCode": false
     }
