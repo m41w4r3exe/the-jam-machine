@@ -14,7 +14,12 @@ midi_files = [f"midi/{f}" for f in os.listdir("midi/") if f.endswith(".mid")]
 # midi_files = []
 
 for file in midi_files:
-    midi = MidiFile(file)
+    try:
+        midi = MidiFile(file)
+    except:
+        print(f"Failed to load {file}")
+        continue
+
     piece_text = encoder.get_piece_text(midi)
 
     midi_filename = os.path.splitext(os.path.basename(file))[0]

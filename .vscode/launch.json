@@ -5,10 +5,10 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "process_chosen.py",
+      "name": "preprocess.py",
       "type": "python",
       "request": "launch",
-      "program": "source/process_chosen.py",
+      "program": "source/preprocess.py",
       "console": "integratedTerminal",
       "justMyCode": false
     },
