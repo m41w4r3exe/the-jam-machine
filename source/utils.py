@@ -68,6 +68,32 @@ def get_text(event):
             return ""
 
 
+def get_event(text, value=None):
+    match text:
+        case "PIECE_START":
+            return Event("Piece-Start", value)
+        case "TRACK_START":
+            return None
+        case "TRACK_END":
+            return None
+        case "INST":
+            return Event("Instrument", value)
+        case "BAR_START":
+            return Event("Bar-Start", value)
+        case "BAR_END":
+            return Event("Bar-End", value)
+        case "TIME_SHIFT":
+            return Event("Time-Shift", value)
+        case "TIME_DELTA":
+            return Event("Time-Shift", to_beat_str(int(value) / 8))
+        case "NOTE_ON":
+            return Event("Note-On", value)
+        case "NOTE_OFF":
+            return Event("Note-Off", value)
+        case _:
+            return None
+
+
 class TextToEvent:
     def getlist(self, type, value):
         event_type = str(type).lower()

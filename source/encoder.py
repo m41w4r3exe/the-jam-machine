@@ -4,6 +4,7 @@ from utils import writeToFile, to_base10, to_beat_str, split_dots, chain, get_te
 
 # TODO: Move remainder_ts logic to divide_timeshift method
 # TODO: Add method comments
+# TODO: Fix beat resolution and its string representation
 
 
 class MIDIEncoder:
