@@ -5,18 +5,34 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Run encoder_oct.py",
+      "name": "preprocess.py",
       "type": "python",
       "request": "launch",
-      "program": "./encoder_oct.py",
+      "program": "source/preprocess.py",
       "console": "integratedTerminal",
       "justMyCode": false
     },
     {
-      "name": "Run encoder_mumidi.py",
+      "name": "decoder.py",
       "type": "python",
       "request": "launch",
-      "program": "./encoder_mumidi.py",
+      "program": "source/decoder.py",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "encoder.py",
+      "type": "python",
+      "request": "launch",
+      "program": "source/encoder.py",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "track_stats_for_encoding.py",
+      "type": "python",
+      "request": "launch",
+      "program": "source/track_stats_for_encoding.py",
       "console": "integratedTerminal",
       "justMyCode": false
     }

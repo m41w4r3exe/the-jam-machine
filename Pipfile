@@ -1,0 +1,22 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+miditok = "*"
+miditoolkit = "*"
+scikit-learn = "*"
+pylab-sdk = "*"
+matplotlib = "*"
+numpy = "*"
+pandas = "*"
+mido = "*"
+python-rtmidi = "*"
+pretty-midi = "*"
+note-seq = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.10"
