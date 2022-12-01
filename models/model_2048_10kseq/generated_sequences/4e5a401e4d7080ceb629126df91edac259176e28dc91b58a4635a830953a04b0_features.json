@@ -1,0 +1,1 @@
+{"inst_list": ["INST=DRUMS", "INST=38", "INST=82", "INST=51"], "density_list": [3, 6, 2, 1], "temperature": 0.2, "max_seq_length": 2048, "generate_until": "TRACK_END"}

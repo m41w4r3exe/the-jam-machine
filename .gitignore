@@ -133,3 +133,7 @@ lmd_full
 data
 
 .vscode
+models/model_2048_10kseq/pytorch_model.bin
+models/model_2048_10kseq/tokenizer_config.json
+models/model_2048_10kseq/special_tokens_map.json
+models/model_2048_10kseq/config.json

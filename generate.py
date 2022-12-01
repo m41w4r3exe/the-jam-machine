@@ -1,15 +1,40 @@
+import os
+import json
 from hashlib import sha256
 from transformers import GPT2LMHeadModel
 from transformers import PreTrainedTokenizerFast
 
 
 class GenerateMidiText:
-    def __init__(self, model, tokenizer, device="cpu"):
+    """
+    # instantiate the class
+    temperature = 0.75 # anything between 0 and +inf
+    gen = GenerateMidiText(model, tokenizer, device, temperature=temperature)
+    # generate a sequence:
+    generated_sequence = gen.generate_one_sequence(input="PIECE_START")
+    # generate a DRUM sequence:
+    generated_sequence = gen.generate_one_sequence(inst="INST=DRUMS")
+    # generate a multi track sequence
+    generated_multi_track_sequence = gen.generate_multi_track_sequence(
+        inst_list=["INST=DRUMS", "INST=38", "INST=82", "INST=51"],
+        density_list=[3, 6, 2, 1])
+    """
+
+    def __init__(
+        self,
+        model,
+        tokenizer,
+        device="cpu",
+        max_seq_length=2048,
+        temperature=0.75,
+        generate_until="TRACK_END",
+    ):
         self.model = model
         self.tokenizer = tokenizer
         self.device = device
-        # self.load_GPT2_model(model_path)
-        # self.load_tokenizer(tokenizer_path)
+        self.max_length = max_seq_length
+        self.temperature = temperature
+        self.generate_until = generate_until
 
     def tokenize_input(self, input, verbose=False):
         input_ids = self.tokenizer.encode(input, return_tensors="pt")
@@ -21,13 +46,17 @@ class GenerateMidiText:
         return input_ids
 
     # generate from the tokenized input
-    def generate_the_next_8_bars(self, input_ids, verbose=False):
+    def generate_the_next_8_bars(
+        self,
+        input_ids,
+        verbose=False,
+    ):
         generated_ids = self.model.generate(
             input_ids,
-            max_length=2048,
+            max_length=self.max_length,
             do_sample=True,
-            temperature=0.75,
-            eos_token_id=self.tokenizer.encode("TRACK_END")[0],
+            temperature=self.temperature,
+            eos_token_id=self.tokenizer.encode(self.generate_until)[0],
         )
         if verbose:
             print(f"output: {generated_ids}")
@@ -58,6 +87,14 @@ class GenerateMidiText:
         inst_list=["INST=DRUMS", "INST=38", "INST=82"],
         density_list=[3, 6, 2],
     ):
+        generate_features_dict = {
+            "inst_list": inst_list,
+            "density_list": density_list,
+            "temperature": self.temperature,
+            "max_seq_length": self.max_length,
+            "generate_until": self.generate_until,
+        }
+
         generated_multi_track_sequence = []
         input = "PIECE_START"
         for inst, density in zip(inst_list, density_list):
@@ -65,13 +102,14 @@ class GenerateMidiText:
                 input=f"{input}", inst=inst, density=density
             )
         generated_multi_track_sequence = input
-        return generated_multi_track_sequence
+        return generated_multi_track_sequence, generate_features_dict
 
 
 class WriteTextMidiToFile:  # utils saving to file
-    def __init__(self, sequence, output_path):
+    def __init__(self, sequence, output_path, feature_dict=None):
         self.sequence = sequence
         self.output_path = output_path
+        self.feature_dict = feature_dict
 
     def hashing_seq(self):
         self.filename = sha256(self.sequence.encode("utf-8")).hexdigest()
@@ -84,9 +122,14 @@ class WriteTextMidiToFile:  # utils saving to file
         file_object.close()
         print(f"Token sequence written: {self.output_path_filename}")
 
+    def writing_feature_dict_to_file(self):
+        with open(f"{self.output_path}{self.filename}_features.json", "w") as json_file:
+            json.dump(self.feature_dict, json_file)
+
     def text_midi_to_file(self):
         self.hashing_seq()
         self.writing_seq_to_file()
+        self.writing_feature_dict_to_file()
 
 
 if __name__ == "__main__":
@@ -100,26 +143,30 @@ if __name__ == "__main__":
     # load model and tokenizer
     model = GPT2LMHeadModel.from_pretrained(model_path).to(device)
     tokenizer = PreTrainedTokenizerFast(tokenizer_file=tokenizer_path)
+    temperature = 0.2
 
     # instantiate the GenerateMidiText class
-    gen = GenerateMidiText(model, tokenizer, device)
-    # generate a sequence
-    # generated_sequence = gen.generate_one_sequence(input="PIECE_START")
-    # WriteTextMidiToFile(
-    #     generated_sequence, generated_sequence_files_path
-    # ).text_midi_to_file()
-
-    # generate a DRUM sequence
-    # generated_sequence = gen.generate_one_sequence(inst="INST=DRUMS")
-    # WriteTextMidiToFile(
-    #     generated_sequence, generated_sequence_files_path
-    # ).text_midi_to_file()
+    gen = GenerateMidiText(model, tokenizer, device, temperature=temperature)
 
     # generate a multi track sequence
-    generated_multi_track_sequence = gen.generate_multi_track_sequence()
+    inst_list = ["INST=DRUMS", "INST=38", "INST=82", "INST=51"]
+    density_list = [3, 6, 2, 1]
+    (
+        generated_multi_track_sequence,
+        generate_features_dict,
+    ) = gen.generate_multi_track_sequence(
+        inst_list=inst_list,
+        density_list=density_list,
+    )
+
+    generated_sequence_files_path = f"{generated_sequence_files_path}"
+    if not os.path.exists(generated_sequence_files_path):
+        os.makedirs(generated_sequence_files_path)
 
     # write to file
     WriteTextMidiToFile(
-        generated_multi_track_sequence, generated_sequence_files_path
+        generated_multi_track_sequence,
+        generated_sequence_files_path,
+        feature_dict=generate_features_dict,
     ).text_midi_to_file()
     generated_multi_track_sequence
