@@ -128,11 +128,25 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# genre_prediction stuff
+genre_prediction/midi_pipeline.py
+genre_prediction/midi_prediction_label_encoders_20.pkl
+genre_prediction/midi_prediction_label_target_encoders_20.pkl
+genre_prediction/midi_prediction_model_20.pkl
+genre_prediction/midi_preprocessing_with_rachel_data.py
+genre_prediction/midi_train_with_rachelP_data.py
+genre_prediction/midi_training.py
+genre_prediction/data/exploring.ipynb
+genre_prediction/data/list_midi_sorted_by_genre.csv
+genre_prediction/data/mmd_discogs_genre_with_artists.csv
+genre_prediction/data/mmd_scraped_artist_genre.csv
+genre_prediction/data/statistics.csv
+
 # Dataset
 lmd_full
 data
 
-.vscode
+# model files 
 models/model_2048_10kseq/pytorch_model.bin
 models/model_2048_10kseq/tokenizer_config.json
 models/model_2048_10kseq/special_tokens_map.json
@@ -140,3 +154,6 @@ models/model_2048_10kseq/config.json
 models/model_2048_10kseq/generated_sequences/0699f83b5e4ff9ffb292e465757a1e37ec6ce74d98a049c8c5cbfa03e08bc271.txt
 models/model_2048_10kseq/generated_sequences/deefdeb09555537daeab5651000d807670cf749858efbe376b8544f54204266a.txt
 models/model_2048_10kseq/generated_sequences/df71ea54b9b6b06e82236a3134770a9a4f1678236180832cf6517c0a173fef81.txt
+
+# VSCode
+.vscode
