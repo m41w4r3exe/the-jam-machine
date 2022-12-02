@@ -16,7 +16,7 @@ class GenerateMidiText:
     # generate a multi track sequence
     generated_multi_track_sequence = gen.generate_multi_track_sequence(
         inst_list=["INST=DRUMS", "INST=38", "INST=82", "INST=51"],
-        density_list=[3, 6, 2, 1])
+        density_list=[2, 3, 3, 1])
     """
 
     def __init__(
@@ -71,14 +71,25 @@ class GenerateMidiText:
         return generated_text
 
     def generate_one_sequence(
-        self, input_prompt="PIECE_START", inst=None, density=None
+        self,
+        input_prompt="PIECE_START",
+        inst=None,
+        density=None,
+        verbose=True,
     ):
         if inst is not None:  # ex: inst="INST=DRUMS"
             input_prompt = f"{input_prompt} TRACK_START {inst} "
             if density is not None:  # ex: inst="INST=DRUMS"
                 input_prompt = f"{input_prompt} DENSITY={density}"
+
         if inst is None and density is not None:
             print("Density cannot be defined without an input_prompt instrument #TOFIX")
+
+        if verbose:
+            print("--------------------")
+            print(
+                f"Generating {inst} - Density {density} - Temperature {self.temperature}"
+            )
 
         input_prompt_ids = self.tokenize_input_prompt(input_prompt)
         generated_ids = self.generate_the_next_8_bars(input_prompt_ids)
@@ -88,7 +99,7 @@ class GenerateMidiText:
     def generate_multi_track_sequence(
         self,
         inst_list=["INST=DRUMS", "INST=38", "INST=82"],
-        density_list=[3, 6, 2],
+        density_list=[3, 2, 1],
         verbose=True,
     ):
         generate_features_dict = {
@@ -102,12 +113,6 @@ class GenerateMidiText:
         generated_multi_track_sequence = []
         input_prompt = "PIECE_START"
         for inst, density in zip(inst_list, density_list):
-            if verbose:
-                print("--------------------")
-                print(
-                    f"Generating {inst} - Density {density} - Temperature {self.temperature}"
-                )
-
             input_prompt = self.generate_one_sequence(
                 input_prompt=f"{input_prompt}", inst=inst, density=density
             )
@@ -119,10 +124,17 @@ if __name__ == "__main__":
 
     device = "cpu"
     # model path
-    os.path.exists("models/model_2048_10kseq/")
-    model_path = "models/model_2048_10kseq/"
-    tokenizer_path = "models/model_2048_10kseq/tokenizer.json"
-    generated_sequence_files_path = "models/model_2048_10kseq/generated_sequences/"
+    # model_path = "models/model_2048_10kseq/"
+    # tokenizer_path = "models/model_2048_10kseq/tokenizer.json"
+    # generated_sequence_files_path = "models/model_2048_10kseq/generated_sequences/"
+
+    # model path
+    model_path = "models/model_2048_wholedataset/"
+    tokenizer_path = "models/model_2048_wholedataset/tokenizer.json"
+    generated_sequence_files_path = (
+        "models/model_2048_wholedataset/generated_sequences/"
+    )
+
     if not os.path.exists(generated_sequence_files_path):
         os.makedirs(generated_sequence_files_path)
 

@@ -7,7 +7,7 @@ import datetime
 
 def writeToFile(path, content):
     if type(content) is dict:
-        with open(f"{path}.json", "w") as json_file:
+        with open(f"{path}", "w") as json_file:
             json.dump(content, json_file)
     else:
         if type(content) is not str:
@@ -110,7 +110,7 @@ class WriteTextMidiToFile:  # utils saving to file
         self.current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         self.filename = sha256(self.sequence.encode("utf-8")).hexdigest()
         self.output_path_filename = (
-            f"{self.output_path}/{self.current_time}_{self.filename}.txt"
+            f"{self.output_path}/{self.current_time}_{self.filename}.json"
         )
 
     # def writing_seq_to_file(self):
@@ -133,8 +133,7 @@ class WriteTextMidiToFile:  # utils saving to file
 
     def text_midi_to_file(self):
         self.hashing_seq()
-        self.writing_seq_to_file()
         output_dict = self.wrapping_seq_feature_in_dict()
-        print(f"Token sequence written: {self.output_path_filename}.json")
+        print(f"Token sequence written: {self.output_path_filename}")
         writeToFile(self.output_path_filename, output_dict)
         # self.writing_feature_dict_to_file(self.feature_dict, self.output_path_filename)
