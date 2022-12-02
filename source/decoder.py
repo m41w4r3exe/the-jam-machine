@@ -85,7 +85,7 @@ def add_velocity(events):
 def get_instruments_tuple(events):
     instruments = []
     for inst in events.keys():
-        is_drum = 1 if inst == "0" else 0
+        is_drum = 1 if inst == "DRUM" else 0
         instruments.append((int(inst), is_drum))
     return tuple(instruments)
 
