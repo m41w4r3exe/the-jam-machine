@@ -1,3 +1,4 @@
+from datetime import datetime
 from miditok import Event
 import os
 
@@ -43,6 +44,10 @@ def to_base10(beat_str):
 
 def split_dots(value):
     return list(map(int, value.split(".")))
+
+
+def get_datetime_filename():
+    return datetime.now().strftime("%d-%m__%H:%M:%S")
 
 
 def get_text(event):
