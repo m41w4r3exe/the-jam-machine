@@ -1,9 +1,12 @@
 from miditoolkit import MidiFile
-from miditok import MIDILike, Event
+from miditok import Event
+from tokenizer import get_tokenizer
 from utils import writeToFile, to_base10, to_beat_str, split_dots, chain, get_text
 
 # TODO: Move remainder_ts logic to divide_timeshift method
 # TODO: Add method comments
+# TODO: Fix beat resolution and its string representation
+# TODO: Make instruments family while encoding
 
 
 class MIDIEncoder:
@@ -151,9 +154,7 @@ if __name__ == "__main__":
     midi_filename = "the_strokes-reptilia"
     midi = MidiFile(f"midi/{midi_filename}.mid")
 
-    pitch_range = range(21, 109)
-    beat_res = {(0, 400): 8}
-    tokenizer = MIDILike(pitch_range, beat_res)
+    tokenizer = get_tokenizer()
 
     piece_text = MIDIEncoder(tokenizer).get_piece_text(midi)
     writeToFile(f"midi/encoded_txts/{midi_filename}.txt", piece_text)

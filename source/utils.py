@@ -1,3 +1,4 @@
+from datetime import datetime
 from miditok import Event
 import os
 import json
@@ -34,6 +35,7 @@ def chain(input, funcs, *params):
 
 
 def to_beat_str(value, beat_res=8):
+
     values = [
         int(int(value * beat_res) / beat_res),
         int(int(value * beat_res) % beat_res),
@@ -49,6 +51,10 @@ def to_base10(beat_str):
 
 def split_dots(value):
     return list(map(int, value.split(".")))
+
+
+def get_datetime_filename():
+    return datetime.now().strftime("%d-%m__%H:%M:%S")
 
 
 def get_text(event):
@@ -75,29 +81,30 @@ def get_text(event):
             return ""
 
 
-class TextToEvent:
-    def getlist(self, type, value):
-        event_type = str(type).lower()
-        try:
-            return getattr(self, event_type, "")(value)
-        except Exception as e:
-            print("Error: Unknown event", type, value)
-            raise e
-
-    def time_shift(self, value):
-        return [Event("Time-Shift", value)]
-
-    def note_on(self, value):
-        return [Event("Note-On", value), Event("Velocity", 100)]
-
-    def note_off(self, value):
-        return [Event("Note-Off", value)]
-
-    def velocity(self, value):
-        return []
-
-    def chord(self, value):
-        return []
+def get_event(text, value=None):
+    match text:
+        case "PIECE_START":
+            return Event("Piece-Start", value)
+        case "TRACK_START":
+            return None
+        case "TRACK_END":
+            return None
+        case "INST":
+            return Event("Instrument", value)
+        case "BAR_START":
+            return Event("Bar-Start", value)
+        case "BAR_END":
+            return Event("Bar-End", value)
+        case "TIME_SHIFT":
+            return Event("Time-Shift", value)
+        case "TIME_DELTA":
+            return Event("Time-Shift", to_beat_str(int(value) / 4))
+        case "NOTE_ON":
+            return Event("Note-On", value)
+        case "NOTE_OFF":
+            return Event("Note-Off", value)
+        case _:
+            return None
 
 
 class WriteTextMidiToFile:  # utils saving to file
