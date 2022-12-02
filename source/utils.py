@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 from miditok import Event
 import os
 import json
@@ -19,9 +19,12 @@ def writeToFile(path, content):
 
 
 # Function to read from text from txt file:
-def readFromFile(path):
+def readFromFile(path, isJSON=False):
     with open(path, "r") as f:
-        return f.read()
+        if isJSON:
+            return json.load(f)
+        else:
+            return f.read()
 
 
 def chain(input, funcs, *params):
@@ -54,7 +57,7 @@ def split_dots(value):
 
 
 def get_datetime_filename():
-    return datetime.now().strftime("%d-%m__%H:%M:%S")
+    return datetime.datetime.now().strftime("%d-%m__%H:%M:%S")
 
 
 def get_text(event):
