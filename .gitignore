@@ -146,9 +146,15 @@ genre_prediction/data/statistics.csv
 lmd_full
 data
 
-# model files 
+# model files
 models
 collab_notebook_model
 
 # VSCode
 .vscode
+
+# Encoded midi data
+midi_encoded
+
+# Wandb file
+wandb
