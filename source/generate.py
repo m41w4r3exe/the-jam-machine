@@ -1,7 +1,7 @@
 from utils import WriteTextMidiToFile
+from load import LoadFromHuggingFace
+from load import LoadModelFromLocalFolder
 import os
-from transformers import GPT2LMHeadModel
-from transformers import PreTrainedTokenizerFast
 
 
 class GenerateMidiText:
@@ -102,7 +102,9 @@ class GenerateMidiText:
         density_list=[3, 2, 1],
         verbose=True,
     ):
+
         generate_features_dict = {
+            "model_identification": self.model.transformer.base_model.name_or_path,
             "inst_list": inst_list,
             "density_list": density_list,
             "temperature": self.temperature,
@@ -123,24 +125,25 @@ class GenerateMidiText:
 if __name__ == "__main__":
 
     device = "cpu"
-    # model path
-    # model_path = "models/model_2048_10kseq/"
-    # tokenizer_path = "models/model_2048_10kseq/tokenizer.json"
-    # generated_sequence_files_path = "models/model_2048_10kseq/generated_sequences/"
+    load_from_huggingface = False
 
-    # model path
-    model_path = "models/model_2048_wholedataset/"
-    tokenizer_path = "models/model_2048_wholedataset/tokenizer.json"
-    generated_sequence_files_path = (
-        "models/model_2048_wholedataset/generated_sequences/"
-    )
+    if load_from_huggingface:
+        # load model and tokenizer from HuggingFace
+        model_repo = "misnaej/the-jam-machine"
+        model, tokenizer = LoadFromHuggingFace(model_repo).load_model_and_tokenizer()
+    else:
+        # load model and tokenizer from a local folder
+        model_path = "models/model_2048_wholedataset"
+        model, tokenizer = LoadModelFromLocalFolder(
+            model_path
+        ).load_model_and_tokenizer()
 
+    # defined path to generate
+    generated_sequence_files_path = "models/model_2048_wholedataset/generated_sequences"
     if not os.path.exists(generated_sequence_files_path):
         os.makedirs(generated_sequence_files_path)
 
-    # load model and tokenizer
-    model = GPT2LMHeadModel.from_pretrained(model_path).to(device)
-    tokenizer = PreTrainedTokenizerFast(tokenizer_file=tokenizer_path)
+    # set the temperature
     temperature = 1
 
     # instantiate the GenerateMidiText class
