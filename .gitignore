@@ -150,5 +150,8 @@ data
 models
 collab_notebook_model
 
+# midi files
+midi/decoded
+
 # VSCode
 .vscode

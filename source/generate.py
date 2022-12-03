@@ -141,14 +141,14 @@ if __name__ == "__main__":
     # load model and tokenizer
     model = GPT2LMHeadModel.from_pretrained(model_path).to(device)
     tokenizer = PreTrainedTokenizerFast(tokenizer_file=tokenizer_path)
-    temperature = 0.2
+    temperature = 1
 
     # instantiate the GenerateMidiText class
     gen = GenerateMidiText(model, tokenizer, device, temperature=temperature)
 
     # generate a multi track sequence
-    inst_list = ["INST=DRUMS", "INST=38", "INST=82", "INST=51"]
-    density_list = [3, 6, 2, 1]
+    inst_list = ["INST=5", "INST=34", "INST=81", "INST=DRUMS"]
+    density_list = [2, 3, 2, 2]
     (
         generated_multi_track_sequence,
         generate_features_dict,
