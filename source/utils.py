@@ -1,9 +1,8 @@
 from datetime import datetime
-from miditok import Event
+from miditok import Event, MIDILike
 import os
 import json
 from hashlib import sha256
-import datetime
 
 
 def writeToFile(path, content):
@@ -53,7 +52,7 @@ def split_dots(value):
     return list(map(int, value.split(".")))
 
 
-def get_datetime_filename():
+def get_datetime():
     return datetime.now().strftime("%d-%m__%H:%M:%S")
 
 
@@ -105,6 +104,13 @@ def get_event(text, value=None):
             return Event("Note-Off", value)
         case _:
             return None
+
+
+# TODO: Make this singleton
+def get_tokenizer():
+    pitch_range = range(21, 109)
+    beat_res = {(0, 400): 8}
+    return MIDILike(pitch_range, beat_res)
 
 
 class WriteTextMidiToFile:  # utils saving to file

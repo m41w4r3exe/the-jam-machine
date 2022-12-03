@@ -1,12 +1,21 @@
 from miditoolkit import MidiFile
 from miditok import Event
-from tokenizer import get_tokenizer
-from utils import writeToFile, to_base10, to_beat_str, split_dots, chain, get_text
+from utils import (
+    writeToFile,
+    to_base10,
+    to_beat_str,
+    split_dots,
+    chain,
+    get_text,
+    get_tokenizer,
+)
 
 # TODO: Move remainder_ts logic to divide_timeshift method
 # TODO: Add method comments
 # TODO: Fix beat resolution and its string representation
 # TODO: Make instruments family while encoding
+# TODO: Data augmentation: hopping 1 bar and re-encode almost same notes
+# TODO: Data augmentation: octave or pitch shift?
 
 
 class MIDIEncoder:

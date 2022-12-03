@@ -1,16 +1,37 @@
-# from encoder_mlike import tokenizer
-from tokenizer import get_tokenizer
-from utils import readFromFile, get_event, to_base10, to_beat_str, get_datetime_filename
+from utils import (
+    readFromFile,
+    get_event,
+    to_base10,
+    to_beat_str,
+    get_datetime,
+    get_tokenizer,
+)
 from miditok import Event
-
-# TODO: Add method comments
 
 
 class TextDecoder:
+    """Decodes text into:
+    1- List of events
+    2- Then converts these events to midi file via MidiTok and miditoolkit
+
+    :param tokenizer: from MidiTok
+
+    Usage with write_to_midi method:
+        args: text(String) example ->  PIECE_START TRACK_START INST=25 DENSITY=2 BAR_START NOTE_ON=50 TIME_DELTA=1 NOTE_OFF=50...BAR_END TRACK_END
+        returns: midi file from miditoolkit
+    """
+
     def __init__(self, tokenizer):
         self.tokenizer = tokenizer
 
     def decode(self, text):
+        r"""converts from text to instrument events
+        Args:
+            text (String): example ->  PIECE_START TRACK_START INST=25 DENSITY=2 BAR_START NOTE_ON=50 TIME_DELTA=1 NOTE_OFF=50...BAR_END TRACK_END
+
+        Returns:
+            Dict{inst_id: List[Events]}: List of events of Notes with velocities, aggregated Timeshifts, for each instrument
+        """
         piece_events = self.text_to_events(text)
         inst_events = self.piece_to_inst_events(piece_events)
         events = self.add_timeshifts_for_empty_bars(inst_events)
@@ -19,12 +40,27 @@ class TextDecoder:
         return events
 
     def tokenize(self, events):
+        r"""converts from events to MidiTok tokens
+        Args:
+            events (Dict{inst_id: List[Events]}): List of events for each instrument
+
+        Returns:
+            List[List[Events]]: List of tokens for each instrument
+        """
         tokens = []
         for inst in events.keys():
             tokens.append(self.tokenizer.events_to_tokens(events[inst]))
         return tokens
 
-    def write_to_midi(self, text, filename=get_datetime_filename()):
+    def write_to_midi(self, text, filename=get_datetime()):
+        r"""writes text to midi file
+        Args:
+            text (String): example ->  PIECE_START TRACK_START INST=25 DENSITY=2 BAR_START NOTE_ON=50 TIME_DELTA=1 NOTE_OFF=50...BAR_END TRACK_END
+
+        Returns:
+            miditoolkit midi: Returns and writes to midi
+        """
+
         events = self.decode(text)
         tokens = self.tokenize(events)
         instruments = self.get_instruments_tuple(events)
@@ -45,6 +81,15 @@ class TextDecoder:
 
     @staticmethod
     def piece_to_inst_events(piece_events):
+        """Converts piece events of 8 bars to instrument events for entire song
+
+        Args:
+            piece_events (List[Events]): List of events of Notes, Timeshifts, Bars, Tracks
+
+        Returns:
+            Dict{inst_id: List[Events]}: List of events for each instrument
+
+        """
         inst_events = {}
         current_instrument = -1
         for event in piece_events:
@@ -58,6 +103,7 @@ class TextDecoder:
 
     @staticmethod
     def add_timeshifts_for_empty_bars(inst_events):
+        """Adds time shift events instead of consecutive [BAR_START BAR_END] events"""
         new_inst_events = {}
         for inst, events in inst_events.items():
             new_inst_events[inst] = []
@@ -71,11 +117,29 @@ class TextDecoder:
 
     @staticmethod
     def add_timeshifts(beat_values1, beat_values2):
+        """Adds two beat values
+
+        Args:
+            beat_values1 (String): like 0.3.8
+            beat_values2 (String): like 1.7.8
+
+        Returns:
+            beat_str (String): added beats like 2.2.8 for example values
+        """
         value1 = to_base10(beat_values1)
         value2 = to_base10(beat_values2)
         return to_beat_str(value1 + value2)
 
     def aggregate_timeshifts(self, events):
+        """Aggregates consecutive time shift events bigger than a bar
+        -> like Timeshift 4.0.8
+
+        Args:
+            events (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         new_events = {}
         for inst, events in events.items():
             inst_events = []
@@ -95,6 +159,7 @@ class TextDecoder:
 
     @staticmethod
     def add_velocity(events):
+        """Adds default velocity 99 to note events since they are removed from text, needed to generate midi"""
         new_events = {}
         for inst, events in events.items():
             inst_events = []
@@ -107,6 +172,7 @@ class TextDecoder:
 
     @staticmethod
     def get_instruments_tuple(events):
+        """Returns instruments tuple for midi generation"""
         instruments = []
         for inst in events.keys():
             is_drum = 1 if inst == "DRUM" else 0
