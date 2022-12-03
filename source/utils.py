@@ -3,7 +3,6 @@ from miditok import Event
 import os
 import json
 from hashlib import sha256
-import datetime
 
 
 def writeToFile(path, content):
@@ -19,9 +18,12 @@ def writeToFile(path, content):
 
 
 # Function to read from text from txt file:
-def readFromFile(path):
+def readFromFile(path, isJSON=False):
     with open(path, "r") as f:
-        return f.read()
+        if isJSON:
+            return json.load(f)
+        else:
+            return f.read()
 
 
 def chain(input, funcs, *params):
@@ -54,7 +56,7 @@ def split_dots(value):
 
 
 def get_datetime_filename():
-    return datetime.now().strftime("%d-%m__%H:%M:%S")
+    return datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
 def get_text(event):
@@ -114,11 +116,10 @@ class WriteTextMidiToFile:  # utils saving to file
         self.feature_dict = feature_dict
 
     def hashing_seq(self):
-        self.current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.filename = sha256(self.sequence.encode("utf-8")).hexdigest()
-        self.output_path_filename = (
-            f"{self.output_path}/{self.current_time}_{self.filename}.json"
-        )
+        # self.current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.current_time = get_datetime_filename()
+        # self.filename = sha256(self.sequence.encode("utf-8")).hexdigest()
+        self.output_path_filename = f"{self.output_path}/{self.current_time}.json"
 
     # def writing_seq_to_file(self):
     #     file_object = open(f"{self.output_path_filename}", "w")
