@@ -109,14 +109,17 @@ class TextDecoder:
     def get_instruments_tuple(events):
         instruments = []
         for inst in events.keys():
-            is_drum = 1 if inst == "DRUM" else 0
+            is_drum = 0
+            if inst == "DRUMS":
+                inst = 0
+                is_drum = 1
             instruments.append((int(inst), is_drum))
         return tuple(instruments)
 
 
 if __name__ == "__main__":
 
-    filename = "20221202_183506_def4c02615dffd4be3579b5f7595459c288c392b31675f52577452521299e90c.json"
+    filename = "20221203_144412.json"
     encoded_json = readFromFile(
         f"models/model_2048_wholedataset/generated_sequences/{filename}",
         True,
