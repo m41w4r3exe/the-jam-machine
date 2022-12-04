@@ -148,7 +148,11 @@ data
 
 # model files 
 models
-collab_notebook_model
+collab_notebook_model/old
 
+
+# generated files
+generated
+midi/decoded
 # VSCode
 .vscode
