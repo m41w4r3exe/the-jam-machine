@@ -1,6 +1,5 @@
 from utils import WriteTextMidiToFile
-from load import LoadFromHuggingFace
-from load import LoadModelFromLocalFolder
+from load import LoadModel
 import os
 
 
@@ -125,17 +124,19 @@ class GenerateMidiText:
 if __name__ == "__main__":
 
     device = "cpu"
-    load_from_huggingface = False
+    load_from_huggingface = True
 
     if load_from_huggingface:
         # load model and tokenizer from HuggingFace
         model_repo = "misnaej/the-jam-machine"
-        model, tokenizer = LoadFromHuggingFace(model_repo).load_model_and_tokenizer()
+        model, tokenizer = LoadModel(
+            model_repo, from_huggingface=True
+        ).load_model_and_tokenizer()
     else:
         # load model and tokenizer from a local folder
         model_path = "models/model_2048_wholedataset"
-        model, tokenizer = LoadModelFromLocalFolder(
-            model_path
+        model, tokenizer = LoadModel(
+            model_path, from_huggingface=False
         ).load_model_and_tokenizer()
 
     # defined path to generate
