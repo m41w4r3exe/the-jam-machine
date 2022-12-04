@@ -7,9 +7,9 @@ from utils import get_files, timeit, uncompress_files, compress_files
 # DONE
 # separate utils and constants
 # fix path issues, offer output path as argument
+# create Familizer class
 
 # TO DO
-# create Familizer class
 # optimize directory paths
 # create a Zip class
 # fix random instrument issue with an instantiation of instrument number
@@ -38,60 +38,66 @@ class Familizer:
                 return random.choice(instrument_class["program_range"])
 
     # Replace instruments in text files
-    def replace_instrument_token(self, token, operation):
+    def replace_instrument_token(self, token):
         """
         Given a MIDI program number in a word token, replace it with the family or program
         number token depending on the operation.
         e.g. INST=86 -> INST=10
         """
-        program_number = int(token.split("=")[1])
-        if operation == "family":
-            return "INST=" + str(self.get_family_number(program_number))
-        elif operation == "program":
-            return "INST=" + str(self.get_program_number(program_number))
+        inst_number = int(token.split("=")[1])
+        if self.operation == "family":
+            return "INST=" + str(self.get_family_number(inst_number))
+        elif self.operation == "program":
+            return "INST=" + str(self.get_program_number(inst_number))
 
-    def replace_instrument_in_text(self, text, operation):
+    def replace_instrument_in_text(self, text):
         """Given a text file, replace all instrument tokens with family number tokens."""
         return " ".join(
             [
-                self.replace_instrument_token(token, operation)
+                self.replace_instrument_token(token)
                 if token.startswith("INST=") and not token == "INST=DRUMS"
                 else token
                 for token in text.split(" ")
             ]
         )
 
-    def replace_instruments_in_file(self, file, operation):
+    def replace_instruments_in_file(self, file):
         """Given a text file, replace all instrument tokens with family number tokens."""
         text = file.read_text()
-        file.write_text(self.replace_instrument_in_text(text, operation))
+        file.write_text(self.replace_instrument_in_text(text))
 
     @timeit
-    def replace_instruments(self, directory, operation, n_jobs):
+    def replace_instruments(self):
         """
         Given a directory of text files:
         Replace all instrument tokens with family number tokens.
         """
-        files = get_files(directory, extension="txt")
+        files = get_files(self.output_directory, extension="txt")
         Parallel(n_jobs=self.n_jobs)(
-            delayed(self.replace_instruments_in_file)(file, operation) for file in files
+            delayed(self.replace_instruments_in_file)(file) for file in files
         )
 
-    def replace_tokens(self, input_directory, output_directory, operation, n_jobs):
+    def replace_tokens(self):
         """
         Given a directory and an operation, perform the operation on all text files in the directory.
         operation can be either 'family' or 'program'.
         """
-        uncompress_files(input_directory, output_directory, n_jobs)
-        self.replace_instruments(output_directory, operation, n_jobs)
-        compress_files(output_directory, output_directory, n_jobs)
-        print(operation + " complete.")
+        uncompress_files(self.input_directory, self.output_directory, self.n_jobs)
+        self.replace_instruments()
+        compress_files(self.output_directory, self.output_directory, self.n_jobs)
+        print(self.operation + " complete.")
 
     def to_family(self, input_directory, output_directory):
-        self.replace_tokens(input_directory, output_directory, "family", self.n_jobs)
+        self.input_directory = input_directory
+        self.output_directory = output_directory
+        self.operation = "family"
+        self.replace_tokens()
 
     def to_program(self, input_directory, output_directory):
-        self.replace_tokens(input_directory, output_directory, "program", self.n_jobs)
+        self.input_directory = input_directory
+        self.output_directory = output_directory
+        self.operation = "program"
+        self.replace_tokens()
 
 
 if __name__ == "__main__":
