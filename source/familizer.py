@@ -77,27 +77,34 @@ class Familizer:
             delayed(self.replace_instruments_in_file)(file) for file in files
         )
 
-    def replace_tokens(self):
+    def replace_tokens(self, input_directory, output_directory, operation):
         """
         Given a directory and an operation, perform the operation on all text files in the directory.
         operation can be either 'family' or 'program'.
         """
+        self.input_directory = input_directory
+        self.output_directory = output_directory
+        self.operation = operation
+
+        # Uncompress files, replace tokens, compress files
         uncompress_files(self.input_directory, self.output_directory, self.n_jobs)
         self.replace_instruments()
         compress_files(self.output_directory, self.output_directory, self.n_jobs)
         print(self.operation + " complete.")
 
     def to_family(self, input_directory, output_directory):
-        self.input_directory = input_directory
-        self.output_directory = output_directory
-        self.operation = "family"
-        self.replace_tokens()
+        """
+        Given a directory containing zip files, replace all instrument tokens with 
+        family number tokens. The output is a directory of zip files.
+        """
+        self.replace_tokens(input_directory, output_directory, "family")
 
     def to_program(self, input_directory, output_directory):
-        self.input_directory = input_directory
-        self.output_directory = output_directory
-        self.operation = "program"
-        self.replace_tokens()
+        """
+        Given a directory containing zip files, replace all instrument tokens with 
+        program number tokens. The output is a directory of zip files.
+        """
+        self.replace_tokens(input_directory, output_directory, "program")
 
 
 if __name__ == "__main__":
