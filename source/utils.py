@@ -4,6 +4,9 @@ import os
 import json
 from hashlib import sha256
 import datetime
+from time import perf_counter
+from joblib import Parallel, delayed
+from zipfile import ZipFile, ZIP_DEFLATED
 
 
 def writeToFile(path, content):
@@ -144,3 +147,55 @@ class WriteTextMidiToFile:  # utils saving to file
         print(f"Token sequence written: {self.output_path_filename}")
         writeToFile(self.output_path_filename, output_dict)
         # self.writing_feature_dict_to_file(self.feature_dict, self.output_path_filename)
+
+
+def get_files(directory, extension):
+    """Given a directory, get a list of the file paths of all files matching the
+    specified file extension."""
+    return directory.glob(f"*.{extension}")
+
+
+def timeit(func):
+    def wrapper(*args, **kwargs):
+        start = perf_counter()
+        result = func(*args, **kwargs)
+        end = perf_counter()
+        print(f"{func.__name__} took {end - start:.2f} seconds to run.")
+        return result
+
+    return wrapper
+
+    # File compression and decompression
+
+
+def uncompress_single_file(file, operation):
+    """uncompress single zip file"""
+    with ZipFile(file, "r") as zip_ref:
+        zip_ref.extractall(file.parent / operation)
+
+
+def compress_single_file(file, operation):
+    """compress a single text file to a new zip file and delete the original"""
+    output_file = file.parent / (file.stem + "_" + operation + ".zip")
+    with ZipFile(output_file, "w") as zip_ref:
+        zip_ref.write(file, arcname=file.name, compress_type=ZIP_DEFLATED)
+        file.unlink()
+
+
+@timeit
+def uncompress_files(directory, operation, n_jobs):
+    """uncompress all zip files in folder"""
+    files = get_files(directory, extension="zip")
+    Parallel(n_jobs=n_jobs)(
+        delayed(uncompress_single_file)(file, operation) for file in files
+    )
+    return directory / operation
+
+
+@timeit
+def compress_files(directory, operation, n_jobs):
+    """compress all text files in folder to new zip files and remove the text files"""
+    files = get_files(directory, extension="txt")
+    Parallel(n_jobs=n_jobs)(
+        delayed(compress_single_file)(file, operation) for file in files
+    )

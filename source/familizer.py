@@ -1,49 +1,16 @@
-from zipfile import ZipFile, ZIP_DEFLATED
 import random
 from joblib import Parallel, delayed
-from time import perf_counter
 from pathlib import Path
+from constants import INSTRUMENT_CLASSES
+from utils import get_files, timeit, uncompress_files, compress_files
 
-
-# Helper functions
-def get_files(directory, extension):
-    """Given a directory, get a list of the file paths of all files matching the
-    specified file extension."""
-    return directory.glob(f"*.{extension}")
-
-
-def timeit(func):
-    def wrapper(*args, **kwargs):
-        start = perf_counter()
-        result = func(*args, **kwargs)
-        end = perf_counter()
-        print(f"{func.__name__} took {end - start:.2f} seconds to run.")
-        return result
-
-    return wrapper
-
-
-# fmt: off
-# Instrument mapping and mapping functions
-INSTRUMENT_CLASSES = [
-    {"name": "Piano", "program_range": range(0, 8), "family_number": 0},
-    {"name": "Chromatic Percussion", "program_range": range(8, 16), "family_number": 1},
-    {"name": "Organ", "program_range": range(16, 24), "family_number": 2},
-    {"name": "Guitar", "program_range": range(24, 32), "family_number": 3},
-    {"name": "Bass", "program_range": range(32, 40), "family_number": 4},
-    {"name": "Strings", "program_range": range(40, 48), "family_number": 5},
-    {"name": "Ensemble", "program_range": range(48, 56), "family_number": 6},
-    {"name": "Brass", "program_range": range(56, 64), "family_number": 7},
-    {"name": "Reed", "program_range": range(64, 72), "family_number": 8},
-    {"name": "Pipe", "program_range": range(72, 80), "family_number": 9},
-    {"name": "Synth Lead", "program_range": range(80, 88), "family_number": 10},
-    {"name": "Synth Pad", "program_range": range(88, 96), "family_number": 11},
-    {"name": "Synth Effects", "program_range": range(96, 104), "family_number": 12},
-    {"name": "Ethnic", "program_range": range(104, 112), "family_number": 13},
-    {"name": "Percussive", "program_range": range(112, 120), "family_number": 14},
-    {"name": "Sound Effects", "program_range": range(120, 128), "family_number": 15,},
-]
-# fmt: on
+# to do
+# 1. separate utils and constants
+# 2. fix path issues, offer output path as argument
+# fix random instrument issue with an instantiation of instrument number
+# 2. create Familizer class
+# 3. create a Zip class
+# 4. create a parallel util function
 
 
 def get_family_number(program_number):
@@ -109,41 +76,6 @@ def replace_instruments(directory, operation, n_jobs):
     )
 
 
-# File compression and decompression
-def uncompress_single_file(file, operation):
-    """uncompress single zip file"""
-    with ZipFile(file, "r") as zip_ref:
-        zip_ref.extractall(file.parent / operation)
-
-
-def compress_single_file(file, operation):
-    """compress a single text file to a new zip file and delete the original"""
-    output_file = file.parent / (file.stem + "_" + operation + ".zip")
-    with ZipFile(output_file, "w") as zip_ref:
-        zip_ref.write(file, arcname=file.name, compress_type=ZIP_DEFLATED)
-        file.unlink()
-
-
-@timeit
-def uncompress_files(directory, operation, n_jobs):
-    """uncompress all zip files in folder"""
-    files = get_files(directory, extension="zip")
-    Parallel(n_jobs=n_jobs)(
-        delayed(uncompress_single_file)(file, operation) for file in files
-    )
-    return directory / operation
-
-
-@timeit
-def compress_files(directory, operation, n_jobs):
-    """compress all text files in folder to new zip files and remove the text files"""
-    files = get_files(directory, extension="txt")
-    Parallel(n_jobs=n_jobs)(
-        delayed(compress_single_file)(file, operation) for file in files
-    )
-
-
-# Main function
 def replace_tokens(directory, operation, n_jobs):
     """
     Given a directory and an operation, perform the operation on all text files in the directory.
@@ -159,7 +91,7 @@ def replace_tokens(directory, operation, n_jobs):
 if __name__ == "__main__":
 
     # Choose between program and family operation
-    operation = "program"
+    operation = "family"
 
     # Choose number of jobs for parallel processing
     n_jobs = -1
