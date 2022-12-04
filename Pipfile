@@ -15,6 +15,7 @@ mido = "*"
 python-rtmidi = "*"
 pretty-midi = "*"
 note-seq = "*"
+huggingface-hub = "*"
 
 [dev-packages]
 

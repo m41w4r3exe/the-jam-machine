@@ -186,8 +186,9 @@ class TextDecoder:
 
 if __name__ == "__main__":
 
+    filename = "20221203_144412.json"
     encoded_json = readFromFile(
-        "models/model_2048_wholedataset/generated_sequences/20221202_171716_80ac6678c79e9c060245f011954eb83f1465055c30e204b3b68c4d5e3a23cd35.json",
+        f"models/model_2048_wholedataset/generated_sequences/{filename}",
         True,
     )
     encoded_text = encoded_json["sequence"]

@@ -123,11 +123,10 @@ class WriteTextMidiToFile:  # utils saving to file
         self.feature_dict = feature_dict
 
     def hashing_seq(self):
-        self.current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.filename = sha256(self.sequence.encode("utf-8")).hexdigest()
-        self.output_path_filename = (
-            f"{self.output_path}/{self.current_time}_{self.filename}.json"
-        )
+        # self.current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.current_time = get_datetime()
+        # self.filename = sha256(self.sequence.encode("utf-8")).hexdigest()
+        self.output_path_filename = f"{self.output_path}/{self.current_time}.json"
 
     # def writing_seq_to_file(self):
     #     file_object = open(f"{self.output_path_filename}", "w")
