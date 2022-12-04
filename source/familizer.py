@@ -4,21 +4,11 @@ from pathlib import Path
 from constants import INSTRUMENT_CLASSES
 from utils import get_files, timeit, FileCompressor
 
-# DONE
-# separate utils and constants
-# fix path issues, offer output path as argument
-# create Familizer class
-# optimize directory paths
-# create a Zip class
-
-# TO DO
-# fix random instrument issue with an instantiation of instrument number
-# create a parallel util function
-
 
 class Familizer:
     def __init__(self, n_jobs=-1):
         self.n_jobs = n_jobs
+        self.reverse_family()
 
     def get_family_number(self, program_number):
         """
@@ -28,14 +18,24 @@ class Familizer:
             if program_number in instrument_class["program_range"]:
                 return instrument_class["family_number"]
 
+    def reverse_family(self):
+        """
+        Create a dictionary of family numbers to randomly assigned program numbers.
+        This is used to reverse the family number tokens back to program number tokens.
+        """
+        self.reference_programs = {}
+        for family in INSTRUMENT_CLASSES:
+            self.reference_programs[family["family_number"]] = random.choice(
+                family["program_range"]
+            )
+
     def get_program_number(self, family_number):
         """
         Given given a family number return a random program number in the respective program_range.
         This is the reverse operation of get_family_number.
         """
-        for instrument_class in INSTRUMENT_CLASSES:
-            if family_number == instrument_class["family_number"]:
-                return random.choice(instrument_class["program_range"])
+        assert family_number in self.reference_programs
+        return self.reference_programs[family_number]
 
     # Replace instruments in text files
     def replace_instrument_token(self, token):
@@ -95,14 +95,14 @@ class Familizer:
 
     def to_family(self, input_directory, output_directory):
         """
-        Given a directory containing zip files, replace all instrument tokens with 
+        Given a directory containing zip files, replace all instrument tokens with
         family number tokens. The output is a directory of zip files.
         """
         self.replace_tokens(input_directory, output_directory, "family")
 
     def to_program(self, input_directory, output_directory):
         """
-        Given a directory containing zip files, replace all instrument tokens with 
+        Given a directory containing zip files, replace all instrument tokens with
         program number tokens. The output is a directory of zip files.
         """
         self.replace_tokens(input_directory, output_directory, "program")
@@ -118,14 +118,14 @@ if __name__ == "__main__":
 
     # Choose directory to process for program
     input_directory = Path("../data/music_picks/encoded_samples/validate").resolve()  # fmt: skip
-    output_directory = input_directory / 'family'
+    output_directory = input_directory / "family"
 
     # familize files
     familizer.to_family(input_directory, output_directory)
 
     # Choose directory to process for family
     input_directory = Path("../data/music_picks/encoded_samples/validate/family").resolve()  # fmt: skip
-    output_directory = input_directory.parent / 'program'
+    output_directory = input_directory.parent / "program"
 
     # programize files
     familizer.to_program(input_directory, output_directory)
