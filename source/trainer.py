@@ -23,12 +23,10 @@ import wandb
 # CONFIG:
 TRAIN_FROM_CHECKPOINT = None  # Example: checkpoint-80000
 EVAL_STEPS = 1000
-PER_DEVICE_TRAIN_BATCH_SIZE = 1
+PER_DEVICE_TRAIN_BATCH_SIZE = 10
 TRAIN_EPOCHS = 5
-WANDB_KEY = "156af33a7166789bdccefbe9d465fe87b82f2e5e"
 
 formattedtime = datetime.now().strftime("%d-%m__%H-%M-%S")
-wandb.login(key=WANDB_KEY)
 wandb.init(project=f"the-jam-machine-{formattedtime}")
 
 try:
