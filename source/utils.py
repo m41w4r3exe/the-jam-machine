@@ -116,17 +116,8 @@ class WriteTextMidiToFile:  # utils saving to file
         self.feature_dict = feature_dict
 
     def hashing_seq(self):
-        # self.current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.current_time = get_datetime_filename()
-        # self.filename = sha256(self.sequence.encode("utf-8")).hexdigest()
         self.output_path_filename = f"{self.output_path}/{self.current_time}.json"
-
-    # def writing_seq_to_file(self):
-    #     file_object = open(f"{self.output_path_filename}", "w")
-    #     assert type(self.sequence) is str, "sequence must be a string"
-    #     file_object.writelines(self.sequence)
-    #     file_object.close()
-    #     print(f"Token sequence written: {self.output_path_filename}")
 
     def wrapping_seq_feature_in_dict(self):
         assert type(self.sequence) is str, "error: sequence must be a string"
@@ -135,13 +126,8 @@ class WriteTextMidiToFile:  # utils saving to file
         ), "error: feature_dict must be a dictionnary"
         return {"sequence": self.sequence, "features": self.feature_dict}
 
-    # def writing_feature_dict_to_file(feature_dict, output_path_filename):
-    #     with open(f"{output_path_filename}_features.json", "w") as json_file:
-    #         json.dump(feature_dict, json_file)
-
     def text_midi_to_file(self):
         self.hashing_seq()
         output_dict = self.wrapping_seq_feature_in_dict()
         print(f"Token sequence written: {self.output_path_filename}")
         writeToFile(self.output_path_filename, output_dict)
-        # self.writing_feature_dict_to_file(self.feature_dict, self.output_path_filename)
