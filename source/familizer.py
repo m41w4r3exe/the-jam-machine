@@ -2,16 +2,16 @@ import random
 from joblib import Parallel, delayed
 from pathlib import Path
 from constants import INSTRUMENT_CLASSES
-from utils import get_files, timeit, uncompress_files, compress_files
+from utils import get_files, timeit, FileCompressor
 
 # DONE
 # separate utils and constants
 # fix path issues, offer output path as argument
 # create Familizer class
-
-# TO DO
 # optimize directory paths
 # create a Zip class
+
+# TO DO
 # fix random instrument issue with an instantiation of instrument number
 # create a parallel util function
 
@@ -87,9 +87,10 @@ class Familizer:
         self.operation = operation
 
         # Uncompress files, replace tokens, compress files
-        uncompress_files(self.input_directory, self.output_directory, self.n_jobs)
+        fc = FileCompressor(self.input_directory, self.output_directory, self.n_jobs)
+        fc.unzip()
         self.replace_instruments()
-        compress_files(self.output_directory, self.output_directory, self.n_jobs)
+        fc.zip()
         print(self.operation + " complete.")
 
     def to_family(self, input_directory, output_directory):
