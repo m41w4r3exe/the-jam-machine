@@ -98,7 +98,7 @@ class GenerateMidiText:
 
     def generate_multi_track_sequence(
         self,
-        inst_list=["INST=DRUMS", "INST=38", "INST=82"],
+        inst_list=["INST=DRUMS", "INST=34", "INST=81", "INST=5"],
         density_list=[3, 2, 1],
         verbose=True,
     ):
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     # generated_sequence_files_path = "models/model_2048_10kseq/generated_sequences/"
 
     # model path
-    model_path = "models/model_2048_wholedataset/"
+    model_path = "models/model_2048_wholedataset/checkpoint-87000"
     tokenizer_path = "models/model_2048_wholedataset/tokenizer.json"
     generated_sequence_files_path = (
         "models/model_2048_wholedataset/generated_sequences/"
@@ -141,14 +141,14 @@ if __name__ == "__main__":
     # load model and tokenizer
     model = GPT2LMHeadModel.from_pretrained(model_path).to(device)
     tokenizer = PreTrainedTokenizerFast(tokenizer_file=tokenizer_path)
-    temperature = 0.2
+    temperature = 0.1
 
     # instantiate the GenerateMidiText class
     gen = GenerateMidiText(model, tokenizer, device, temperature=temperature)
 
     # generate a multi track sequence
-    inst_list = ["INST=DRUMS", "INST=38", "INST=82", "INST=51"]
-    density_list = [3, 6, 2, 1]
+    inst_list = ["INST=DRUMS", "INST=34", "INST=81", "INST=5"]
+    density_list = [3, 3, 3, 3]
     (
         generated_multi_track_sequence,
         generate_features_dict,

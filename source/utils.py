@@ -18,9 +18,12 @@ def writeToFile(path, content):
 
 
 # Function to read from text from txt file:
-def readFromFile(path):
+def readFromFile(path, isJSON=False):
     with open(path, "r") as f:
-        return f.read()
+        if isJSON:
+            return json.load(f)
+        else:
+            return f.read()
 
 
 def chain(input, funcs, *params):
