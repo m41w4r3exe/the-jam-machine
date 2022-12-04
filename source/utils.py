@@ -165,37 +165,34 @@ def timeit(func):
 
     return wrapper
 
-    # File compression and decompression
-
-
-def uncompress_single_file(file, operation):
+# File compression and decompression
+def uncompress_single_file(file, output_directory):
     """uncompress single zip file"""
     with ZipFile(file, "r") as zip_ref:
-        zip_ref.extractall(file.parent / operation)
+        zip_ref.extractall(output_directory)
 
 
-def compress_single_file(file, operation):
+def compress_single_file(file, output_directory):
     """compress a single text file to a new zip file and delete the original"""
-    output_file = file.parent / (file.stem + "_" + operation + ".zip")
+    output_file = output_directory / (file.stem + ".zip")
     with ZipFile(output_file, "w") as zip_ref:
         zip_ref.write(file, arcname=file.name, compress_type=ZIP_DEFLATED)
         file.unlink()
 
 
 @timeit
-def uncompress_files(directory, operation, n_jobs):
+def uncompress_files(input_directory, output_directory, n_jobs):
     """uncompress all zip files in folder"""
-    files = get_files(directory, extension="zip")
+    files = get_files(input_directory, extension="zip")
     Parallel(n_jobs=n_jobs)(
-        delayed(uncompress_single_file)(file, operation) for file in files
+        delayed(uncompress_single_file)(file, output_directory) for file in files
     )
-    return directory / operation
 
 
 @timeit
-def compress_files(directory, operation, n_jobs):
+def compress_files(input_directory, output_directory, n_jobs):
     """compress all text files in folder to new zip files and remove the text files"""
-    files = get_files(directory, extension="txt")
+    files = get_files(input_directory, extension="txt")
     Parallel(n_jobs=n_jobs)(
-        delayed(compress_single_file)(file, operation) for file in files
+        delayed(compress_single_file)(file, output_directory) for file in files
     )

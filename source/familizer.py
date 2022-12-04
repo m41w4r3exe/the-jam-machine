@@ -4,13 +4,15 @@ from pathlib import Path
 from constants import INSTRUMENT_CLASSES
 from utils import get_files, timeit, uncompress_files, compress_files
 
-# to do
-# 1. separate utils and constants
-# 2. fix path issues, offer output path as argument
+# DONE
+# separate utils and constants
+
+# TO DO
+# fix path issues, offer output path as argument
 # fix random instrument issue with an instantiation of instrument number
-# 2. create Familizer class
-# 3. create a Zip class
-# 4. create a parallel util function
+# create Familizer class
+# create a Zip class
+# create a parallel util function
 
 
 def get_family_number(program_number):
@@ -76,29 +78,31 @@ def replace_instruments(directory, operation, n_jobs):
     )
 
 
-def replace_tokens(directory, operation, n_jobs):
+def replace_tokens(input_directory, output_directory, operation, n_jobs):
     """
     Given a directory and an operation, perform the operation on all text files in the directory.
     operation can be either 'family' or 'program'.
     """
     assert operation in ["family", "program"]
-    output_directory = uncompress_files(directory, operation, n_jobs)
+    uncompress_files(input_directory, output_directory, n_jobs)
     replace_instruments(output_directory, operation, n_jobs)
-    compress_files(output_directory, operation, n_jobs)
+    compress_files(output_directory, output_directory, n_jobs)
     print(operation + " complete.")
 
 
 if __name__ == "__main__":
 
     # Choose between program and family operation
-    operation = "family"
+    operation = "program"
 
     # Choose number of jobs for parallel processing
     n_jobs = -1
 
     # Choose directory to process
-    directory = "../data/music_picks/encoded_samples/validate"
-    directory = Path(directory).resolve()
+    input_directory = Path(
+        "../data/music_picks/encoded_samples/validate/family"
+    ).resolve()
+    output_directory = input_directory.parent / operation
 
     # Run operation
-    replace_tokens(directory, operation, n_jobs=n_jobs)
+    replace_tokens(input_directory, output_directory, operation, n_jobs=n_jobs)
