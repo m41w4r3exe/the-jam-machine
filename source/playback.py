@@ -18,7 +18,7 @@ def get_music(midi_file):
 
 def show_piano_roll(music_notes, fs=100):
     """
-    Show the piano roll of a music piece
+    Show the piano roll of a music piece, with all instruments squashed onto a single 128xN matrix
     :param music_notes: PrettyMIDI object
     :param fs: sampling frequency
     """
