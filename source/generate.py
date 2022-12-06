@@ -14,7 +14,7 @@ class GenerateMidiText:
     generated_sequence = gen.generate_one_sequence(inst="INST=DRUMS")
     # generate a multi track sequence
     generated_multi_track_sequence = gen.generate_multi_track_sequence(
-        inst_list=["INST=DRUMS", "INST=38", "INST=82", "INST=51"],
+        inst_list=["DRUMS", "38", "82", "51"],
         density_list=[2, 3, 3, 1])
     """
 
@@ -52,7 +52,6 @@ class GenerateMidiText:
             print("Tokenizing input_prompt...")
         return input_prompt_ids
 
-    # generate from the tokenized input_prompt
     def generate_sequence_of_token_ids(
         self,
         input_prompt_ids,
@@ -94,7 +93,10 @@ class GenerateMidiText:
         - the generated toekn_ids are then converted to text
         """
         if inst is not None:
-            input_prompt = f"{input_prompt} TRACK_START {inst} "
+            if type(inst) is not str:  # inst should be str
+                inst = str(inst)
+
+            input_prompt = f"{input_prompt} TRACK_START INST={inst} "
             if density is not None:
                 input_prompt = f"{input_prompt} DENSITY={density}"
 
@@ -113,7 +115,7 @@ class GenerateMidiText:
         return generated_text
 
     def generate_multi_track_sequence(
-        self, inst_list=["INST=DRUMS", "INST=38", "INST=82"], density_list=[3, 2, 1]
+        self, inst_list=["DRUMS", "84", 5], density_list=[3, 2, 1]
     ):
         """generate a sequence with mutiple tracks
         - inst_list sets the list of instruments of the order of generation
@@ -141,14 +143,26 @@ class GenerateMidiText:
         generated_multi_track_sequence = input_prompt
         return generated_multi_track_sequence, generate_features_dict
 
+    def generate_one_more_bar(input_prompt):
+        pass
+        # return one_more_bar
+
+    def generate_n_more_bars(input_prompt, n_bars=8):
+        pass
+
 
 if __name__ == "__main__":
 
     device = "cpu"
-    model_repo = "misnaej/the-jam-machine-1024"
+    # model_repo = "misnaej/the-jam-machine-1024"
     # model_repo = "misnaej/the-jam-machine"
+    # model, tokenizer = LoadModel(
+    #     model_repo, from_huggingface=True
+    # ).load_model_and_tokenizer()
+
+    model_repo = "models/model_2048_fake_wholedataset"
     model, tokenizer = LoadModel(
-        model_repo, from_huggingface=True
+        model_repo, from_huggingface=False
     ).load_model_and_tokenizer()
 
     generated_sequence_files_path = define_generation_dir(model_repo)
@@ -164,7 +178,7 @@ if __name__ == "__main__":
     )
 
     # generate a multi track sequence
-    inst_list = ["INST=DRUMS", "INST=5", "INST=34", "INST=81"]
+    inst_list = ["DRUMS", "5", "34", 81]
     density_list = [2, 3, 2, 2]
     (
         generated_multi_track_sequence,
