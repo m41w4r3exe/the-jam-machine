@@ -150,9 +150,9 @@ data
 models
 collab_notebook_model/old
 
-
 # generated files
-generated
-midi/decoded
+# midi/decoded
+# midi/generated_text/tests
+# midi/generated_text/misnaej
 # VSCode
 .vscode
