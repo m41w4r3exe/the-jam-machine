@@ -25,6 +25,7 @@ class LoadModel:
         # path is either a relative path on a local/remote machine or a model repo on HuggingFace
         if not from_huggingface:
             if not os.path.exists(path):
+                print(path)
                 raise Exception("Model path does not exist")
         self.from_huggingface = from_huggingface
         self.path = path
