@@ -23,14 +23,22 @@ class GenerateMidiText:
         model,
         tokenizer,
         device="cpu",
-        max_seq_length=2048,
+        max_seq_length=None,
         temperature=0.75,
         generate_until="TRACK_END",
     ):
         self.model = model
         self.tokenizer = tokenizer
         self.device = device
-        self.max_length = max_seq_length
+        if max_seq_length is not None:
+            self.max_length = max_seq_length
+            print(f"Sequence length set to {self.max_length}")
+        else:
+            self.max_length = model.config.n_positions
+            print(
+                f"Sequence length set to {self.max_length} BASED ON 'model.config.n_positions'"
+            )
+
         self.temperature = temperature
         self.generate_until = generate_until
 
@@ -137,8 +145,8 @@ class GenerateMidiText:
 if __name__ == "__main__":
 
     device = "cpu"
+    model_repo = "misnaej/the-jam-machine-1024"
     # model_repo = "misnaej/the-jam-machine"
-    model_repo = "misnaej/the-jam-machine"
     model, tokenizer = LoadModel(
         model_repo, from_huggingface=True
     ).load_model_and_tokenizer()
@@ -148,7 +156,12 @@ if __name__ == "__main__":
     temperature = 1
 
     # instantiate the GenerateMidiText class
-    gen = GenerateMidiText(model, tokenizer, device, temperature=temperature)
+    gen = GenerateMidiText(
+        model,
+        tokenizer,
+        device,
+        temperature=temperature,
+    )
 
     # generate a multi track sequence
     inst_list = ["INST=DRUMS", "INST=5", "INST=34", "INST=81"]
