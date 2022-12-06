@@ -148,7 +148,7 @@ data
 
 # model files 
 models
-collab_notebook_model/old
+notebooks/collab_notebook_model/old
 
 # generated files
 # midi/decoded
