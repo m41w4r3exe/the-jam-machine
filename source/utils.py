@@ -61,7 +61,7 @@ def get_datetime_filename():
 
 def define_generation_dir(model_repo_path):
     #### to remove later ####
-    if model_repo_path == "models/models/model_2048_fake_wholedataset":
+    if model_repo_path == "models/model_2048_fake_wholedataset":
         model_repo_path = "misnaej/the-jam-machine"
     #### to remove later ####
     generated_sequence_files_path = f"midi/generated/{model_repo_path}"
