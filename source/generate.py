@@ -160,47 +160,62 @@ class GenerateMidiText:
             generate_features_dict,
         )
 
-    def process_prompt_for_next_bar(self, input_prompt):
+    def process_prompt_for_next_bar(self, input_prompt, n_bars=2):
         """
         input_prompt should be at least a 8 bar sequence for one instrument
-        input_prompt shoud
         """
         input_prompt_split = input_prompt.split(" ")
-        engineered_prompt = ""
+        prompt_processed_for_next_bar = ""
+        bar_skipped = 0
         skipping_first_bar = False
         first_bar_skipped = False
-        for token in input_prompt_split:
+        for token in input_prompt_split[:-1]:
+            # input_prompt_split[:-1] should exclude TRACK_END
             if first_bar_skipped == False:
                 if token == "BAR_START":
                     skipping_first_bar = True
-                else:
-                    pass
 
                 if skipping_first_bar is True:
                     # print(f"skipping token {token} for the first bar ")
                     if token != "BAR_END":
                         continue
+
                     else:
-                        skipping_first_bar = False
-                        first_bar_skipped = True
+                        bar_skipped += 1
+                        if bar_skipped == n_bars:
+                            skipping_first_bar = False
+                            first_bar_skipped = True
+
                         continue
 
-                if token == "TRACK_END":
-                    # print("removing the TRACK_END token")
-                    continue
-                else:
-                    pass
+                # if token == "TRACK_END":
+                #     # print("removing the TRACK_END token")
+                #     continue
 
-            engineered_prompt += f"{token} "
+            prompt_processed_for_next_bar += f"{token} "
 
-        return engineered_prompt
+        return prompt_processed_for_next_bar
 
     def generate_one_more_bar(self, input_prompt):
-        the_next_bar = input_prompt
-        pass
+        prompt_processed_for_next_bar = self.process_prompt_for_next_bar(input_prompt)
+        prompt_plus_bar = self.generate_one_sequence(
+            input_prompt=prompt_processed_for_next_bar
+        )
+        added_bar = prompt_plus_bar[
+            len(prompt_processed_for_next_bar) - 1 : -len("TRACK_END")
+        ]
+        return prompt_plus_bar, added_bar
 
-    def generate_n_more_bars(self, input_prompt, n_bars=8):
-        the_n_next_bars = input_prompt
+    def generate_n_more_bars(self, input_prompt, n_bars=2):
+        new_bars = ""
+        for bar in range(n_bars):
+            input_prompt, new_bar = self.generate_one_more_bar(input_prompt)
+            new_bars += new_bar
+
+        return new_bars
+
+    def bar_count_check(sequence, n_bars=8):
+        """check if the sequence contains the right number of bars"""
         pass
 
 
@@ -231,8 +246,8 @@ if __name__ == "__main__":
     )
 
     # generate a multi track sequence
-    inst_list = ["DRUMS", "34", 81]
-    density_list = [2, 3, 2]
+    inst_list = ["DRUMS", "34"]
+    density_list = [2, 3]
     (
         generated_multi_track_sequence,
         generated_multi_track_dict,
@@ -248,8 +263,14 @@ if __name__ == "__main__":
         generated_sequence_files_path,
         feature_dict=generate_features_dict,
     ).text_midi_to_file()
-    generated_multi_track_sequence
 
     # generate 8 more bars for the drums
     input_prompt = generated_multi_track_dict["INST=DRUMS"]
-    gen.process_prompt_for_next_bar(input_prompt)
+    seq = gen.generate_n_more_bars(input_prompt, n_bars=2)
+    whole_seq = f"{input_prompt}{seq}TRACK_END "
+    # write to file
+    WriteTextMidiToFile(
+        whole_seq,
+        generated_sequence_files_path,
+        feature_dict=generate_features_dict,
+    ).text_midi_to_file()
