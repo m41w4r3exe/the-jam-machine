@@ -59,6 +59,13 @@ def get_datetime_filename():
     return datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
+def define_generation_dir(model_repo_path):
+    generated_sequence_files_path = f"{model_repo_path}/generated_sequences"
+    if not os.path.exists(generated_sequence_files_path):
+        os.makedirs(generated_sequence_files_path)
+    return generated_sequence_files_path
+
+
 def get_text(event):
     match event.type:
         case "Piece-Start":
@@ -131,3 +138,4 @@ class WriteTextMidiToFile:  # utils saving to file
         output_dict = self.wrapping_seq_feature_in_dict()
         print(f"Token sequence written: {self.output_path_filename}")
         writeToFile(self.output_path_filename, output_dict)
+        return self.output_path_filename

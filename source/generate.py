@@ -1,6 +1,6 @@
 from utils import WriteTextMidiToFile
+from utils import define_generation_dir
 from load import LoadModel
-import os
 
 
 class GenerateMidiText:
@@ -45,11 +45,15 @@ class GenerateMidiText:
         return input_prompt_ids
 
     # generate from the tokenized input_prompt
-    def generate_the_next_8_bars(
+    def generate_sequence_of_token_ids(
         self,
         input_prompt_ids,
         verbose=True,
     ):
+        """
+        generate a sequence of token ids based on input_prompt_ids
+        The sequence length depends on the trained model (8 bars in our case)
+        """
         generated_ids = self.model.generate(
             input_prompt_ids,
             max_length=self.max_length,
@@ -58,12 +62,11 @@ class GenerateMidiText:
             eos_token_id=self.tokenizer.encode(self.generate_until)[0],
         )
         if verbose:
-            print("Generating a 8 bar token_id sequence...")
-            # print(f"output: {generated_ids}")
+            print("Generating a token_id sequence...")
         return generated_ids
 
-    # convert the generated tokens to string
     def convert_ids_to_text(self, generated_ids, verbose=True):
+        """converts the token_ids to text"""
         generated_text = self.tokenizer.decode(generated_ids[0])
         if verbose:
             print("Converting token sequence to MidiText...")
@@ -76,9 +79,15 @@ class GenerateMidiText:
         density=None,
         verbose=True,
     ):
-        if inst is not None:  # ex: inst="INST=DRUMS"
+        """generate a sequence based on
+        - the input_prompt and/or inst and density parameters
+        - the "final prompt" is converted into input_prompt_ids
+        - input_prompt_ids are passed to generate_sequence_of_token_ids for generation
+        - the generated toekn_ids are then converted to text
+        """
+        if inst is not None:
             input_prompt = f"{input_prompt} TRACK_START {inst} "
-            if density is not None:  # ex: inst="INST=DRUMS"
+            if density is not None:
                 input_prompt = f"{input_prompt} DENSITY={density}"
 
         if inst is None and density is not None:
@@ -91,17 +100,21 @@ class GenerateMidiText:
             )
 
         input_prompt_ids = self.tokenize_input_prompt(input_prompt)
-        generated_ids = self.generate_the_next_8_bars(input_prompt_ids)
+        generated_ids = self.generate_sequence_of_token_ids(input_prompt_ids)
         generated_text = self.convert_ids_to_text(generated_ids)
         return generated_text
 
     def generate_multi_track_sequence(
-        self,
-        inst_list=["INST=DRUMS", "INST=38", "INST=82"],
-        density_list=[3, 2, 1],
-        verbose=True,
+        self, inst_list=["INST=DRUMS", "INST=38", "INST=82"], density_list=[3, 2, 1]
     ):
+        """generate a sequence with mutiple tracks
+        - inst_list sets the list of instruments of the order of generation
+        - density is paired with inst_list
 
+        Each track/intrument is generated on a prompt which contains the previously generated track/instrument
+        This means that the first instrument is generated with less bias than the next one, and so on.
+
+        """
         generate_features_dict = {
             "model_identification": self.model.transformer.base_model.name_or_path,
             "inst_list": inst_list,
@@ -124,26 +137,13 @@ class GenerateMidiText:
 if __name__ == "__main__":
 
     device = "cpu"
-    load_from_huggingface = True
+    # model_repo = "misnaej/the-jam-machine"
+    model_repo = "misnaej/the-jam-machine"
+    model, tokenizer = LoadModel(
+        model_repo, from_huggingface=True
+    ).load_model_and_tokenizer()
 
-    if load_from_huggingface:
-        # load model and tokenizer from HuggingFace
-        model_repo = "misnaej/the-jam-machine"
-        model, tokenizer = LoadModel(
-            model_repo, from_huggingface=True
-        ).load_model_and_tokenizer()
-    else:
-        # load model and tokenizer from a local folder
-        model_path = "models/model_2048_wholedataset"
-        model, tokenizer = LoadModel(
-            model_path, from_huggingface=False
-        ).load_model_and_tokenizer()
-
-    # defined path to generate
-    generated_sequence_files_path = "models/model_2048_wholedataset/generated_sequences"
-    if not os.path.exists(generated_sequence_files_path):
-        os.makedirs(generated_sequence_files_path)
-
+    generated_sequence_files_path = define_generation_dir(model_repo)
     # set the temperature
     temperature = 1
 
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     gen = GenerateMidiText(model, tokenizer, device, temperature=temperature)
 
     # generate a multi track sequence
-    inst_list = ["INST=5", "INST=34", "INST=81", "INST=DRUMS"]
+    inst_list = ["INST=DRUMS", "INST=5", "INST=34", "INST=81"]
     density_list = [2, 3, 2, 2]
     (
         generated_multi_track_sequence,

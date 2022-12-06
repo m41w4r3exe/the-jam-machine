@@ -4,6 +4,23 @@ import os
 
 
 class LoadModel:
+    """
+    Example usage:
+
+    # if loading model and tokenizer from Huggingface
+    model_repo = "misnaej/the-jam-machine"
+    model, tokenizer = LoadModel(
+        model_repo, from_huggingface=True
+    ).load_model_and_tokenizer()
+
+    # if loading model and tokenizer from a local folder
+    model_path = "models/model_2048_wholedataset"
+    model, tokenizer = LoadModel(
+        model_path, from_huggingface=False
+    ).load_model_and_tokenizer()
+
+    """
+
     def __init__(self, path, from_huggingface=True, device="cpu"):
         # path is either a relative path on a local/remote machine or a model repo on HuggingFace
         if not from_huggingface:
