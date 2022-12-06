@@ -50,6 +50,7 @@ class GenerateMidiText:
         if verbose:
             # print(f"input_prompts: {self.tokenizer.decode(input_prompt_ids[0])}")
             print("Tokenizing input_prompt...")
+
         return input_prompt_ids
 
     def generate_sequence_of_token_ids(
@@ -70,6 +71,7 @@ class GenerateMidiText:
         )
         if verbose:
             print("Generating a token_id sequence...")
+
         return generated_ids
 
     def convert_ids_to_text(self, generated_ids, verbose=True):
@@ -134,20 +136,71 @@ class GenerateMidiText:
             "generate_until": self.generate_until,
         }
 
-        generated_multi_track_sequence = []
-        input_prompt = "PIECE_START"
-        for inst, density in zip(inst_list, density_list):
-            input_prompt = self.generate_one_sequence(
-                input_prompt=f"{input_prompt}", inst=inst, density=density
+        generated_multi_track_dict = {}
+        generated_multi_track_sequence = "PIECE_START"
+        for count, (inst, density) in enumerate(zip(inst_list, density_list)):
+            generated_multi_track_sequence_length = len(generated_multi_track_sequence)
+            generated_multi_track_sequence = self.generate_one_sequence(
+                input_prompt=f"{generated_multi_track_sequence}",
+                inst=inst,
+                density=density,
             )
-        generated_multi_track_sequence = input_prompt
-        return generated_multi_track_sequence, generate_features_dict
+            if count > 0:  # not first iteration
+                generated_track = generated_multi_track_sequence[
+                    generated_multi_track_sequence_length + 1 :
+                ]
+            else:
+                generated_track = generated_multi_track_sequence
 
-    def generate_one_more_bar(input_prompt):
+            generated_multi_track_dict[f"INST={inst}"] = generated_track
+
+        return (
+            generated_multi_track_sequence,
+            generated_multi_track_dict,
+            generate_features_dict,
+        )
+
+    def process_prompt_for_next_bar(self, input_prompt):
+        """
+        input_prompt should be at least a 8 bar sequence for one instrument
+        input_prompt shoud
+        """
+        input_prompt_split = input_prompt.split(" ")
+        engineered_prompt = ""
+        skipping_first_bar = False
+        first_bar_skipped = False
+        for token in input_prompt_split:
+            if first_bar_skipped == False:
+                if token == "BAR_START":
+                    skipping_first_bar = True
+                else:
+                    pass
+
+                if skipping_first_bar is True:
+                    # print(f"skipping token {token} for the first bar ")
+                    if token != "BAR_END":
+                        continue
+                    else:
+                        skipping_first_bar = False
+                        first_bar_skipped = True
+                        continue
+
+                if token == "TRACK_END":
+                    # print("removing the TRACK_END token")
+                    continue
+                else:
+                    pass
+
+            engineered_prompt += f"{token} "
+
+        return engineered_prompt
+
+    def generate_one_more_bar(self, input_prompt):
+        the_next_bar = input_prompt
         pass
-        # return one_more_bar
 
-    def generate_n_more_bars(input_prompt, n_bars=8):
+    def generate_n_more_bars(self, input_prompt, n_bars=8):
+        the_n_next_bars = input_prompt
         pass
 
 
@@ -167,7 +220,7 @@ if __name__ == "__main__":
 
     generated_sequence_files_path = define_generation_dir(model_repo)
     # set the temperature
-    temperature = 1
+    temperature = 0.3
 
     # instantiate the GenerateMidiText class
     gen = GenerateMidiText(
@@ -178,10 +231,11 @@ if __name__ == "__main__":
     )
 
     # generate a multi track sequence
-    inst_list = ["DRUMS", "5", "34", 81]
-    density_list = [2, 3, 2, 2]
+    inst_list = ["DRUMS", "34", 81]
+    density_list = [2, 3, 2]
     (
         generated_multi_track_sequence,
+        generated_multi_track_dict,
         generate_features_dict,
     ) = gen.generate_multi_track_sequence(
         inst_list=inst_list,
@@ -195,3 +249,7 @@ if __name__ == "__main__":
         feature_dict=generate_features_dict,
     ).text_midi_to_file()
     generated_multi_track_sequence
+
+    # generate 8 more bars for the drums
+    input_prompt = generated_multi_track_dict["INST=DRUMS"]
+    gen.process_prompt_for_next_bar(input_prompt)
