@@ -4,7 +4,14 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
-
+    {
+      "name": "midi_stats.py",
+      "type": "python",
+      "request": "launch",
+      "program": "source/stats/midi_stats.py",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
     {
       "name": "preprocess.py",
       "type": "python",
