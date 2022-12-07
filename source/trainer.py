@@ -24,7 +24,7 @@ from datasets import load_dataset
 # CONFIG:
 TRAIN_FROM_CHECKPOINT = None  # Example: checkpoint-80000
 EVAL_STEPS = 1000
-PER_DEVICE_TRAIN_BATCH_SIZE = 2
+PER_DEVICE_TRAIN_BATCH_SIZE = 8
 TRAIN_EPOCHS = 5
 
 # Set paths either from Google Drive or locally
@@ -45,17 +45,15 @@ if not os.path.exists(model_path):
     os.mkdir(model_path)
 
 """Load dataset from gzip files"""
-train_data = load_dataset(dataset_path, data_files={"train": "train/*.zip"})
-validate_data = load_dataset(dataset_path, data_files={"validate": "validate/*.zip"})
+train_data = load_dataset(dataset_path, data_files={"train": "train/*.zip"})["train"]
+validate_data = load_dataset(dataset_path, data_files={"val": "validate/*.zip"})["val"]
 
 """Get tokenizer from scratch or saved tokenizer.json"""
 if not os.path.isfile(tokenizer_path):
     tokenizer = Tokenizer(WordLevel(unk_token="[UNK]"))
     tokenizer.pre_tokenizer = WhitespaceSplit()
     tokenizer_trainer = WordLevelTrainer(special_tokens=["[UNK]", "[PAD]", "[MASK]"])
-    tokenizer.train_from_iterator(
-        train_data["train"]["text"], trainer=tokenizer_trainer
-    )
+    tokenizer.train_from_iterator(train_data["text"], trainer=tokenizer_trainer)
     tokenizer.save(tokenizer_path)
 tokenizer = PreTrainedTokenizerFast(tokenizer_file=tokenizer_path)
 tokenizer.add_special_tokens({"pad_token": "[PAD]"})
@@ -71,16 +69,14 @@ def tokenize(data):
     )
 
 
-train_data_tokenized = train_data["train"].map(
-    tokenize, batched=True, remove_columns=["text"]
-)
-validate_data_tokenized = validate_data["validate"].map(
+train_data_tokenized = train_data.map(tokenize, batched=True, remove_columns=["text"])
+validate_data_tokenized = validate_data.map(
     tokenize, batched=True, remove_columns=["text"]
 )
 
 """Make sure the tokenized dataset structure is correct and check a few examples"""
 assert "input_ids" in list(train_data_tokenized[0]), list(train_data_tokenized[0])
-for i, data in enumerate(train_data["train"]["text"][:3]):
+for i, data in enumerate(train_data["text"][:3]):
     print("----")
     print(data)
     print(train_data_tokenized[i]["input_ids"])
@@ -93,7 +89,7 @@ model = GPT2LMHeadModel(
         pad_token_id=tokenizer.pad_token_id,
         n_embd=512,
         n_head=8,
-        n_layer=8,
+        n_layer=10,
         n_positions=2048,
     )
 )
@@ -109,9 +105,9 @@ training_args = TrainingArguments(
     lr_scheduler_type="cosine",
     per_device_train_batch_size=PER_DEVICE_TRAIN_BATCH_SIZE,
     save_strategy="steps",
-    save_steps=EVAL_STEPS * 10,
+    save_steps=EVAL_STEPS * 5,
     save_total_limit=10,
-    logging_steps=EVAL_STEPS * 10,
+    logging_steps=EVAL_STEPS * 5,
     logging_dir=os.path.join(model_path, "logs"),
     report_to="wandb",
     seed=42,
