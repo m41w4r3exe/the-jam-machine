@@ -2,7 +2,9 @@ from datetime import datetime
 from miditok import Event, MIDILike
 import os
 import json
-from hashlib import sha256
+from time import perf_counter
+from joblib import Parallel, delayed
+from zipfile import ZipFile, ZIP_DEFLATED
 
 
 def writeToFile(path, content):
@@ -37,7 +39,6 @@ def chain(input, funcs, *params):
 
 
 def to_beat_str(value, beat_res=8):
-
     values = [
         int(int(value * beat_res) / beat_res),
         int(int(value * beat_res) % beat_res),
@@ -55,8 +56,23 @@ def split_dots(value):
     return list(map(int, value.split(".")))
 
 
+def compute_list_average(l):
+    return sum(l) / len(l)
+
+
 def get_datetime():
-    return datetime.now().strftime("%d-%m__%H:%M:%S")
+    return datetime.now().strftime("%Y%m%d_%H%M%S")
+
+
+def define_generation_dir(model_repo_path):
+    #### to remove later ####
+    if model_repo_path == "models/model_2048_fake_wholedataset":
+        model_repo_path = "misnaej/the-jam-machine"
+    #### to remove later ####
+    generated_sequence_files_path = f"midi/generated/{model_repo_path}"
+    if not os.path.exists(generated_sequence_files_path):
+        os.makedirs(generated_sequence_files_path)
+    return generated_sequence_files_path
 
 
 def get_text(event):
@@ -123,17 +139,8 @@ class WriteTextMidiToFile:  # utils saving to file
         self.feature_dict = feature_dict
 
     def hashing_seq(self):
-        # self.current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.current_time = get_datetime()
-        # self.filename = sha256(self.sequence.encode("utf-8")).hexdigest()
         self.output_path_filename = f"{self.output_path}/{self.current_time}.json"
-
-    # def writing_seq_to_file(self):
-    #     file_object = open(f"{self.output_path_filename}", "w")
-    #     assert type(self.sequence) is str, "sequence must be a string"
-    #     file_object.writelines(self.sequence)
-    #     file_object.close()
-    #     print(f"Token sequence written: {self.output_path_filename}")
 
     def wrapping_seq_feature_in_dict(self):
         assert type(self.sequence) is str, "error: sequence must be a string"
@@ -142,13 +149,66 @@ class WriteTextMidiToFile:  # utils saving to file
         ), "error: feature_dict must be a dictionnary"
         return {"sequence": self.sequence, "features": self.feature_dict}
 
-    # def writing_feature_dict_to_file(feature_dict, output_path_filename):
-    #     with open(f"{output_path_filename}_features.json", "w") as json_file:
-    #         json.dump(feature_dict, json_file)
-
     def text_midi_to_file(self):
         self.hashing_seq()
         output_dict = self.wrapping_seq_feature_in_dict()
         print(f"Token sequence written: {self.output_path_filename}")
         writeToFile(self.output_path_filename, output_dict)
-        # self.writing_feature_dict_to_file(self.feature_dict, self.output_path_filename)
+        return self.output_path_filename
+
+
+def get_files(directory, extension, recursive=False):
+    """
+    Given a directory, get a list of the file paths of all files matching the
+    specified file extension.
+    directory: the directory to search as a Path object
+    extension: the file extension to match as a string
+    recursive: whether to search recursively in the directory or not
+    """
+    if recursive:
+        return list(directory.rglob(f"*.{extension}"))
+    else:
+        return list(directory.glob(f"*.{extension}"))
+
+
+def timeit(func):
+    def wrapper(*args, **kwargs):
+        start = perf_counter()
+        result = func(*args, **kwargs)
+        end = perf_counter()
+        print(f"{func.__name__} took {end - start:.2f} seconds to run.")
+        return result
+
+    return wrapper
+
+
+class FileCompressor:
+    def __init__(self, input_directory, output_directory, n_jobs=-1):
+        self.input_directory = input_directory
+        self.output_directory = output_directory
+        self.n_jobs = n_jobs
+
+    # File compression and decompression
+    def unzip_file(self, file):
+        """uncompress single zip file"""
+        with ZipFile(file, "r") as zip_ref:
+            zip_ref.extractall(self.output_directory)
+
+    def zip_file(self, file):
+        """compress a single text file to a new zip file and delete the original"""
+        output_file = self.output_directory / (file.stem + ".zip")
+        with ZipFile(output_file, "w") as zip_ref:
+            zip_ref.write(file, arcname=file.name, compress_type=ZIP_DEFLATED)
+            file.unlink()
+
+    @timeit
+    def unzip(self):
+        """uncompress all zip files in folder"""
+        files = get_files(self.input_directory, extension="zip")
+        Parallel(n_jobs=self.n_jobs)(delayed(self.unzip_file)(file) for file in files)
+
+    @timeit
+    def zip(self):
+        """compress all text files in folder to new zip files and remove the text files"""
+        files = get_files(self.output_directory, extension="txt")
+        Parallel(n_jobs=self.n_jobs)(delayed(self.zip_file)(file) for file in files)
