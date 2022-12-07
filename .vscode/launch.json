@@ -8,7 +8,7 @@
       "name": "midi_stats.py",
       "type": "python",
       "request": "launch",
-      "program": "source/stats/midi_stats.py",
+      "program": "source/midi_stats.py",
       "console": "integratedTerminal",
       "justMyCode": false
     },

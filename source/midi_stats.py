@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 from pretty_midi import program_to_instrument_name, PrettyMIDI
 
-from utils import compute_list_average
+from utils import compute_list_average, get_files
 
 # TODO : implement util function get_files (after merging with master)
 # TODO : replace categorize_midi_instrument (after merging with master)
@@ -467,20 +467,6 @@ class MidiStats:
 
         # Remove None values, where statistics could not be computed
         return [s for s in statistics if s is not None]
-
-
-def get_files(directory, extension, recursive=False):
-    """
-    Given a directory, get a list of the file paths of all files matching the
-    specified file extension.
-    directory: the directory to search as a Path object
-    extension: the file extension to match as a string
-    recursive: whether to search recursively in the directory or not
-    """
-    if recursive:
-        return list(directory.rglob(f"*.{extension}"))
-    else:
-        return list(directory.glob(f"*.{extension}"))
 
 
 if __name__ == "__main__":
