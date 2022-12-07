@@ -17,9 +17,7 @@ def load_pickles(
     label_encoder_pickle_opener = open(label_encoder_pickle_path, "rb")
     label_encoder_dict = pickle.load(label_encoder_pickle_opener)
 
-    label_target_encoder_pickle_opener = open(
-        label_target_encoder_pickle_path, "rb"
-    )
+    label_target_encoder_pickle_opener = open(label_target_encoder_pickle_path, "rb")
     label_target_encoder = pickle.load(label_target_encoder_pickle_opener)
 
     return model, label_encoder_dict, label_target_encoder
