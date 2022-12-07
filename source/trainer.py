@@ -22,21 +22,6 @@ import wandb
 from datasets import load_dataset
 from pynvml import *
 
-
-def print_gpu_utilization():
-    nvmlInit()
-    handle = nvmlDeviceGetHandleByIndex(0)
-    info = nvmlDeviceGetMemoryInfo(handle)
-    print(f"GPU memory occupied: {info.used//1024**2} MB.")
-
-
-def print_summary(result):
-    print(f"Time: {result.metrics['train_runtime']:.2f}")
-    print(f"Samples/second: {result.metrics['train_samples_per_second']:.2f}")
-    print_gpu_utilization()
-
-
-print_gpu_utilization()
 # CONFIG:
 TRAIN_FROM_CHECKPOINT = None  # Example: checkpoint-80000
 EVAL_STEPS = 1000
@@ -49,7 +34,7 @@ formattedtime = datetime.now().strftime("%d-%m__%H-%M-%S")
 try:
     from google.colab import drive
 
-    wandb.init(project=f"the-jam-machine-{formattedtime}")
+    wandb.init(project=f"the-jammy-machine")
     drive.mount("/content/gdrive")
     drive_path = "/content/gdrive/MyDrive/the_jam_machine"
     dataset_path = f"{drive_path}/midi_encoded"
@@ -147,7 +132,8 @@ if TRAIN_FROM_CHECKPOINT is not None:
 else:
     result = trainer.train()
 
-print_summary(result)
+print("Training finished")
+print(result)
 
 """Save the tokenizer, latest status of trained model and push it to hugging face."""
 tokenizer.save_pretrained(model_path)
