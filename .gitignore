@@ -147,6 +147,7 @@ models
 notebooks/collab_notebook_model/old
 
 # generated files
+midi/generated/misnaej/the-jam-machine/ignore
 
 # VSCode
 .vscode
