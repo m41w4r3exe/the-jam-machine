@@ -235,7 +235,7 @@ if __name__ == "__main__":
 
     generated_sequence_files_path = define_generation_dir(model_repo)
     # set the temperature
-    temperature = 0.3
+    temperature = 0.9
 
     # instantiate the GenerateMidiText class
     gen = GenerateMidiText(
@@ -265,7 +265,7 @@ if __name__ == "__main__":
     ).text_midi_to_file()
 
     # generate 8 more bars for the drums
-    input_prompt = generated_multi_track_dict["INST=DRUMS"]
+    input_prompt = generated_multi_track_dict["INST=34"]
     seq = gen.generate_n_more_bars(input_prompt, n_bars=2)
     whole_seq = f"{input_prompt}{seq}TRACK_END "
     # write to file
@@ -274,3 +274,11 @@ if __name__ == "__main__":
         generated_sequence_files_path,
         feature_dict=generate_features_dict,
     ).text_midi_to_file()
+
+    """"
+    to do:
+    - do not convert back to text for multi track generation: use tokens instead
+        - for this get the encoding in the tokenizer
+        - this should speed up the process tremendously
+    - check that 8 bars are generated for each instrument; if not, generate again
+    """
