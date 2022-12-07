@@ -128,16 +128,31 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# genre prediction folder trash
-genre_prediction/midi_preprocessing_with_rachel_data.py
-genre_prediction/midi_train_with_rachelP_data.py
-genre_prediction/midi_training.py
-genre_prediction/data/statistics.csv
+# genre_prediction stuff
+genre_prediction/midi_pipeline.py
 genre_prediction/midi_prediction_label_encoders_20.pkl
 genre_prediction/midi_prediction_label_target_encoders_20.pkl
 genre_prediction/midi_prediction_model_20.pkl
-genre_prediction/midi_pipeline.py
+genre_prediction/midi_preprocessing_with_rachel_data.py
+genre_prediction/midi_train_with_rachelP_data.py
+genre_prediction/midi_training.py
 genre_prediction/data/exploring.ipynb
+genre_prediction/data/list_midi_sorted_by_genre.csv
 genre_prediction/data/mmd_discogs_genre_with_artists.csv
 genre_prediction/data/mmd_scraped_artist_genre.csv
-genre_prediction/data/list_midi_sorted_by_genre.csv
+genre_prediction/data/statistics.csv
+
+# Dataset
+lmd_full
+data
+
+# model files 
+models
+notebooks/collab_notebook_model/old
+
+# generated files
+# midi/decoded
+# midi/generated_text/tests
+# midi/generated_text/misnaej
+# VSCode
+.vscode
