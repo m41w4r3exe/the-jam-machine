@@ -27,7 +27,7 @@ EVAL_STEPS = 1000
 PER_DEVICE_TRAIN_BATCH_SIZE = 8
 TRAIN_EPOCHS = 5
 
-# Set paths either from Google Drive or locally
+"""Set paths either from Google Drive or locally"""
 formattedtime = datetime.now().strftime("%d-%m__%H-%M-%S")
 try:
     from google.colab import drive
@@ -48,6 +48,7 @@ if not os.path.exists(model_path):
 train_data = load_dataset(dataset_path, data_files={"train": "train/*.zip"})["train"]
 validate_data = load_dataset(dataset_path, data_files={"val": "validate/*.zip"})["val"]
 
+# TODO: Move tokenizer logic to encoder and use its json here only.
 """Get tokenizer from scratch or saved tokenizer.json"""
 if not os.path.isfile(tokenizer_path):
     tokenizer = Tokenizer(WordLevel(unk_token="[UNK]"))
@@ -89,7 +90,7 @@ model = GPT2LMHeadModel(
         pad_token_id=tokenizer.pad_token_id,
         n_embd=512,
         n_head=8,
-        n_layer=10,
+        n_layer=6,
         n_positions=2048,
     )
 )
@@ -106,7 +107,7 @@ training_args = TrainingArguments(
     per_device_train_batch_size=PER_DEVICE_TRAIN_BATCH_SIZE,
     save_strategy="steps",
     save_steps=EVAL_STEPS * 5,
-    save_total_limit=10,
+    save_total_limit=5,
     logging_steps=EVAL_STEPS * 5,
     logging_dir=os.path.join(model_path, "logs"),
     report_to="wandb",
