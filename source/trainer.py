@@ -35,7 +35,7 @@ try:
     wandb.init(project=f"the-jam-machine-{formattedtime}")
     drive.mount("/content/gdrive")
     drive_path = Path("/content/gdrive/MyDrive/the_jam_machine")
-    dataset_path = Path(f"{drive_path}/midi_encode")
+    dataset_path = Path(f"{drive_path}/midi_encoded")
     model_path = Path(f"{drive_path}/model_{formattedtime}")
 except:
     dataset_path = "./midi_encoded"
