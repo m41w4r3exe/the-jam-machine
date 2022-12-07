@@ -5,6 +5,14 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "mmd_metadata.py",
+      "type": "python",
+      "request": "launch",
+      "program": "source/mmd_metadata.py",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
       "name": "midi_stats.py",
       "type": "python",
       "request": "launch",
