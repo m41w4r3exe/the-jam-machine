@@ -3,47 +3,17 @@ from pathlib import Path
 import pandas as pd
 from pretty_midi import program_to_instrument_name, PrettyMIDI
 
+from constants import INSTRUMENT_CLASSES
 from utils import compute_list_average, get_files
 
-# TODO : implement util function get_files (after merging with master)
-# TODO : replace categorize_midi_instrument (after merging with master)
-# TODO : add enrichment
+# TODO : add data enrichment
 # TODO : include types
 
 
 def categorize_midi_instrument(program_number):
-    if 0 <= program_number <= 7:
-        return "Piano"
-    elif 8 <= program_number <= 15:
-        return "Chromatic Percussion"
-    elif 16 <= program_number <= 23:
-        return "Organ"
-    elif 24 <= program_number <= 31:
-        return "Guitar"
-    elif 32 <= program_number <= 39:
-        return "Bass"
-    elif 40 <= program_number <= 47:
-        return "Strings"
-    elif 48 <= program_number <= 55:
-        return "Ensemble"
-    elif 56 <= program_number <= 63:
-        return "Brass"
-    elif 64 <= program_number <= 71:
-        return "Reed"
-    elif 72 <= program_number <= 79:
-        return "Pipe"
-    elif 80 <= program_number <= 87:
-        return "Synth Lead"
-    elif 88 <= program_number <= 95:
-        return "Synth Pad"
-    elif 96 <= program_number <= 103:
-        return "Synth Effects"
-    elif 104 <= program_number <= 111:
-        return "Ethnic"
-    elif 112 <= program_number <= 119:
-        return "Percussive"
-    elif 120 <= program_number <= 127:
-        return "Sound Effects"
+    for instrument_class in INSTRUMENT_CLASSES:
+        if program_number in instrument_class["program_range"]:
+            return instrument_class["name"]
 
 
 def track_name(midi_file):
@@ -458,6 +428,8 @@ class MidiStats:
     def get_stats(self, input_directory, recursive=False, n_jobs=-1):
         """
         Compute statistics for a list of MIDI files
+        input_directory: path to the directory containing the MIDI files
+        recursive: if True, recursively search for MIDI files in subdirectories
         """
         midi_files = get_files(input_directory, "mid", recursive)
 
