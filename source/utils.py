@@ -2,6 +2,9 @@ from datetime import datetime
 from miditok import Event, MIDILike
 import os
 import json
+from time import perf_counter
+from joblib import Parallel, delayed
+from zipfile import ZipFile, ZIP_DEFLATED
 
 
 def writeToFile(path, content):
@@ -149,3 +152,52 @@ class WriteTextMidiToFile:  # utils saving to file
         print(f"Token sequence written: {self.output_path_filename}")
         writeToFile(self.output_path_filename, output_dict)
         return self.output_path_filename
+
+
+def get_files(directory, extension):
+    """Given a directory, get a list of the file paths of all files matching the
+    specified file extension."""
+    return directory.glob(f"*.{extension}")
+
+
+def timeit(func):
+    def wrapper(*args, **kwargs):
+        start = perf_counter()
+        result = func(*args, **kwargs)
+        end = perf_counter()
+        print(f"{func.__name__} took {end - start:.2f} seconds to run.")
+        return result
+
+    return wrapper
+
+
+class FileCompressor:
+    def __init__(self, input_directory, output_directory, n_jobs=-1):
+        self.input_directory = input_directory
+        self.output_directory = output_directory
+        self.n_jobs = n_jobs
+
+    # File compression and decompression
+    def unzip_file(self, file):
+        """uncompress single zip file"""
+        with ZipFile(file, "r") as zip_ref:
+            zip_ref.extractall(self.output_directory)
+
+    def zip_file(self, file):
+        """compress a single text file to a new zip file and delete the original"""
+        output_file = self.output_directory / (file.stem + ".zip")
+        with ZipFile(output_file, "w") as zip_ref:
+            zip_ref.write(file, arcname=file.name, compress_type=ZIP_DEFLATED)
+            file.unlink()
+
+    @timeit
+    def unzip(self):
+        """uncompress all zip files in folder"""
+        files = get_files(self.input_directory, extension="zip")
+        Parallel(n_jobs=self.n_jobs)(delayed(self.unzip_file)(file) for file in files)
+
+    @timeit
+    def zip(self):
+        """compress all text files in folder to new zip files and remove the text files"""
+        files = get_files(self.output_directory, extension="txt")
+        Parallel(n_jobs=self.n_jobs)(delayed(self.zip_file)(file) for file in files)
