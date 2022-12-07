@@ -122,7 +122,7 @@ class TextDecoder:
 
 if __name__ == "__main__":
 
-    path_filename = "midi/generated/misnaej/the-jam-machine/20221207_005555"
+    path_filename = "midi/generated/misnaej/the-jam-machine/20221207_200231"
     encoded_json = readFromFile(
         f"{path_filename}.json",
         True,

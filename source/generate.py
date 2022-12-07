@@ -1,6 +1,7 @@
 from utils import WriteTextMidiToFile
 from utils import define_generation_dir
 from load import LoadModel
+from tqdm import tqdm
 
 
 class GenerateMidiText:
@@ -87,20 +88,20 @@ class GenerateMidiText:
         inst=None,
         density=None,
         verbose=True,
+        expected_length=8,
     ):
         """generate a sequence based on
         - the input_prompt and/or inst and density parameters
         - the "final prompt" is converted into input_prompt_ids
         - input_prompt_ids are passed to generate_sequence_of_token_ids for generation
-        - the generated toekn_ids are then converted to text
-        """
-        if inst is not None:
-            if type(inst) is not str:  # inst should be str
-                inst = str(inst)
+        - the generated toekn_ids are then converted to text"""
 
+        if inst is not None:
+            if type(inst) is not str:
+                inst = str(inst)
             input_prompt = f"{input_prompt} TRACK_START INST={inst} "
             if density is not None:
-                input_prompt = f"{input_prompt} DENSITY={density}"
+                input_prompt = f"{input_prompt}DENSITY={density} "
 
         if inst is None and density is not None:
             print("Density cannot be defined without an input_prompt instrument #TOFIX")
@@ -110,14 +111,20 @@ class GenerateMidiText:
             print(
                 f"Generating {inst} - Density {density} - Temperature {self.temperature}"
             )
+        bar_count_checks = False
+        while not bar_count_checks:
+            input_prompt_ids = self.tokenize_input_prompt(input_prompt)
+            generated_tokens = self.generate_sequence_of_token_ids(input_prompt_ids)
+            generated_text = self.convert_ids_to_text(generated_tokens)
+            newly_generated_only = generated_text[len(input_prompt) :]
+            bar_count_checks, _ = self.bar_count_check(
+                newly_generated_only, expected_length
+            )
 
-        input_prompt_ids = self.tokenize_input_prompt(input_prompt)
-        generated_ids = self.generate_sequence_of_token_ids(input_prompt_ids)
-        generated_text = self.convert_ids_to_text(generated_ids)
         return generated_text
 
     def generate_multi_track_sequence(
-        self, inst_list=["DRUMS", "84", 5], density_list=[3, 2, 1]
+        self, inst_list=["DRUMS", "84", 5], density_list=[3, 2, 3]
     ):
         """generate a sequence with mutiple tracks
         - inst_list sets the list of instruments of the order of generation
@@ -135,7 +142,6 @@ class GenerateMidiText:
             "max_seq_length": self.max_length,
             "generate_until": self.generate_until,
         }
-
         generated_multi_track_dict = {}
         generated_multi_track_sequence = "PIECE_START"
         for count, (inst, density) in enumerate(zip(inst_list, density_list)):
@@ -160,63 +166,74 @@ class GenerateMidiText:
             generate_features_dict,
         )
 
-    def process_prompt_for_next_bar(self, input_prompt, n_bars=2):
+    def process_prompt_for_next_bar(self, input_prompt):
         """
         input_prompt should be at least a 8 bar sequence for one instrument
         """
+        n_bars = 1
         input_prompt_split = input_prompt.split(" ")
-        prompt_processed_for_next_bar = ""
+        processed_prompt = ""
         bar_skipped = 0
         skipping_first_bar = False
         first_bar_skipped = False
-        for token in input_prompt_split[:-1]:
+        for token in input_prompt_split:
             # input_prompt_split[:-1] should exclude TRACK_END
             if first_bar_skipped == False:
                 if token == "BAR_START":
                     skipping_first_bar = True
 
-                if skipping_first_bar is True:
-                    # print(f"skipping token {token} for the first bar ")
-                    if token != "BAR_END":
-                        continue
+            if skipping_first_bar is True:
+                if token != "BAR_END":
+                    continue
 
-                    else:
-                        bar_skipped += 1
-                        if bar_skipped == n_bars:
-                            skipping_first_bar = False
-                            first_bar_skipped = True
+                else:
+                    bar_skipped += 1
+                    if bar_skipped == n_bars:
+                        skipping_first_bar = False
+                        first_bar_skipped = True
+                    continue
 
-                        continue
+            if token == "TRACK_END":
+                break
+            processed_prompt += f"{token} "
 
-                # if token == "TRACK_END":
-                #     # print("removing the TRACK_END token")
-                #     continue
-
-            prompt_processed_for_next_bar += f"{token} "
-
-        return prompt_processed_for_next_bar
+        processed_prompt += "BAR_START "
+        return processed_prompt
 
     def generate_one_more_bar(self, input_prompt):
-        prompt_processed_for_next_bar = self.process_prompt_for_next_bar(input_prompt)
+
+        processed_prompt = self.process_prompt_for_next_bar(input_prompt)
         prompt_plus_bar = self.generate_one_sequence(
-            input_prompt=prompt_processed_for_next_bar
+            input_prompt=processed_prompt,
+            expected_length=1,
         )
+        # remove the processed_prompt - but keeping "BAR_START " - and the TRACK_END
         added_bar = prompt_plus_bar[
-            len(prompt_processed_for_next_bar) - 1 : -len("TRACK_END")
+            len(processed_prompt) - len("BAR_START ") : -len("TRACK_END ")
         ]
         return prompt_plus_bar, added_bar
 
-    def generate_n_more_bars(self, input_prompt, n_bars=2):
+    def generate_n_more_bars(self, input_prompt, n_bars=8):
         new_bars = ""
         for bar in range(n_bars):
-            input_prompt, new_bar = self.generate_one_more_bar(input_prompt)
+            bar_count_matches = False
+            while bar_count_matches is False:
+                input_prompt, new_bar = self.generate_one_more_bar(input_prompt)
+                bar_count_matches, bar_count = self.bar_count_check(new_bar, 1)
             new_bars += new_bar
 
         return new_bars
 
-    def bar_count_check(sequence, n_bars=8):
+    def bar_count_check(self, sequence, n_bars):
         """check if the sequence contains the right number of bars"""
-        pass
+        sequence = sequence.split(" ")
+        # find occurences of "BAR_START" in a str
+        bar_count = 0
+        for seq in sequence:
+            if seq == "BAR_END":
+                bar_count += 1
+        bar_count_matches = bar_count == n_bars
+        return bar_count_matches, bar_count
 
 
 if __name__ == "__main__":
@@ -228,14 +245,14 @@ if __name__ == "__main__":
     #     model_repo, from_huggingface=True
     # ).load_model_and_tokenizer()
 
-    model_repo = "models/model_2048_fake_wholedataset"
+    model_repo = "misnaej/the-jam-machine"
     model, tokenizer = LoadModel(
-        model_repo, from_huggingface=False
+        model_repo, from_huggingface=True
     ).load_model_and_tokenizer()
 
     generated_sequence_files_path = define_generation_dir(model_repo)
     # set the temperature
-    temperature = 0.9
+    temperature = 0.75
 
     # instantiate the GenerateMidiText class
     gen = GenerateMidiText(
@@ -246,8 +263,8 @@ if __name__ == "__main__":
     )
 
     # generate a multi track sequence
-    inst_list = ["DRUMS", "34"]
-    density_list = [2, 3]
+    inst_list = [81, 28, "32", "DRUMS"]
+    density_list = [3, 2, 3, 3]
     (
         generated_multi_track_sequence,
         generated_multi_track_dict,
@@ -265,8 +282,8 @@ if __name__ == "__main__":
     ).text_midi_to_file()
 
     # generate 8 more bars for the drums
-    input_prompt = generated_multi_track_dict["INST=34"]
-    seq = gen.generate_n_more_bars(input_prompt, n_bars=2)
+    input_prompt = generated_multi_track_dict["INST=DRUMS"]
+    seq = gen.generate_n_more_bars(input_prompt, n_bars=8)
     whole_seq = f"{input_prompt}{seq}TRACK_END "
     # write to file
     WriteTextMidiToFile(
