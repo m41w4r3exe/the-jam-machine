@@ -3,6 +3,10 @@ import os
 import shutil
 import pandas as pd
 
+# TODO : create main
+# TODO : turn into functions
+# TODO : turn into object
+
 input_path = "../data/lmd_full/"
 output_path = "../data/lmd_new/"
 reference_path = "../data/electronic_artists.csv"
