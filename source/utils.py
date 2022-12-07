@@ -53,6 +53,10 @@ def split_dots(value):
     return list(map(int, value.split(".")))
 
 
+def compute_list_average(l):
+    return sum(l) / len(l)
+
+
 def get_datetime_filename():
     return datetime.now().strftime("%d-%m__%H:%M:%S")
 
