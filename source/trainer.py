@@ -1,5 +1,5 @@
 # RUN 3 lines below in a seperate cell in Google Colab
-# !pip install transformers tokenizers wandb huggingface_hub datasets datetime
+# !pip install transformers tokenizers wandb huggingface_hub datasets datetime nvidia-ml-py3
 # from huggingface_hub import notebook_login
 # notebook_login()
 
@@ -20,11 +20,28 @@ from tokenizers.trainers import WordLevelTrainer
 from datetime import datetime
 import wandb
 from datasets import load_dataset
+from pynvml import *
 
+
+def print_gpu_utilization():
+    nvmlInit()
+    handle = nvmlDeviceGetHandleByIndex(0)
+    info = nvmlDeviceGetMemoryInfo(handle)
+    print(f"GPU memory occupied: {info.used//1024**2} MB.")
+
+
+def print_summary(result):
+    print(f"Time: {result.metrics['train_runtime']:.2f}")
+    print(f"Samples/second: {result.metrics['train_samples_per_second']:.2f}")
+    print_gpu_utilization()
+
+
+print_gpu_utilization()
 # CONFIG:
 TRAIN_FROM_CHECKPOINT = None  # Example: checkpoint-80000
 EVAL_STEPS = 1000
-PER_DEVICE_TRAIN_BATCH_SIZE = 8
+PER_DEVICE_TRAIN_BATCH_SIZE = 4
+GRADIENT_ACCUMULATION_STEPS = 2
 TRAIN_EPOCHS = 5
 
 """Set paths either from Google Drive or locally"""
@@ -34,9 +51,9 @@ try:
 
     wandb.init(project=f"the-jam-machine-{formattedtime}")
     drive.mount("/content/gdrive")
-    drive_path = Path("/content/gdrive/MyDrive/the_jam_machine")
-    dataset_path = Path(f"{drive_path}/midi_encoded")
-    model_path = Path(f"{drive_path}/model_{formattedtime}")
+    drive_path = "/content/gdrive/MyDrive/the_jam_machine"
+    dataset_path = f"{drive_path}/midi_encoded"
+    model_path = f"{drive_path}/model_{formattedtime}"
 except:
     dataset_path = "./midi_encoded"
     model_path = f"./models/model_{formattedtime}"
@@ -105,6 +122,8 @@ training_args = TrainingArguments(
     warmup_steps=1_000,
     lr_scheduler_type="cosine",
     per_device_train_batch_size=PER_DEVICE_TRAIN_BATCH_SIZE,
+    gradient_accumulation_steps=GRADIENT_ACCUMULATION_STEPS,
+    fp16=True,
     save_strategy="steps",
     save_steps=EVAL_STEPS * 5,
     save_total_limit=5,
@@ -124,10 +143,11 @@ trainer = Trainer(
 
 """Train the model from scratch or from checkpoint"""
 if TRAIN_FROM_CHECKPOINT is not None:
-    trainer.train(f"{model_path}/{TRAIN_FROM_CHECKPOINT}")
+    result = trainer.train(f"{model_path}/{TRAIN_FROM_CHECKPOINT}")
 else:
-    trainer.train()
+    result = trainer.train()
 
+print_summary(result)
 
 """Save the tokenizer, latest status of trained model and push it to hugging face."""
 tokenizer.save_pretrained(model_path)
