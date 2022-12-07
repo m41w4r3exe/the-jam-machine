@@ -13,6 +13,14 @@
       "justMyCode": false
     },
     {
+      "name": "midi_stats.py",
+      "type": "python",
+      "request": "launch",
+      "program": "source/midi_stats.py",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
       "name": "preprocess.py",
       "type": "python",
       "request": "launch",

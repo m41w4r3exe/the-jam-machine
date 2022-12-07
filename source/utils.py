@@ -39,7 +39,6 @@ def chain(input, funcs, *params):
 
 
 def to_beat_str(value, beat_res=8):
-
     values = [
         int(int(value * beat_res) / beat_res),
         int(int(value * beat_res) % beat_res),
@@ -55,6 +54,10 @@ def to_base10(beat_str):
 
 def split_dots(value):
     return list(map(int, value.split(".")))
+
+
+def compute_list_average(l):
+    return sum(l) / len(l)
 
 
 def get_datetime():
@@ -154,10 +157,18 @@ class WriteTextMidiToFile:  # utils saving to file
         return self.output_path_filename
 
 
-def get_files(directory, extension):
-    """Given a directory, get a list of the file paths of all files matching the
-    specified file extension."""
-    return directory.glob(f"*.{extension}")
+def get_files(directory, extension, recursive=False):
+    """
+    Given a directory, get a list of the file paths of all files matching the
+    specified file extension.
+    directory: the directory to search as a Path object
+    extension: the file extension to match as a string
+    recursive: whether to search recursively in the directory or not
+    """
+    if recursive:
+        return list(directory.rglob(f"*.{extension}"))
+    else:
+        return list(directory.glob(f"*.{extension}"))
 
 
 def timeit(func):
