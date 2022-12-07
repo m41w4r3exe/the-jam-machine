@@ -25,8 +25,8 @@ def load_pickles(
 
 def pre_process_data(df, label_encoder_dict):
 
-    loaded_data = DataPreprocessing(df)
-    df = loaded_data.process()
+    loaded_data = DataPreprocessing(df, target_name="genre")
+    df = loaded_data.process_predict_only(df)
 
     for col in df.columns:
         if col in list(label_encoder_dict.keys()):
@@ -49,13 +49,24 @@ def make_predictions(processed_df, model):
 
 def generate_predictions(test_df):
     model_pickle_path = "./midi_prediction_model.pkl"
-    label_encoder_pickle_path = "./midi_prediction_label_encoders.pkl.pkl"
-    label_target_encoder_pickle_path = "./midi_prediction_label_target_encoder.pkl"
+    label_encoder_pickle_path = "./midi_prediction_label_encoders.pkl"
+    label_target_encoder_pickle_path = "./midi_prediction_label_target_encoders.pkl"
 
-    model, label_encoder_dict = load_pickles(
+    model, label_encoder_dict, label_target_encoder = load_pickles(
         model_pickle_path, label_encoder_pickle_path, label_target_encoder_pickle_path
     )
 
     processed_df = pre_process_data(test_df, label_encoder_dict)
+    # processed_target = pre_process_target(target, label_target_encoder)
     prediction = make_predictions(processed_df, model)
+    prediction = label_target_encoder.inverse_transform(prediction)
     return prediction
+
+
+# test
+datapath = "./data/onelinedata3.csv"
+# load data and get training and test data
+test_df = pd.read_csv(datapath, index_col=0)
+test_df = test_df.reset_index(drop=True)
+prediction = generate_predictions(test_df)
+print(prediction)

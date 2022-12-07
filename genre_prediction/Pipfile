@@ -5,13 +5,16 @@ name = "pypi"
 
 [packages]
 pandas = "*"
-streamlit = "*"
-pretty_midi = "*"
-sklearn = "*"
 scikit-learn = "*"
+streamlit = "*"
+numpy = "*"
+matplotlib = "*"
+
+[dev-packages]
+black = "*"
 
 [requires]
-python_version = "3.8"
+python_version = "3.10"
 
 [pipenv]
 allow_prereleases = true
