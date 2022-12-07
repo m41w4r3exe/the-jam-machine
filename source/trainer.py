@@ -1,5 +1,5 @@
 # RUN 3 lines below in a seperate cell in Google Colab
-# !pip install transformers tokenizers wandb huggingface_hub
+# !pip install transformers tokenizers wandb huggingface_hub datasets datetime
 # from huggingface_hub import notebook_login
 # notebook_login()
 
