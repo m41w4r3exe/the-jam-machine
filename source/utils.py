@@ -3,7 +3,6 @@ from miditok import Event
 import os
 import json
 from hashlib import sha256
-import datetime
 from time import perf_counter
 from joblib import Parallel, delayed
 from zipfile import ZipFile, ZIP_DEFLATED
@@ -22,9 +21,12 @@ def writeToFile(path, content):
 
 
 # Function to read from text from txt file:
-def readFromFile(path):
+def readFromFile(path, isJSON=False):
     with open(path, "r") as f:
-        return f.read()
+        if isJSON:
+            return json.load(f)
+        else:
+            return f.read()
 
 
 def chain(input, funcs, *params):
@@ -57,7 +59,18 @@ def split_dots(value):
 
 
 def get_datetime_filename():
-    return datetime.now().strftime("%d-%m__%H:%M:%S")
+    return datetime.now().strftime("%Y%m%d_%H%M%S")
+
+
+def define_generation_dir(model_repo_path):
+    #### to remove later ####
+    if model_repo_path == "models/model_2048_fake_wholedataset":
+        model_repo_path = "misnaej/the-jam-machine"
+    #### to remove later ####
+    generated_sequence_files_path = f"midi/generated/{model_repo_path}"
+    if not os.path.exists(generated_sequence_files_path):
+        os.makedirs(generated_sequence_files_path)
+    return generated_sequence_files_path
 
 
 def get_text(event):
@@ -117,18 +130,8 @@ class WriteTextMidiToFile:  # utils saving to file
         self.feature_dict = feature_dict
 
     def hashing_seq(self):
-        self.current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.filename = sha256(self.sequence.encode("utf-8")).hexdigest()
-        self.output_path_filename = (
-            f"{self.output_path}/{self.current_time}_{self.filename}.json"
-        )
-
-    # def writing_seq_to_file(self):
-    #     file_object = open(f"{self.output_path_filename}", "w")
-    #     assert type(self.sequence) is str, "sequence must be a string"
-    #     file_object.writelines(self.sequence)
-    #     file_object.close()
-    #     print(f"Token sequence written: {self.output_path_filename}")
+        self.current_time = get_datetime_filename()
+        self.output_path_filename = f"{self.output_path}/{self.current_time}.json"
 
     def wrapping_seq_feature_in_dict(self):
         assert type(self.sequence) is str, "error: sequence must be a string"
@@ -137,16 +140,12 @@ class WriteTextMidiToFile:  # utils saving to file
         ), "error: feature_dict must be a dictionnary"
         return {"sequence": self.sequence, "features": self.feature_dict}
 
-    # def writing_feature_dict_to_file(feature_dict, output_path_filename):
-    #     with open(f"{output_path_filename}_features.json", "w") as json_file:
-    #         json.dump(feature_dict, json_file)
-
     def text_midi_to_file(self):
         self.hashing_seq()
         output_dict = self.wrapping_seq_feature_in_dict()
         print(f"Token sequence written: {self.output_path_filename}")
         writeToFile(self.output_path_filename, output_dict)
-        # self.writing_feature_dict_to_file(self.feature_dict, self.output_path_filename)
+        return self.output_path_filename
 
 
 def get_files(directory, extension):
