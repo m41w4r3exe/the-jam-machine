@@ -15,6 +15,9 @@ mido = "*"
 python-rtmidi = "*"
 pretty-midi = "*"
 note-seq = "*"
+huggingface-hub = "*"
+ipykernel = "*"
+pyfluidsynth = "*"
 
 [dev-packages]
 
