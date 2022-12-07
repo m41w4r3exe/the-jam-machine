@@ -2,7 +2,6 @@ from datetime import datetime
 from miditok import Event, MIDILike
 import os
 import json
-from hashlib import sha256
 
 
 def writeToFile(path, content):
