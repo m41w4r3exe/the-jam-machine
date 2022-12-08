@@ -5,6 +5,7 @@
   "version": "0.2.0",
   "configurations": [
 
+
     {
       "name": "trainer.py",
       "type": "python",
@@ -62,7 +63,7 @@
       "justMyCode": false
     },
     {
-      "name": "streamlite genre prediction",
+      "name": "streamlite_genre_prediction",
       "type": "python",
       "request": "launch",
       "program": "genre_prediction/streamlit_app.py",

@@ -95,6 +95,11 @@ print(f"Test accuracy is: {round(accuracy, 3)}")
 # print(f"Test precision is: {round(precision[0], 3)}")
 # print(f"Test recall is: {round(recall[0], 3)}")
 
+# pickling preprocessing
+prepross_pickler = open("midi_preprocessing.pkl", "wb")
+pickle.dump(loaded_data, prepross_pickler)
+prepross_pickler.close()
+
 # pickling mdl
 mdl_pickler = open("midi_prediction_model.pkl", "wb")
 pickle.dump(model, mdl_pickler)
