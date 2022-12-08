@@ -1,11 +1,11 @@
+"""
+This script is used to extract 
+"""
+
 from pathlib import Path
 import pandas as pd
 from utils import get_files, copy_file
 from joblib import Parallel, delayed
-
-# TODO : create main
-# TODO : turn into functions
-# TODO : turn into object
 
 
 def pick_midis(input_dir, output_dir, reference_file):
