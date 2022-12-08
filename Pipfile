@@ -18,6 +18,7 @@ note-seq = "*"
 huggingface-hub = "*"
 ipykernel = "*"
 pyfluidsynth = "*"
+pydub = "*"
 
 [dev-packages]
 
