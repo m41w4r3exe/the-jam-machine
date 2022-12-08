@@ -1,8 +1,7 @@
 from datetime import datetime
-from miditok import Event
+from miditok import Event, MIDILike
 import os
 import json
-from hashlib import sha256
 from time import perf_counter
 from joblib import Parallel, delayed
 from zipfile import ZipFile, ZIP_DEFLATED
@@ -40,7 +39,6 @@ def chain(input, funcs, *params):
 
 
 def to_beat_str(value, beat_res=8):
-
     values = [
         int(int(value * beat_res) / beat_res),
         int(int(value * beat_res) % beat_res),
@@ -62,7 +60,7 @@ def compute_list_average(l):
     return sum(l) / len(l)
 
 
-def get_datetime_filename():
+def get_datetime():
     return datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
@@ -127,6 +125,13 @@ def get_event(text, value=None):
             return None
 
 
+# TODO: Make this singleton
+def get_tokenizer():
+    pitch_range = range(21, 109)
+    beat_res = {(0, 400): 8}
+    return MIDILike(pitch_range, beat_res)
+
+
 class WriteTextMidiToFile:  # utils saving to file
     def __init__(self, sequence, output_path, feature_dict=None):
         self.sequence = sequence
@@ -134,7 +139,7 @@ class WriteTextMidiToFile:  # utils saving to file
         self.feature_dict = feature_dict
 
     def hashing_seq(self):
-        self.current_time = get_datetime_filename()
+        self.current_time = get_datetime()
         self.output_path_filename = f"{self.output_path}/{self.current_time}.json"
 
     def wrapping_seq_feature_in_dict(self):

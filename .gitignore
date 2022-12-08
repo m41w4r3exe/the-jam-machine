@@ -142,16 +142,20 @@ genre_prediction/*.pkl
 lmd_full
 data
 
-# model files 
+# model files
 models
 notebooks/collab_notebook_model/old
 
 # generated files
-# midi/decoded
-# midi/generated_text/tests
-# midi/generated_text/misnaej
+midi/generated/misnaej/the-jam-machine/ignore
+
 # VSCode
 .vscode
 
+# Encoded midi data
+midi_encoded
+
+# Wandb file
+wandb
 # Mac
 .DS_Store
