@@ -29,17 +29,17 @@ def load_pickles(
     label_encoder_pickle_opener = open(label_encoder_pickle_path, "rb")
     label_encoder_dict = pickle.load(label_encoder_pickle_opener)
 
-    label_target_encoder_pickle_opener = open(
-        label_target_encoder_pickle_path, "rb")
+    label_target_encoder_pickle_opener = open(label_target_encoder_pickle_path, "rb")
     label_target_encoder = pickle.load(label_target_encoder_pickle_opener)
 
     return preprocessed, model, label_encoder_dict, label_target_encoder
 
 
 def pre_process_data(df, preprocess, label_encoder_dict):
-
     # process the df
-    preprocess.process_predict_only(df)
+    preprocess.process_predict_only(
+        df,
+    )
     for col in df.columns:
         if col in list(label_encoder_dict.keys()):
             column_le = label_encoder_dict[col]
@@ -170,12 +170,10 @@ def compute_statistics(midi_file):
         "n_unique_instruments": len(set([i.program for i in pm.instruments])),
         "instruments": ", ".join([str(i.program) for i in pm.instruments]),
         "instrument_families": ", ".join(
-            set([categorize_midi_instrument(i.program)
-                for i in pm.instruments])
+            set([categorize_midi_instrument(i.program) for i in pm.instruments])
         ),
         "number_of_instrument_families": len(
-            set([categorize_midi_instrument(i.program)
-                for i in pm.instruments])
+            set([categorize_midi_instrument(i.program) for i in pm.instruments])
         ),
         # notes
         "n_notes": sum([len(i.notes) for i in pm.instruments]),
@@ -198,8 +196,7 @@ def compute_statistics(midi_file):
         ),
         "average_range_of_note_pitches_per_instrument": compute_list_average(
             [
-                max([n.pitch for n in i.notes]) - \
-                (min([n.pitch for n in i.notes]))
+                max([n.pitch for n in i.notes]) - (min([n.pitch for n in i.notes]))
                 for i in pm.instruments
             ]
         ),
@@ -213,8 +210,7 @@ def compute_statistics(midi_file):
             set([n.pitch // 12 for i in pm.instruments for n in i.notes])
         ),
         "average_number_of_octaves_per_instrument": compute_list_average(
-            [len(set([n.pitch // 12 for n in i.notes]))
-             for i in pm.instruments]
+            [len(set([n.pitch // 12 for n in i.notes])) for i in pm.instruments]
         ),
         "number_of_notes_per_second": len([n for i in pm.instruments for n in i.notes])
         / pm.get_end_time(),
@@ -279,12 +275,12 @@ if __name__ == "__main__":
         # Let user upload midi file
         uploaded_file = st.file_uploader("Choose a MIDI file", type="mid")
 
-    st.subheader("Listen to you file:")
+    st.subheader("Play the Midi file:")
     _, waveform = get_music(uploaded_file)
     st.audio(waveform, format="audio/wav", sample_rate=44100)
 
     # Do prediction if user clicks on predict button
-    if st.button("Predict genre"):
+    if True:  # st.button("Predict genre"):
         if uploaded_file is not None:
             # Compute statistics on the midi file
             statistics = compute_statistics(uploaded_file_path)
