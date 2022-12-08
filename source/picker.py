@@ -1,5 +1,8 @@
 """
-This script is used to extract 
+This script is used to pick out the midi files that we want to use for our project.
+It takes a reference file as input, which contains the md5 hash of the tracks we want to copy.
+This reference file is created by the script midi_stats.py and refined in mmd_metadata.py.
+It then searches for all midi files in the input folder and subfolders and copies them to the output folder.
 """
 
 from pathlib import Path
