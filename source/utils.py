@@ -8,6 +8,7 @@ from zipfile import ZipFile, ZIP_DEFLATED
 from scipy.io.wavfile import write
 import numpy as np
 from pydub import AudioSegment
+import shutil
 
 
 def writeToFile(path, content):
@@ -238,3 +239,8 @@ def load_jsonl(filepath):
     with open(filepath, "r") as f:
         data = [json.loads(line) for line in f]
     return data
+
+def copy_file(input_file, output_dir):
+    """Copy an input file to the output_dir"""
+    output_file = output_dir / input_file.name
+    shutil.copy(input_file, output_file)

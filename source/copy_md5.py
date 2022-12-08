@@ -1,45 +1,38 @@
-# extract all filnames from a folder
-import os
-import shutil
+from pathlib import Path
 import pandas as pd
+from utils import get_files, copy_file
+from joblib import Parallel, delayed
 
 # TODO : create main
 # TODO : turn into functions
 # TODO : turn into object
 
-input_path = "../data/lmd_full/"
-output_path = "../data/lmd_new/"
-reference_path = "../data/electronic_artists.csv"
 
-# create output folder if it does not already exist
-if not os.path.exists(output_path):
-    os.makedirs(output_path)
+def pick_midis(input_dir, output_dir, reference_file):
 
-# get all file paths from the folder and subfolders and store them in a list
-file_paths = [
-    os.path.join(dp, f) for dp, dn, filenames in os.walk(input_path) for f in filenames
-]
+    # create output folder if it does not already exist
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-# create a data frame with the file paths
-df = pd.DataFrame(file_paths, columns=["file_path"])
+    # Load file in which we have the md5 hash of the tracks we want to copy
+    reference = pd.read_csv(reference_file)
 
-# create column with the filename
-df["filename"] = df["file_path"].apply(lambda x: x.split("/")[-1])
+    # get all midi files from the folder and subfolders that match the reference file
+    file_paths = get_files(input_dir, "mid", recursive=True)
+    file_paths = [f for f in file_paths if f.stem in list(reference.md5)]
 
-# keep only .mid files
-df = df[df["filename"].str.contains(".mid")]
+    # copy all files from the file_paths list to the output folder
+    for f in file_paths:
+        copy_file(f, output_dir)
 
-# create column with the md5 hash
-df["md5"] = df["filename"].apply(lambda x: x.split(".")[0])
+    print('All tracks copied faster than it takes to say "electronic music"')
 
-# load electronic artists df
-df_electronic = pd.read_csv(reference_path)
 
-# merge the two data frames
-df_electronic = pd.merge(df, df_electronic, on="md5")
+if __name__ == "__main__":
 
-# copy all files from the file_path column to the output folder
-df_electronic["file_path"].apply(lambda x: shutil.copy(x, output_path))
+    # Select paths
+    input_dir = Path("data/lmd_full/").resolve()
+    output_dir = Path("data/lmd_new/").resolve()
+    reference_file = Path("data/electronic_artists.csv").resolve()
 
-print('All tracks copied faster than it takes to say "electronic music"')
-
+    # Run function
+    pick_midis(input_dir, output_dir, reference_file)

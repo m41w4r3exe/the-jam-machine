@@ -68,5 +68,13 @@
       "console": "integratedTerminal",
       "justMyCode": false
     }
+    {
+      "name": "copy_md5.py",
+      "type": "python",
+      "request": "launch",
+      "program": "source/copy_md5.py",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    }
   ]
 }
