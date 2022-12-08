@@ -259,7 +259,12 @@ if __name__ == "__main__":
 
     dropdown = True
     if dropdown:
-        select_file_path = "/Users/jean/WORK/DSR_2022_b32/music_portfolio/the_jam_machine_github/the-jam-machine/midi/dataset/electronic/electronic_deduped"
+        st.write("Local directory with midi files")
+        select_file_path = st.text_input(
+            "Enter a path to a folder",
+            "/Users/jean/WORK/DSR_2022_b32/music_portfolio/the_jam_machine_github/the-jam-machine/midi/dataset/electronic/electronic_deduped",
+        )
+        # select_file_path = "/Users/jean/WORK/DSR_2022_b32/music_portfolio/the_jam_machine_github/the-jam-machine/midi/dataset/electronic/electronic_deduped"
         midi_file_list = os.listdir(select_file_path)
         # select midi file from dropdown menu
         file_select = st.selectbox(
