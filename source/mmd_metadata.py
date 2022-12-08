@@ -40,21 +40,19 @@ class MetadataExtractor:
             title = "unknown"
             return artist, title
 
-    def get_artist_and_titles(self, names_df):
+    def get_artist_and_titles(self):
         """Extract the artist and title from the mmd scraped data"""
         # Get first value from the title_artist column
-        title_artist = names_df["title_artist"].apply(self.get_single_artist_title)
+        title_artist = self.names_df["title_artist"].apply(self.get_single_artist_title)
         # add title and artist to the dataframe
-        names_df["artist"] = title_artist.apply(lambda x: x[0])
-        names_df["title"] = title_artist.apply(lambda x: x[1])
-        names_df.drop("title_artist", axis=1, inplace=True)
-        return names_df
+        self.names_df["artist"] = title_artist.apply(lambda x: x[0])
+        self.names_df["title"] = title_artist.apply(lambda x: x[1])
+        self.names_df.drop("title_artist", axis=1, inplace=True)
 
-    def get_genre(self, genre_df):
+    def get_genre(self):
         # turn values of genre column into list and explode the list
-        genre_df["genre"] = genre_df["genre"].apply(lambda x: x[0])
-        genre_df = genre_df.explode("genre")
-        return genre_df
+        self.genre_df["genre"] = self.genre_df["genre"].apply(lambda x: x[0])
+        self.genre_df = self.genre_df.explode("genre")
 
     def string_cleaner(self, string):
         # remove unwanted characters from string
@@ -69,7 +67,7 @@ class MetadataExtractor:
         return string
 
     # compare strings in the list sequentially and return a list of the same size with the replaces values
-    def find_and_replace_duplicates(self, str_list, threshold=75):
+    def find_and_replace_duplicates(self, str_list):
         # clean the list of strings
         str_list = [self.string_cleaner(string) for string in str_list]
         # create a list with the same size as the input list
@@ -80,7 +78,7 @@ class MetadataExtractor:
                 and not "," in s
                 and not any(
                     [
-                        fuzz.partial_ratio(s, wrong_str) > threshold
+                        fuzz.partial_ratio(s, wrong_str) > self.threshold
                         for wrong_str in ["karaoke", "reprise", "solo", "acoustic"]
                     ]
                 )
@@ -89,7 +87,7 @@ class MetadataExtractor:
                 for j, other_strs in enumerate(str_list):
                     if similar_strs[j] is None:
                         # if the other string has not been compared yet, compare them
-                        if fuzz.token_sort_ratio(s, other_strs) > threshold:
+                        if fuzz.token_sort_ratio(s, other_strs) > self.threshold:
                             # if the ratio is above 80, store the other string in the list
                             similar_strs[j] = s
         # if similar_strs still contains None values, replace them with the original string
@@ -98,33 +96,33 @@ class MetadataExtractor:
         ]
         return similar_strs
 
-    def get_mmd_artist_genre(self, title_artist_path, genre_path):
+    def get_mmd_artist_genre(self):
         # load MMD scraped data
-        names = load_jsonl(title_artist_path)
-        scraped_genre = load_jsonl(genre_path)
+        names = load_jsonl(self.title_artist_path)
+        genre = load_jsonl(self.genre_path)
         # Create a dataframe with the names data
-        names_df = pd.DataFrame(names)
-        scraped_genre_df = pd.DataFrame(scraped_genre)
+        self.names_df = pd.DataFrame(names)
+        self.genre_df = pd.DataFrame(genre)
         # get the artist and title from the scraped data
-        names_df = self.get_artist_and_titles(names_df)
-        scraped_genre_df = self.get_genre(scraped_genre_df)
-        return names_df, scraped_genre_df
+        self.get_artist_and_titles()
+        self.get_genre()
 
-    def merge_mmd_data(self, stats_path, names_df, scraped_genre_df):
+    def merge_mmd_data(self):
         # load stats file
-        stats = pd.read_csv(stats_path)
+        stats = pd.read_csv(self.stats_path)
         # merge the names and scraped genre dataframes
-        name_genres_df = names_df.merge(scraped_genre_df, on="md5", how="left")
+        name_genres_df = self.names_df.merge(
+            self.genre_df, on="md5", how="left"
+        )
         # merge the name_genres_df with the stats dataframe on md5
-        stats = stats.merge(name_genres_df, on="md5", how="left")
-        return stats
+        self.stats = stats.merge(name_genres_df, on="md5", how="left")
 
-    def deduplicate_artists(self, stats):
-        stats.rename(columns={"artist": "artist_old"}, inplace=True)
-        stats.rename(columns={"title": "title_old"}, inplace=True)
+    def deduplicate_artists(self):
+        self.stats.rename(columns={"artist": "artist_old"}, inplace=True)
+        self.stats.rename(columns={"title": "title_old"}, inplace=True)
 
         # find unique artists and replace duplicates
-        unique_artists = stats["artist_old"].unique()
+        unique_artists = self.stats["artist_old"].unique()
         similar_artists = self.find_and_replace_duplicates(unique_artists)
 
         # create a dataframe with the unique artists and the similar artists
@@ -133,24 +131,22 @@ class MetadataExtractor:
         )
 
         # replace artists in the original dataframe
-        stats["artist"] = stats["artist_old"].replace(
+        self.stats["artist"] = self.stats["artist_old"].replace(
             df_artists.set_index("artist_old")["artist_new"]
         )
-        return stats
 
-    def deduplicate_genre(self, stats):
+    def deduplicate_genre(self):
         # get most common genre per artist
-        stats["genre"] = stats.groupby("artist")["genre"].transform(
+        self.stats["genre"] = self.stats.groupby("artist")["genre"].transform(
             lambda x: x.value_counts().index[0]
         )
         # get rid of duplicates
-        stats.drop_duplicates(subset=["md5"], inplace=True)
-        return stats
+        self.stats.drop_duplicates(subset=["md5"], inplace=True)
 
-    def deduplicate_titles(self, stats):
-        for artist in stats["artist_old"].unique():
+    def deduplicate_titles(self):
+        for artist in self.stats["artist_old"].unique():
             # select all tracks by the artist
-            df_temp = stats[stats["artist_old"] == artist]
+            df_temp = self.stats[self.stats["artist_old"] == artist]
 
             # create list of similar titles
             unique_titles = df_temp["title_old"]
@@ -163,27 +159,33 @@ class MetadataExtractor:
             )
 
             # replace values in the original dataframe at the specified index
-            stats.loc[df_titles.index, "title"] = df_titles["title_new"]
-        return stats
+            self.stats.loc[df_titles.index, "title"] = df_titles["title_new"]
 
-    def deduplicate_all(self, stats):
+    def deduplicate_all(self):
         # Deduplication
-        self.stats = self.deduplicate_artists(stats)
-        self.stats = self.deduplicate_genre(stats)
-        self.stats = self.deduplicate_titles(stats)
+        self.deduplicate_artists()
+        self.deduplicate_genre()
+        self.deduplicate_titles()
         # remove old columns
         self.stats.drop(columns=["artist_old", "title_old"], inplace=True)
-        return self.stats
 
-    def extract_metadata(self):
+    def extract(self, threshold=75):
+        """
+        This function completes the process of extracting metadata from the MMD scraped data.
+        1. It loads the MMD metadata and the statistics file generated by the previous step.
+        2. It merges the MMD metadata with the statistics file.
+        3. It deduplicates the data using fuzzy matching.
+
+        threshold: the threshold for fuzzy matching of names (int from 0 to 100).
+        The higher the threshold, the more strict the matching.
+        """
+        self.threshold = threshold
         # get and format the artist and title from the scraped data into dataframes
-        names_df, scraped_genre_df = self.get_mmd_artist_genre(
-            self.title_artist_path, self.genre_path
-        )
+        self.get_mmd_artist_genre()
         # merge the scraped data with the stats dataframe
-        stats = self.merge_mmd_data(self.stats_path, names_df, scraped_genre_df)
+        self.merge_mmd_data()
         # deduplicate the data
-        self.stats = self.deduplicate_all(stats)
+        self.deduplicate_all()
 
     def export_to_csv(self, output_path):
         # export to csv
@@ -191,13 +193,13 @@ class MetadataExtractor:
 
 
 if __name__ == "__main__":
-
+    # Pick paths
     stats_path = "data/music_picks/statistics.csv"
     title_artist_path = "data/mmd_matches/MMD_scraped_title_artist.jsonl"
     genre_path = "data/mmd_matches/MMD_scraped_genre.jsonl"
     output_path = "data/music_picks/statistics_deduplicated.csv"
 
+    # Extract metadata
     meta = MetadataExtractor(stats_path, title_artist_path, genre_path)
-    meta.extract_metadata()
-    print(meta.stats.head(5))
+    meta.extract(threshold=75)
     meta.export_to_csv(output_path)
