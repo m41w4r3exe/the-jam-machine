@@ -4,6 +4,9 @@
 
 import pickle
 import os
+import io
+from pydub import AudioSegment
+from midi2audio import FluidSynth
 
 import streamlit as st
 import pandas as pd
@@ -153,7 +156,7 @@ def compute_statistics(midi_file):
     # Extract informative events from the MIDI file
     statistics = {
         # get name of file
-        "md5": midi_file.name,
+        "md5": midi_file.name.split("/")[-1],
         # instruments
         "n_instruments": len(pm.instruments),
         "n_unique_instruments": len(set([i.program for i in pm.instruments])),
@@ -237,13 +240,29 @@ if __name__ == "__main__":
     st.title("Music Genre Prediction")
     st.subheader("Upload a MIDI file to predict its genre:")
 
-    # Let user upload midi file
-    uploaded_file = st.file_uploader("Choose a MIDI file", type="mid")
+    select_file_path = "/Users/jean/WORK/DSR_2022_b32/music_portfolio/the_jam_machine_github/the-jam-machine/midi/dataset/electronic/electronic_deduped"
+    midi_file_list = os.listdir(select_file_path)
+    # select file from dropdown menu
+    file_select = st.selectbox(
+        "Select a file",
+        (midi_file_list),
+    )
+    st.write("You selected:", file_select)
+    # st.loader
+    # # Let user upload midi file
+    # uploaded_file = st.file_uploader("Choose a MIDI file", type="mid")
+    uploaded_file_path = f"{select_file_path}/{file_select}"
 
+    uploaded_file = io.open(
+        "/Users/jean/WORK/DSR_2022_b32/music_portfolio/the_jam_machine_github/the-jam-machine/midi/dataset/electronic/electronic_deduped/ff11fae207ab22ed2ac18843823d3a8f.mid",
+        "rb",
+        buffering=0,
+    )
     # Do prediction if user clicks on predict button
-    if st.button("Predict genre"):
+    if True:  # st.button("Predict genre"):
         # Compute statistics on the midi file
         if uploaded_file is not None:
+            file_mp3 = convert_midi_into_audio(uploaded_file_path)
             # try:
             statistics = compute_statistics(uploaded_file)
             # Convert statistics to dataframe
