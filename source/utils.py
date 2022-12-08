@@ -207,3 +207,10 @@ class FileCompressor:
         """compress all text files in folder to new zip files and remove the text files"""
         files = get_files(self.output_directory, extension="txt")
         Parallel(n_jobs=self.n_jobs)(delayed(self.zip_file)(file) for file in files)
+
+
+def load_jsonl(filepath):
+    """Load a jsonl file"""
+    with open(filepath, "r") as f:
+        data = [json.loads(line) for line in f]
+    return data
