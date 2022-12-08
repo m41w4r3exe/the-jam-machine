@@ -5,6 +5,9 @@ import json
 from time import perf_counter
 from joblib import Parallel, delayed
 from zipfile import ZipFile, ZIP_DEFLATED
+from scipy.io.wavfile import write
+import numpy as np
+from pydub import AudioSegment
 
 
 def writeToFile(path, content):
@@ -212,3 +215,19 @@ class FileCompressor:
         """compress all text files in folder to new zip files and remove the text files"""
         files = get_files(self.output_directory, extension="txt")
         Parallel(n_jobs=self.n_jobs)(delayed(self.zip_file)(file) for file in files)
+
+
+def write_mp3(waveform, output_path, bitrate="92k"):
+    """
+    Write a waveform to an mp3 file.
+    output_path: Path object for the output mp3 file
+    waveform: numpy array of the waveform
+    bitrate: bitrate of the mp3 file (64k, 92k, 128k, 256k, 312k)
+    """
+    # write the wav file
+    wav_path = output_path.with_suffix('.wav')
+    write(wav_path, 44100, waveform.astype(np.float32))
+    # compress the wav file as mp3
+    AudioSegment.from_wav(wav_path).export(output_path, format="mp3", bitrate=bitrate)
+    # remove the wav file
+    wav_path.unlink()
