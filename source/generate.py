@@ -100,15 +100,18 @@ class GenerateMidiText:
                 """Cut the sequence if too long"""
                 if bar_count - expected_length > 0:
                     regenerated_text = ""
-                    splited = generated_text.split("BAR_END ")
+                    splited = newly_generated_only.split("BAR_END ")
                     for count, spl in enumerate(splited):
                         if count < expected_length:
                             regenerated_text += spl + "BAR_END "
 
                     regenerated_text += "TRACK_END"
-                    generated_text = regenerated_text
+                    newly_generated_only = regenerated_text
                     print("Generated sequence trunkated at 8 bars")
                     bar_count_checks = True
+                    generated_text = (
+                        generated_text[: len(input_prompt)] + newly_generated_only
+                    )
                 else:
                     pass
 
@@ -254,6 +257,7 @@ if __name__ == "__main__":
 
     temperature = 0.2
     instrument_promt_list = ["0", "4", "DRUMS"]
+    # instrument_promt_list = ["32", "30", "DRUMS"]
     density_list = [3, 2, 3]
 
     """" load model and tokenizer """
