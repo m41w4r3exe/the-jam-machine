@@ -1,4 +1,4 @@
-# RUN 3 lines below in a seperate cell in Google Colab
+# RUN 3 lines below in a separate cell in Google Colab
 # !pip install transformers tokenizers wandb huggingface_hub datasets datetime nvidia-ml-py3
 # from huggingface_hub import notebook_login
 # notebook_login()
@@ -22,8 +22,14 @@ import wandb
 from datasets import load_dataset
 from pynvml import *
 
+
 # CONFIG:
-TRAIN_FROM_CHECKPOINT = None  # Example: checkpoint-80000
+""" 
+The Checkpoint path folder will here be in a distinct folder
+Because a new name is given for every model using formattedtime
+"""
+TRAIN_FROM_CHECKPOINT = None  # Example: fullpath/model/checkpoint-80000
+ADDITIONAL_TRAIN_EPOCHS = 0  # only used if TRAIN_FROM_CHECKPOINT is not None
 EVAL_STEPS = 1000
 PER_DEVICE_TRAIN_BATCH_SIZE = 4
 GRADIENT_ACCUMULATION_STEPS = 2
@@ -39,10 +45,14 @@ try:
     drive_path = "/content/gdrive/MyDrive/the_jam_machine"
     dataset_path = f"{drive_path}/midi_encoded"
     model_path = f"{drive_path}/model_{formattedtime}"
+    MODEL_RUN_IN = "gdrive"
 except:
     dataset_path = "./midi_encoded"
     model_path = f"./models/model_{formattedtime}"
+    MODEL_RUN_IN = "local"
+    HF_REPO = "misnaej/the-jam-machine"
 tokenizer_path = f"{model_path}/tokenizer.json"
+
 if not os.path.exists(model_path):
     os.mkdir(model_path)
 
@@ -110,7 +120,7 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=GRADIENT_ACCUMULATION_STEPS,
     fp16=True,
     save_strategy="steps",
-    save_steps=EVAL_STEPS * 5,
+    save_steps=EVAL_STEPS * 4,
     save_total_limit=5,
     logging_steps=EVAL_STEPS,
     logging_dir=os.path.join(model_path, "logs"),
@@ -125,17 +135,36 @@ trainer = Trainer(
     train_dataset=train_data_tokenized,
     eval_dataset=validate_data_tokenized,
 )
-
+if MODEL_RUN_IN != "gdrive":  # it does not work from gdrive
+    trainer.args.push_to_hub = True
+    trainer.args.hub_strategy = "end"
+    trainer.args.hub_model_id = HF_REPO
 """Train the model from scratch or from checkpoint"""
 if TRAIN_FROM_CHECKPOINT is not None:
-    result = trainer.train(f"{model_path}/{TRAIN_FROM_CHECKPOINT}")
+    trainer.args.num_train_epochs += ADDITIONAL_TRAIN_EPOCHS
+    result = trainer.train(TRAIN_FROM_CHECKPOINT)
 else:
     result = trainer.train()
 
 print("Training finished")
 print(result)
 
+
 """Save the tokenizer, latest status of trained model and push it to hugging face."""
 tokenizer.save_pretrained(model_path)
 model.save_pretrained(model_path)
-trainer.push_to_hub(f"model_{formattedtime}")
+
+"""wandb finish"""
+wandb.finish()
+
+"""Save the trainer state which contains the metrics to json"""
+trainer.state.save_to_json(f"{model_path}/trainer_state.json")
+
+"""Ploting the history of the training"""
+from trainer_utils import get_history, plot_history
+
+history = get_history(trainer)
+plot_history(history)
+
+if MODEL_RUN_IN != "gdrive":  # not sure it works from gdrive # TOCHECK
+    trainer.push_to_hub()
