@@ -8,6 +8,7 @@ from utils import compute_list_average, get_files
 
 # TODO : add data enrichment
 # TODO : include types
+# TODO : count most common combinations of instruments / instrument families (pairwise and trackwise)
 
 
 def categorize_midi_instrument(program_number):
