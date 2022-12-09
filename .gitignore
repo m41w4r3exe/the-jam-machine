@@ -141,7 +141,7 @@ genre_prediction/*.pkl
 # Dataset
 lmd_full
 data
-midi/dataset/electronic
+midi/dataset
 
 # model files
 models

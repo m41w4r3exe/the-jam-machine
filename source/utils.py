@@ -217,6 +217,13 @@ class FileCompressor:
         Parallel(n_jobs=self.n_jobs)(delayed(self.zip_file)(file) for file in files)
 
 
+def load_jsonl(filepath):
+    """Load a jsonl file"""
+    with open(filepath, "r") as f:
+        data = [json.loads(line) for line in f]
+    return data
+
+
 def write_mp3(waveform, output_path, bitrate="92k"):
     """
     Write a waveform to an mp3 file.
@@ -231,3 +238,4 @@ def write_mp3(waveform, output_path, bitrate="92k"):
     AudioSegment.from_wav(wav_path).export(output_path, format="mp3", bitrate=bitrate)
     # remove the wav file
     wav_path.unlink()
+
