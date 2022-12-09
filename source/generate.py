@@ -9,8 +9,8 @@ import numpy as np
 class GenerateMidiText:
     """
     # instantiate the class
-    TEMPERATURE = 0.75 # anything between 0 and +inf
-    gen = GenerateMidiText(model, tokenizer, device, temperature=TEMPERATURE)
+    temperature = 0.75 # anything between 0 and +inf
+    gen = GenerateMidiText(model, tokenizer, device, temperature=temperature)
     # generate a sequence:
     generated_sequence = gen.generate_one_sequence(input_prompt="PIECE_START")
     # generate a DRUM sequence:
@@ -42,7 +42,7 @@ class GenerateMidiText:
                 f"Sequence length set to {self.max_length} BASED ON 'model.config.n_positions'"
             )
 
-        self.temperature = TEMPERATURE
+        self.temperature = temperature
         self.generate_until = generate_until
 
     def tokenize_input_prompt(self, input_prompt, verbose=True):
@@ -111,7 +111,7 @@ class GenerateMidiText:
         if verbose:
             print("--------------------")
             print(
-                f"Generating {inst} - Density {density} - Temperature {self.temperature}"
+                f"Generating {inst} - Density {density} - temperature {self.temperature}"
             )
         bar_count_checks = False
         while not bar_count_checks:
@@ -119,9 +119,22 @@ class GenerateMidiText:
             generated_tokens = self.generate_sequence_of_token_ids(input_prompt_ids)
             generated_text = self.convert_ids_to_text(generated_tokens)
             newly_generated_only = generated_text[len(input_prompt) :]
-            bar_count_checks, _ = self.bar_count_check(
+            bar_count_checks, bar_count = self.bar_count_check(
                 newly_generated_only, expected_length
             )
+            if bar_count_checks is False:
+                """Cut the sequence if too long"""
+                if bar_count - expected_length > 0:
+                    regenerated_text = ""
+                    splited = generated_text.split("BAR_END ")
+                    for count, spl in enumerate(splited):
+                        if count < expected_length:
+                            regenerated_text += spl + "BAR_END "
+
+                    regenerated_text += "TRACK_END"
+                    generated_text = regenerated_text
+                    print("Generated sequence trunkated at 8 bars")
+                    bar_count_checks = True
 
         return generated_text
 
@@ -203,7 +216,7 @@ class GenerateMidiText:
         return processed_prompt
 
     def generate_one_more_bar(self, input_prompt):
-
+        """Generate one more bar from the input_prompt"""
         processed_prompt = self.process_prompt_for_next_bar(input_prompt)
         prompt_plus_bar = self.generate_one_sequence(
             input_prompt=processed_prompt,
@@ -216,17 +229,19 @@ class GenerateMidiText:
         return prompt_plus_bar, added_bar
 
     def generate_n_more_bars(self, input_prompt, n_bars=8):
+        """Generate n more bars from the input_prompt"""
         new_bars = ""
-        for bar in range(n_bars):
+        for _ in range(n_bars):
             bar_count_matches = False
             while bar_count_matches is False:
                 input_prompt, new_bar = self.generate_one_more_bar(input_prompt)
-                bar_count_matches, bar_count = self.bar_count_check(new_bar, 1)
+                bar_count_matches, _ = self.bar_count_check(new_bar, 1)
             new_bars += new_bar
 
         return new_bars
 
-    def bar_count_check(self, sequence, n_bars):
+    @staticmethod
+    def bar_count_check(sequence, n_bars):
         """check if the sequence contains the right number of bars"""
         sequence = sequence.split(" ")
         # find occurences of "BAR_START" in a str
@@ -235,18 +250,20 @@ class GenerateMidiText:
             if seq == "BAR_END":
                 bar_count += 1
         bar_count_matches = bar_count == n_bars
+        if not bar_count_matches:
+            print(f"Bar count is {bar_count} - but should be {n_bars}")
+            print(f"-------------------")
         return bar_count_matches, bar_count
 
 
-""" Check if the prompt instrument are in the tokenizer vocab"""
-
-
 def print_inst_classes(INSTRUMENT_CLASSES):
+    """Print the instrument classes"""
     for classe in INSTRUMENT_CLASSES:
         print(f"{classe}")
 
 
 def check_if_prompt_inst_in_tokenizer_vocab(tokenizer, inst_prompt_list):
+    """Check if the prompt instrument are in the tokenizer vocab"""
     for inst in inst_prompt_list:
         if f"INST={inst}" not in tokenizer.vocab:
             instruments_in_dataset = np.sort(
@@ -271,9 +288,9 @@ if __name__ == "__main__":
     model_repo = "misnaej/the-jam-machine-elec-famil"
     generated_sequence_files_path = define_generation_dir(model_repo)
 
-    TEMPERATURE = 0.75
-    INSTRUMENT_PROMPT_LIST = [81, 28, "32", "DRUMS"]
-    DENSITY_LIST = [3, 2, 3, 3]
+    temperature = 0.2
+    instrument_promt_list = ["DRUMS", 10, 4]
+    density_list = [3, 2, 3]
 
     """" load model and tokenizer """
     model, tokenizer = LoadModel(
@@ -281,14 +298,14 @@ if __name__ == "__main__":
     ).load_model_and_tokenizer()
 
     """" check if the prompt makes sense"""
-    check_if_prompt_inst_in_tokenizer_vocab(tokenizer, INSTRUMENT_PROMPT_LIST)
+    check_if_prompt_inst_in_tokenizer_vocab(tokenizer, instrument_promt_list)
 
     """" instantiate the class for generation """
     genesis = GenerateMidiText(
         model,
         tokenizer,
         DEVICE,
-        temperature=TEMPERATURE,
+        temperature=temperature,
     )
     """" generate a multi-track sequence """
     (
@@ -296,8 +313,8 @@ if __name__ == "__main__":
         generated_multi_track_dict,
         generate_features_dict,
     ) = genesis.generate_multi_track_sequence(
-        inst_list=INSTRUMENT_PROMPT_LIST,
-        density_list=DENSITY_LIST,
+        inst_list=instrument_promt_list,
+        density_list=density_list,
     )
     """" write to JSON file """
     WriteTextMidiToFile(
