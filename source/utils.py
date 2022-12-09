@@ -67,17 +67,6 @@ def get_datetime():
     return datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
-def define_generation_dir(model_repo_path):
-    #### to remove later ####
-    if model_repo_path == "models/model_2048_fake_wholedataset":
-        model_repo_path = "misnaej/the-jam-machine"
-    #### to remove later ####
-    generated_sequence_files_path = f"midi/generated/{model_repo_path}"
-    if not os.path.exists(generated_sequence_files_path):
-        os.makedirs(generated_sequence_files_path)
-    return generated_sequence_files_path
-
-
 def get_text(event):
     match event.type:
         case "Piece-Start":
@@ -232,10 +221,9 @@ def write_mp3(waveform, output_path, bitrate="92k"):
     bitrate: bitrate of the mp3 file (64k, 92k, 128k, 256k, 312k)
     """
     # write the wav file
-    wav_path = output_path.with_suffix('.wav')
+    wav_path = output_path.with_suffix(".wav")
     write(wav_path, 44100, waveform.astype(np.float32))
     # compress the wav file as mp3
     AudioSegment.from_wav(wav_path).export(output_path, format="mp3", bitrate=bitrate)
     # remove the wav file
     wav_path.unlink()
-
