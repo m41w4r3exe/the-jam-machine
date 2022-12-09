@@ -22,19 +22,22 @@ class DataPreprocessing:
         self.data.dropna(inplace=True)
 
     # get rid of columns (hardcoded right now)
-    def drop_columns_to_drop(self, data):
+    def drop_columns_to_drop(self, data, predict=False):
         data.drop("md5", axis=1, inplace=True)
         data.drop("instruments", axis=1, inplace=True)
         data.drop("instrument_families", axis=1, inplace=True)
         data.drop("main_time_signature", axis=1, inplace=True)
-        data.drop("artist", axis=1, inplace=True)
-        data.drop("title", axis=1, inplace=True)
-        if self.target_name == "genre":
-            data.drop("style", axis=1, inplace=True)
-        elif self.target_name == "style":
-            data.drop("genre", axis=1, inplace=True)
+        if not predict:
+            for col in ["artist", "title", "consensus_genre", "genre_count"]:
+                # try:
+                data.drop(col, axis=1, inplace=True)
+                # except:
+                #     pass
+            if self.target_name == "genre":
+                data.drop("style", axis=1, inplace=True)
+            elif self.target_name == "style":
+                data.drop("genre", axis=1, inplace=True)
 
-        data.drop("consensus_genre", axis=1, inplace=True)
         return data
 
     # pop target column
@@ -145,7 +148,7 @@ class DataPreprocessing:
 
     def process_predict_only(self, data):
         data = self.drop_duplicates(data)
-        data = self.drop_columns_to_drop(data)
+        data = self.drop_columns_to_drop(data, predict=True)
         data = self.process_basis(data)
         # data = self.impute_missing_data_prediction(
         #     data, im=self.imputer)

@@ -1,21 +1,28 @@
 # This streamlit app is used to predict the genre of a MIDI song based on a set of features
 # It takes a pickled sklearn pipeline as input and predicts the genre of a MIDI song
 # The user can upload a MIDI song and the app will predict the genre
-
 import pickle
+from pathlib import Path
 import os
-
+import io
 import streamlit as st
 import pandas as pd
 import pretty_midi
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
+
+# from sklearn.preprocessing import LabelEncoder
 from midi_preprocessing import DataPreprocessing
 
 
 def load_pickles(
-    model_pickle_path, label_encoder_pickle_path, label_target_encoder_pickle_path
+    preprocessed_pickle_path,
+    model_pickle_path,
+    label_encoder_pickle_path,
+    label_target_encoder_pickle_path,
 ):
+    preprocessed_pickle_opener = open(preprocessed_pickle_path, "rb")
+    preprocessed = pickle.load(preprocessed_pickle_opener)
+
     model_pickle_opener = open(model_pickle_path, "rb")
     model = pickle.load(model_pickle_opener)
 
@@ -25,14 +32,14 @@ def load_pickles(
     label_target_encoder_pickle_opener = open(label_target_encoder_pickle_path, "rb")
     label_target_encoder = pickle.load(label_target_encoder_pickle_opener)
 
-    return model, label_encoder_dict, label_target_encoder
+    return preprocessed, model, label_encoder_dict, label_target_encoder
 
 
-def pre_process_data(df, label_encoder_dict):
-
-    loaded_data = DataPreprocessing(df, just_predict=True)
-    df = loaded_data.process()
-
+def pre_process_data(df, preprocess, label_encoder_dict):
+    # process the df
+    preprocess.process_predict_only(
+        df,
+    )
     for col in df.columns:
         if col in list(label_encoder_dict.keys()):
             column_le = label_encoder_dict[col]
@@ -53,16 +60,20 @@ def make_predictions(processed_df, model):
 
 
 def generate_predictions(test_df):
+    preprocessing_pickle_path = "./midi_preprocessing.pkl"
     model_pickle_path = "./midi_prediction_model.pkl"
     label_encoder_pickle_path = "./midi_prediction_label_encoders.pkl"
-    label_target_encoder_pickle_path = "./midi_prediction_label_target_encoder.pkl"
+    label_target_encoder_pickle_path = "./midi_prediction_label_target_encoders.pkl"
 
-    model, label_encoder_dict, nlah = load_pickles(
-        model_pickle_path, label_encoder_pickle_path, label_target_encoder_pickle_path
+    preprocess, model, label_encoder_dict, nlah = load_pickles(
+        preprocessing_pickle_path,
+        model_pickle_path,
+        label_encoder_pickle_path,
+        label_target_encoder_pickle_path,
     )
     # decode prediction using encode
 
-    processed_df = pre_process_data(test_df, label_encoder_dict)
+    processed_df = pre_process_data(test_df, preprocess, label_encoder_dict)
     prediction = make_predictions(processed_df, model)
     return nlah.inverse_transform(prediction)[0]
 
@@ -153,7 +164,7 @@ def compute_statistics(midi_file):
     # Extract informative events from the MIDI file
     statistics = {
         # get name of file
-        "md5": midi_file.name,
+        "md5": Path(midi_file).stem,
         # instruments
         "n_instruments": len(pm.instruments),
         "n_unique_instruments": len(set([i.program for i in pm.instruments])),
@@ -233,19 +244,51 @@ def compute_statistics(midi_file):
     return statistics
 
 
+def get_music(midi_file):
+    """
+    Load a midi file and return the PrettyMIDI object and the audio signal
+    """
+    music = pretty_midi.PrettyMIDI(midi_file=midi_file)
+    waveform = music.fluidsynth()
+    return music, waveform
+
+
 if __name__ == "__main__":
     st.title("Music Genre Prediction")
     st.subheader("Upload a MIDI file to predict its genre:")
 
-    # Let user upload midi file
-    uploaded_file = st.file_uploader("Choose a MIDI file", type="mid")
+    dropdown = True
+    if dropdown:
+        st.write("Local directory with midi files")
+        select_file_path = st.text_input(
+            "Enter a path to a folder",
+            "/Users/jean/WORK/DSR_2022_b32/music_portfolio/the_jam_machine_github/the-jam-machine/midi/dataset/electronic/electronic_deduped",
+        )
+        # select_file_path = "/Users/jean/WORK/DSR_2022_b32/music_portfolio/the_jam_machine_github/the-jam-machine/midi/dataset/electronic/electronic_deduped"
+        midi_file_list = os.listdir(select_file_path)
+        # select midi file from dropdown menu
+        file_select = st.selectbox(
+            "Select a file",
+            (midi_file_list),
+        )
+        st.write("You selected:", file_select)
+        # file_select = "2edbfd8e175633e707830e0cf2fa6e5e.mid"
+        uploaded_file_path = f"{select_file_path}/{file_select}"
+        uploaded_file = io.open(uploaded_file_path, "rb")
+
+    else:
+        # Let user upload midi file
+        uploaded_file = st.file_uploader("Choose a MIDI file", type="mid")
+
+    st.subheader("Play the Midi file:")
+    _, waveform = get_music(uploaded_file)
+    st.audio(waveform, format="audio/wav", sample_rate=44100)
 
     # Do prediction if user clicks on predict button
-    if st.button("Predict genre"):
-        # Compute statistics on the midi file
+    if True:  # st.button("Predict genre"):
         if uploaded_file is not None:
-            # try:
-            statistics = compute_statistics(uploaded_file)
+            # Compute statistics on the midi file
+            statistics = compute_statistics(uploaded_file_path)
             # Convert statistics to dataframe
             statistics = pd.DataFrame(statistics, index=[0])
             # Predict genre
