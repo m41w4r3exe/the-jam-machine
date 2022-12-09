@@ -19,6 +19,7 @@ huggingface-hub = "*"
 ipykernel = "*"
 pyfluidsynth = "*"
 pydub = "*"
+pip = "*"
 
 [dev-packages]
 
