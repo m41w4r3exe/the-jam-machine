@@ -8,6 +8,7 @@ from zipfile import ZipFile, ZIP_DEFLATED
 from scipy.io.wavfile import write
 import numpy as np
 from pydub import AudioSegment
+import shutil
 
 
 def writeToFile(path, content):
@@ -217,13 +218,13 @@ class FileCompressor:
         Parallel(n_jobs=self.n_jobs)(delayed(self.zip_file)(file) for file in files)
 
 
+<<<<<<<<< Temporary merge branch 1
 def load_jsonl(filepath):
     """Load a jsonl file"""
     with open(filepath, "r") as f:
         data = [json.loads(line) for line in f]
     return data
-
-
+=========
 def write_mp3(waveform, output_path, bitrate="92k"):
     """
     Write a waveform to an mp3 file.
@@ -239,3 +240,14 @@ def write_mp3(waveform, output_path, bitrate="92k"):
     # remove the wav file
     wav_path.unlink()
 
+
+def load_jsonl(filepath):
+    """Load a jsonl file"""
+    with open(filepath, "r") as f:
+        data = [json.loads(line) for line in f]
+    return data
+
+def copy_file(input_file, output_dir):
+    """Copy an input file to the output_dir"""
+    output_file = output_dir / input_file.name
+    shutil.copy(input_file, output_file)
