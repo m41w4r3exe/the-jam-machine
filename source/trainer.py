@@ -3,6 +3,15 @@
 # from huggingface_hub import notebook_login
 # notebook_login()
 
+"""TO DO:
+- separating this file
+     -> we can just clone the repo and run it on the machine wherever it is at
+- dataset on Huggingface
+- pushing checkpoints and model to HuggingFace
+- Get rid of google drive/local seperation stuff
+- forget about google collab for ever
+"""
+
 import os
 from pathlib import Path
 from transformers import (
@@ -21,6 +30,7 @@ from datetime import datetime
 import wandb
 from datasets import load_dataset
 from pynvml import *
+from trainer_utils import get_history, plot_history
 
 
 # CONFIG:
@@ -161,8 +171,6 @@ wandb.finish()
 trainer.state.save_to_json(f"{model_path}/trainer_state.json")
 
 """Ploting the history of the training"""
-from trainer_utils import get_history, plot_history
-
 history = get_history(trainer)
 plot_history(history)
 
