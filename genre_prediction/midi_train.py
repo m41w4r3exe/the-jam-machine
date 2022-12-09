@@ -91,9 +91,11 @@ precision, recall, fscore, support = precision_recall_fscore_support(
 )
 accuracy = accuracy_score(y_test, predictions)
 print(f"Test accuracy is: {round(accuracy, 3)}")
-# print(f"Test fscore is: {round(fscore[0], 3)}")
-# print(f"Test precision is: {round(precision[0], 3)}")
-# print(f"Test recall is: {round(recall[0], 3)}")
+
+# pickling preprocessing
+prepross_pickler = open("midi_preprocessing.pkl", "wb")
+pickle.dump(loaded_data, prepross_pickler)
+prepross_pickler.close()
 
 # pickling mdl
 mdl_pickler = open("midi_prediction_model.pkl", "wb")
@@ -109,22 +111,3 @@ le_pickler.close()
 le_tar_pickler = open("midi_prediction_label_target_encoders.pkl", "wb")
 pickle.dump(le_tar, le_tar_pickler)
 le_tar_pickler.close()
-
-
-# init_the_pipeline = TheMidiPipeline(
-#     categorical_features=categorical_features, numerical_features=numerical_features
-# )
-# pipeline = init_the_pipeline.define_the_pipeline()
-
-# # train the model
-# print(x_train.head())
-# print(y_train.head())
-# pipeline.fit(x_train, y_train)
-
-# # predictions
-# predictions = pipeline.predict(x_test)
-# precision, recall, fscore, support = precision_recall_fscore_support(
-#     y_test, predictions
-# )
-# accuracy = accuracy_score(y_test, predictions)
-# print(accuracy)

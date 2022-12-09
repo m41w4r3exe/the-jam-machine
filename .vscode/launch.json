@@ -4,6 +4,16 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
+
+
+    {
+      "name": "mmd_metadata.py",
+      "type": "python",
+      "request": "launch",
+      "program": "source/mmd_metadata.py",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
     {
       "name": "trainer.py",
       "type": "python",
@@ -57,6 +67,22 @@
       "type": "python",
       "request": "launch",
       "program": "source/generate.py",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "streamlite_genre_prediction",
+      "type": "python",
+      "request": "launch",
+      "program": "genre_prediction/streamlit_app.py",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    }
+    {
+      "name": "copy_md5.py",
+      "type": "python",
+      "request": "launch",
+      "program": "source/copy_md5.py",
       "console": "integratedTerminal",
       "justMyCode": false
     }
