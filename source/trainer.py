@@ -27,7 +27,6 @@ from datasets import load_dataset
 from trainer_utils import *
 
 # CONFIG:
-
 # The Checkpoint path folder will here be in a distinct folder
 # Because a new name is given for every model using formattedtime
 TRAIN_FROM_CHECKPOINT = None  # Example: fullpath/model/checkpoint-80000
@@ -41,7 +40,7 @@ MODEL_RUN_IN = "local"
 # wandb.init(project=f"the-jammy-machine")
 HF_REPO = "misnaej/the-jam-machine"
 
-"""set paths """
+# set paths
 base_path = "/Users/jean/WORK/DSR_2022_b32/music_portfolio/the_jam_machine_github/the-jam-machine"
 model_path = "models/model_elec_familiarised"
 data_path = "midi/dataset/electronic/familiarised"
@@ -50,13 +49,14 @@ tokenizer_path = paths["tokenizer_path"]
 dataset_path = paths["dataset_path"]
 model_path = paths["model_path"]
 
-"""Load dataset from gzip files"""
+# Load dataset from gzip files
 train_data = load_dataset(dataset_path, data_files={"train": "train/*.zip"})["train"]
 validate_data = load_dataset(dataset_path, data_files={"val": "validate/*.zip"})["val"]
 
-"""Get tokenizer from scratch or saved tokenizer.json"""
+# Tokenizer
 tokenizer = train_tokenizer(tokenizer_path, train_data)
 
+# Tokenize Dateset
 print("=======Tokenizing Train dataset========")
 train_data_tokenized = TokenizeDataset(tokenizer).batch_tokenization(train_data)
 check_tokenized_data(train_data, train_data_tokenized)
@@ -65,7 +65,7 @@ print("=======Tokenizing Validation dataset========")
 validate_data_tokenized = TokenizeDataset(tokenizer).batch_tokenization(validate_data)
 check_tokenized_data(validate_data, validate_data_tokenized)
 
-"""Create model and trainer"""
+# Model, Data collator and Trainer
 model = GPT2LMHeadModel(
     GPT2Config(
         vocab_size=tokenizer.vocab_size,
@@ -97,7 +97,9 @@ training_args = TrainingArguments(
     report_to="wandb",
     seed=42,
 )
+
 data_collator = DataCollatorForLanguageModeling(tokenizer, mlm=False)
+
 trainer = Trainer(
     model=model,
     args=training_args,
@@ -109,7 +111,8 @@ if MODEL_RUN_IN != "gdrive":  # it does not work from gdrive
     trainer.args.push_to_hub = True
     trainer.args.hub_strategy = "end"
     trainer.args.hub_model_id = HF_REPO
-"""Train the model from scratch or from checkpoint"""
+
+# Train the model
 if TRAIN_FROM_CHECKPOINT is not None:
     trainer.args.num_train_epochs += ADDITIONAL_TRAIN_EPOCHS
     result = trainer.train(TRAIN_FROM_CHECKPOINT)
@@ -119,18 +122,17 @@ else:
 print("Training finished")
 print(result)
 
-
-"""Save the tokenizer, latest status of trained model and push it to hugging face."""
+# Save the tokenizer, latest status of trained model
 tokenizer.save_pretrained(model_path)
 model.save_pretrained(model_path)
 
-"""wandb finish"""
+# wandb finish
 wandb.finish()
 
-"""Save the trainer state which contains the metrics to json"""
+# Save the trainer state
 trainer.state.save_to_json(f"{model_path}/trainer_state.json")
 
-"""Ploting the history of the training"""
+# Ploting the history of the training
 history = get_history(trainer)
 plot_history(history)
 
