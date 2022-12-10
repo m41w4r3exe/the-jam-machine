@@ -126,42 +126,34 @@ class GenerateMidiText:
 
         return generated_text
 
-    def generate_multi_track_sequence(
-        self, inst_list=["4", "0", "DRUMS"], density_list=[1, 2, 1]
-    ):
+    def generate_tracks(self, inst_list=["4", "0", "DRUMS"], density_list=[1, 2, 1]):
         """generate a sequence with mutiple tracks
         - inst_list sets the list of instruments of the order of generation
         - density is paired with inst_list
         Each track/intrument is generated on a prompt which contains the previously generated track/instrument
         This means that the first instrument is generated with less bias than the next one, and so on."""
 
-        generated_multi_track_dict = {}
-        generated_multi_track_sequence = "PIECE_START"
+        self.generated_tracks_dict = {}
+        generated_tracks = "PIECE_START"
         for count, (instrument, density) in enumerate(zip(inst_list, density_list)):
-            seq_len = len(generated_multi_track_sequence)
-            generated_multi_track_sequence = self.generate_one_sequence(
-                input_prompt=f"{generated_multi_track_sequence}",
+            generated_tracks = self.generate_one_sequence(
+                input_prompt=generated_tracks,
                 instrument=instrument,
                 density=density,
             )
-            if count > 0:  # not first iteration
-                generated_track = generated_multi_track_sequence[seq_len + 1 :]
-            else:
-                generated_track = generated_multi_track_sequence
 
-            generated_multi_track_dict[
+            current_track = "TRACK_START " + generated_tracks.split("TRACK_START")[-1]
+
+            self.generated_tracks_dict[
                 f"TRACK_{count}_INST={instrument}"
-            ] = generated_track
+            ] = current_track
 
-        hyperparameter_dict = self.create_hyperparameter_dictionary(
+        self.hyperparameter_dict = self.create_hyperparameter_dictionary(
             self, inst_list, density_list
         )
+        return generated_tracks
 
-        return (
-            generated_multi_track_sequence,
-            generated_multi_track_dict,
-            hyperparameter_dict,
-        )
+    # def wrap sequence and dictionary
 
     def generate_n_more_bars(self, input_prompt, n_bars=8):
         """Generate n more bars from the input_prompt"""
@@ -243,7 +235,7 @@ if __name__ == "__main__":
 
     # define generation parameters
     N_FILES_TO_GENERATE = 1
-    Temperatures_to_try = [0.5]
+    Temperatures_to_try = [0.5, 0.25, 0.75]
 
     USE_FAMILIARIZED_MODEL = True
     force_sequence_length = True
@@ -256,7 +248,6 @@ if __name__ == "__main__":
         model_repo = "misnaej/the-jam-machine"
         instrument_promt_list = ["30", "DRUMS", "33", "51"]
         density_list = [2, 2, 2, 1]
-    inst_density_list = zip(instrument_promt_list, density_list)
 
     # define generation directory
     generated_sequence_files_path = define_generation_dir(model_repo)
@@ -282,17 +273,13 @@ if __name__ == "__main__":
                 force_sequence_length=force_sequence_length,
             )
             # 2- generate the first 8 bars for each instrument
-            (
-                generated_multi_track_sequence,
-                generated_multi_track_dict,
-                hyperparameter_dict,
-            ) = genesis.generate_multi_track_sequence(
+            generated_tracks = genesis.generate_tracks(
                 inst_list=instrument_promt_list,
                 density_list=density_list,
             )
             # 3 - generate the next 8 bars for each instrument
             # TO IMPROVE
-            # input_prompt = generated_multi_track_dict["INST=DRUMS"]
+            # input_prompt = generated_tracks_dict["INST=DRUMS"]
             # added_sequence = genesis.generate_n_more_bars(input_prompt, n_bars=8)
             # added_sequence = f"{input_prompt}{added_sequence}TRACK_END "
             # """" Write to JSON file """
@@ -304,20 +291,20 @@ if __name__ == "__main__":
 
             # print the generated sequence in terminal
             print("=========================================")
-            for inst in generated_multi_track_dict.items():
+            for inst in genesis.generated_tracks_dict.items():
                 print(inst)
             print("=========================================")
 
             # write to JSON file
             filename = WriteTextMidiToFile(
-                generated_multi_track_sequence,
+                generated_tracks,
                 generated_sequence_files_path,
-                hyperparameter_dict=hyperparameter_dict,
+                hyperparameter_dict=genesis.hyperparameter_dict,
             ).text_midi_to_file()
 
-            # decode the sequence to MIDI """
+            # decode the sequence to MIDI
             decode_tokenizer = get_tokenizer()
             TextDecoder(decode_tokenizer).write_to_midi(
-                generated_multi_track_sequence, filename=filename.split(".")[0]
+                generated_tracks, filename=filename.split(".")[0]
             )
             print("Et voilà! Your MIDI file is ready! But don't expect too much...")
