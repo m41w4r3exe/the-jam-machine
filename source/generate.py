@@ -154,12 +154,14 @@ class GenerateMidiText:
                 f"TRACK_{count}_INST={instrument}"
             ] = generated_track
 
-        generate_features_dict = self.make_feature_dict(self, inst_list, density_list)
+        hyperparameter_dict = self.create_hyperparameter_dictionary(
+            self, inst_list, density_list
+        )
 
         return (
             generated_multi_track_sequence,
             generated_multi_track_dict,
-            generate_features_dict,
+            hyperparameter_dict,
         )
 
     def generate_n_more_bars(self, input_prompt, n_bars=8):
@@ -189,7 +191,7 @@ class GenerateMidiText:
         return prompt_plus_bar, added_bar
 
     @staticmethod
-    def make_feature_dict(self, inst_list, density_list):
+    def create_hyperparameter_dictionary(self, inst_list, density_list):
         return {
             "model_identification": self.model.transformer.base_model.name_or_path,
             "inst_list": inst_list,
@@ -239,8 +241,8 @@ if __name__ == "__main__":
 
     """ " worker"""
     DEVICE = "cpu"
-    N_FILES_TO_GENERATE = 2
-    Temperatures_to_try = [0.25, 0.5, 0.75]
+    N_FILES_TO_GENERATE = 1
+    Temperatures_to_try = [0.5]
 
     """" define generation parameters """
     USE_FAMILIARIZED_MODEL = True
@@ -284,7 +286,7 @@ if __name__ == "__main__":
             (
                 generated_multi_track_sequence,
                 generated_multi_track_dict,
-                generate_features_dict,
+                hyperparameter_dict,
             ) = genesis.generate_multi_track_sequence(
                 inst_list=instrument_promt_list,
                 density_list=density_list,
@@ -298,7 +300,7 @@ if __name__ == "__main__":
             # WriteTextMidiToFile(
             #     added_sequence,
             #     generated_sequence_files_path,
-            #     feature_dict=generate_features_dict,
+            #     hyperparameter_dict=hyperparameter_dict,
             # ).text_midi_to_file()
 
             """ print the generated sequence in terminal"""
@@ -311,7 +313,7 @@ if __name__ == "__main__":
             filename = WriteTextMidiToFile(
                 generated_multi_track_sequence,
                 generated_sequence_files_path,
-                feature_dict=generate_features_dict,
+                hyperparameter_dict=hyperparameter_dict,
             ).text_midi_to_file()
 
             """" decode the sequence to MIDI """

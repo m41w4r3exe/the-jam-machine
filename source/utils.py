@@ -125,25 +125,25 @@ def get_tokenizer():
 
 
 class WriteTextMidiToFile:  # utils saving to file
-    def __init__(self, sequence, output_path, feature_dict=None):
+    def __init__(self, sequence, output_path, hyperparameter_dict=None):
         self.sequence = sequence
         self.output_path = output_path
-        self.feature_dict = feature_dict
+        self.hyperparameter_dict = hyperparameter_dict
 
     def hashing_seq(self):
         self.current_time = get_datetime()
         self.output_path_filename = f"{self.output_path}/{self.current_time}.json"
 
-    def wrapping_seq_feature_in_dict(self):
+    def wrapping_seq_hyperparameters_in_dict(self):
         assert type(self.sequence) is str, "error: sequence must be a string"
         assert (
-            type(self.feature_dict) is dict
+            type(self.hyperparameter_dict) is dict
         ), "error: feature_dict must be a dictionnary"
-        return {"sequence": self.sequence, "features": self.feature_dict}
+        return {"sequence": self.sequence, "features": self.hyperparameter_dict}
 
     def text_midi_to_file(self):
         self.hashing_seq()
-        output_dict = self.wrapping_seq_feature_in_dict()
+        output_dict = self.wrapping_seq_hyperparameters_in_dict()
         print(f"Token sequence written: {self.output_path_filename}")
         writeToFile(self.output_path_filename, output_dict)
         return self.output_path_filename
