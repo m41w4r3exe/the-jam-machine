@@ -1,15 +1,31 @@
-from utils import WriteTextMidiToFile
-from generation_utils import define_generation_dir, bar_count_check
+from utils import WriteTextMidiToFile, get_tokenizer
+from generation_utils import (
+    define_generation_dir,
+    bar_count_check,
+    print_inst_classes,
+    check_if_prompt_inst_in_tokenizer_vocab,
+    forcing_bar_length,
+)
 from load import LoadModel
 from tqdm import tqdm
 from constants import INSTRUMENT_CLASSES
 import numpy as np
 
+## import for execution
+from decoder import TextDecoder
+
 
 class GenerateMidiText:
     """Generating music with Class"""
 
-    def __init__(self, model, tokenizer, device="cpu", temperature=0.75):
+    def __init__(
+        self,
+        model,
+        tokenizer,
+        device="cpu",
+        temperature=0.75,
+        force_sequence_length=False,
+    ):
         self.model = model
         self.tokenizer = tokenizer
         self.device = device
@@ -19,6 +35,7 @@ class GenerateMidiText:
         )
         self.temperature = temperature
         self.generate_until = "TRACK_END"
+        self.force_sequence_length = force_sequence_length
 
     def tokenize_input_prompt(self, input_prompt, verbose=True):
         input_prompt_ids = self.tokenizer.encode(input_prompt, return_tensors="pt")
@@ -73,11 +90,9 @@ class GenerateMidiText:
         - the generated token_ids are then converted to text"""
 
         if inst is not None:
-            if type(inst) is not str:
-                inst = str(inst)
-            input_prompt = f"{input_prompt} TRACK_START INST={inst} "
+            input_prompt = f"{input_prompt} TRACK_START INST={str(inst)} "
             if density is not None:
-                input_prompt = f"{input_prompt}DENSITY={density} "
+                input_prompt = f"{input_prompt}DENSITY={str(density)} "
 
         if inst is None and density is not None:
             print("Density cannot be defined without an input_prompt instrument #TOFIX")
@@ -88,37 +103,32 @@ class GenerateMidiText:
                 f"Generating {inst} - Density {density} - temperature {self.temperature}"
             )
         bar_count_checks = False
-        while not bar_count_checks:
+
+        while not bar_count_checks:  # regenerate until right length
             input_prompt_ids = self.tokenize_input_prompt(input_prompt)
             generated_tokens = self.generate_sequence_of_token_ids(input_prompt_ids)
             generated_text = self.convert_ids_to_text(generated_tokens)
-            newly_generated_only = generated_text[len(input_prompt) :]
+            # bar_count_checks
             bar_count_checks, bar_count = bar_count_check(
-                newly_generated_only, expected_length
+                generated_text[len(input_prompt) :], expected_length
             )
-            if bar_count_checks is False:
-                """Cut the sequence if too long"""
-                if bar_count - expected_length > 0:
-                    regenerated_text = ""
-                    splited = newly_generated_only.split("BAR_END ")
-                    for count, spl in enumerate(splited):
-                        if count < expected_length:
-                            regenerated_text += spl + "BAR_END "
+            if not self.force_sequence_length:
+                # set bar_count_checks to true to exist the while loop
+                bar_count_checks = True
 
-                    regenerated_text += "TRACK_END"
-                    newly_generated_only = regenerated_text
-                    print("Generated sequence trunkated at 8 bars")
-                    bar_count_checks = True
-                    generated_text = (
-                        generated_text[: len(input_prompt)] + newly_generated_only
-                    )
-                else:
-                    pass
+            if not bar_count_checks and self.force_sequence_length:
+                # if the generated sequence is not the expected length
+                generated_text, bar_count_checks = forcing_bar_length(
+                    input_prompt,
+                    generated_text[len(input_prompt) :],
+                    bar_count,
+                    expected_length,
+                )
 
         return generated_text
 
     def generate_multi_track_sequence(
-        self, inst_list=["4", "0", "DRUMS"], density_list=[3, 2, 3]
+        self, inst_density_list=zip(["4", "0", "DRUMS"], [3, 2, 3])
     ):
         """generate a sequence with mutiple tracks
         - inst_list sets the list of instruments of the order of generation
@@ -128,10 +138,9 @@ class GenerateMidiText:
         This means that the first instrument is generated with less bias than the next one, and so on.
 
         """
-        generate_features_dict = self.make_feature_dict(self, inst_list, density_list)
         generated_multi_track_dict = {}
         generated_multi_track_sequence = "PIECE_START"
-        for count, (inst, density) in enumerate(zip(inst_list, density_list)):
+        for count, (inst, density) in enumerate(inst_density_list):
             seq_len = len(generated_multi_track_sequence)
             generated_multi_track_sequence = self.generate_one_sequence(
                 input_prompt=f"{generated_multi_track_sequence}",
@@ -143,7 +152,9 @@ class GenerateMidiText:
             else:
                 generated_track = generated_multi_track_sequence
 
-            generated_multi_track_dict[f"INST={inst}"] = generated_track
+            generated_multi_track_dict[f"TRACK_{count}_INST={inst}"] = generated_track
+
+        generate_features_dict = self.make_feature_dict(self, inst_density_list)
 
         return (
             generated_multi_track_sequence,
@@ -151,8 +162,44 @@ class GenerateMidiText:
             generate_features_dict,
         )
 
-    ## MAKE STATIC
-    def process_prompt_for_next_bar(self, input_prompt):
+    def generate_n_more_bars(self, input_prompt, n_bars=8):
+        """Generate n more bars from the input_prompt"""
+        new_bars = ""
+        for _ in range(n_bars):
+            bar_count_matches = False
+            while bar_count_matches is False:
+                input_prompt, new_bar = self.generate_one_more_bar(self, input_prompt)
+                bar_count_matches, _ = bar_count_check(new_bar, 1)
+            new_bars += new_bar
+
+        return new_bars
+
+    @staticmethod
+    def generate_one_more_bar(self, input_prompt):
+        """Generate one more bar from the input_prompt"""
+        processed_prompt = self.process_prompt_for_next_bar(input_prompt)
+        prompt_plus_bar = self.generate_one_sequence(
+            input_prompt=processed_prompt,
+            expected_length=1,
+        )
+        # remove the processed_prompt - but keeping "BAR_START " - and the TRACK_END
+        added_bar = prompt_plus_bar[
+            len(processed_prompt) - len("BAR_START ") : -len("TRACK_END ")
+        ]
+        return prompt_plus_bar, added_bar
+
+    @staticmethod
+    def make_feature_dict(self, inst_density_list):
+        return {
+            "model_identification": self.model.transformer.base_model.name_or_path,
+            "inst_density_list": list(inst_density_list),
+            "temperature": self.temperature,
+            "max_seq_length": self.max_length,
+            "generate_until": self.generate_until,
+        }
+
+    @staticmethod
+    def process_prompt_for_next_bar(input_prompt):
         """
         input_prompt should be at least a 8 bar sequence for one instrument
         """
@@ -186,79 +233,29 @@ class GenerateMidiText:
         processed_prompt += "BAR_START "
         return processed_prompt
 
-    def generate_one_more_bar(self, input_prompt):
-        """Generate one more bar from the input_prompt"""
-        processed_prompt = self.process_prompt_for_next_bar(input_prompt)
-        prompt_plus_bar = self.generate_one_sequence(
-            input_prompt=processed_prompt,
-            expected_length=1,
-        )
-        # remove the processed_prompt - but keeping "BAR_START " - and the TRACK_END
-        added_bar = prompt_plus_bar[
-            len(processed_prompt) - len("BAR_START ") : -len("TRACK_END ")
-        ]
-        return prompt_plus_bar, added_bar
-
-    def generate_n_more_bars(self, input_prompt, n_bars=8):
-        """Generate n more bars from the input_prompt"""
-        new_bars = ""
-        for _ in range(n_bars):
-            bar_count_matches = False
-            while bar_count_matches is False:
-                input_prompt, new_bar = self.generate_one_more_bar(input_prompt)
-                bar_count_matches, _ = bar_count_check(new_bar, 1)
-            new_bars += new_bar
-
-        return new_bars
-
-    @staticmethod
-    def make_feature_dict(self, inst_list, density_list):
-        return {
-            "model_identification": self.model.transformer.base_model.name_or_path,
-            "inst_list": inst_list,
-            "density_list": density_list,
-            "temperature": self.temperature,
-            "max_seq_length": self.max_length,
-            "generate_until": self.generate_until,
-        }
-
-
-def print_inst_classes(INSTRUMENT_CLASSES):
-    """Print the instrument classes"""
-    for classe in INSTRUMENT_CLASSES:
-        print(f"{classe}")
-
-
-def check_if_prompt_inst_in_tokenizer_vocab(tokenizer, inst_prompt_list):
-    """Check if the prompt instrument are in the tokenizer vocab"""
-    for inst in inst_prompt_list:
-        if f"INST={inst}" not in tokenizer.vocab:
-            instruments_in_dataset = np.sort(
-                [tok.split("=")[-1] for tok in tokenizer.vocab if "INST" in tok]
-            )
-            print_inst_classes(INSTRUMENT_CLASSES)
-            raise ValueError(
-                f"""The instrument {inst} is not in the tokenizer vocabulary. 
-                Available Instruments: {instruments_in_dataset}"""
-            )
-
 
 if __name__ == "__main__":
 
+    print("=========================================")
+    """" worker """
     DEVICE = "cpu"
-    # model_repo = "misnaej/the-jam-machine-1024"
-    # model_repo = "misnaej/the-jam-machine"
-    # model, tokenizer = LoadModel(
-    #     model_repo, from_huggingface=True
-    # ).load_model_and_tokenizer()
 
-    model_repo = "misnaej/the-jam-machine-elec-famil"
+    """" define generation parameters """
+    USE_FAMILIARIZED_MODEL = False
+    force_sequence_length = False
+    temperature = 0.5
+    if USE_FAMILIARIZED_MODEL:
+        model_repo = "misnaej/the-jam-machine-elec-famil"
+        instrument_promt_list = ["3", "DRUMS", "4", "5"]
+        density_list = [3, 2, 3, 1]
+    else:
+        model_repo = "misnaej/the-jam-machine"
+        instrument_promt_list = ["30", "DRUMS", "33", "51"]
+        density_list = [3, 2, 3, 1]
+    inst_density_list = zip(instrument_promt_list, density_list)
+
+    """" define generation directory """
     generated_sequence_files_path = define_generation_dir(model_repo)
-
-    temperature = 0.2
-    instrument_promt_list = ["0", "4", "DRUMS"]
-    # instrument_promt_list = ["32", "30", "DRUMS"]
-    density_list = [3, 2, 3]
 
     """" load model and tokenizer """
     model, tokenizer = LoadModel(
@@ -274,6 +271,7 @@ if __name__ == "__main__":
         tokenizer,
         DEVICE,
         temperature=temperature,
+        force_sequence_length=force_sequence_length,
     )
     """" generate a multi-track sequence """
     (
@@ -281,17 +279,10 @@ if __name__ == "__main__":
         generated_multi_track_dict,
         generate_features_dict,
     ) = genesis.generate_multi_track_sequence(
-        inst_list=instrument_promt_list,
-        density_list=density_list,
+        inst_density_list=inst_density_list,
     )
-    """" write to JSON file """
-    WriteTextMidiToFile(
-        generated_multi_track_sequence,
-        generated_sequence_files_path,
-        feature_dict=generate_features_dict,
-    ).text_midi_to_file()
 
-    # """" Generate the next 8 bars """
+    # """" Generate the next 8 bars """ TO DO
     # input_prompt = generated_multi_track_dict["INST=DRUMS"]
     # added_sequence = genesis.generate_n_more_bars(input_prompt, n_bars=8)
     # added_sequence = f"{input_prompt}{added_sequence}TRACK_END "
@@ -301,3 +292,23 @@ if __name__ == "__main__":
     #     generated_sequence_files_path,
     #     feature_dict=generate_features_dict,
     # ).text_midi_to_file()
+
+    """ print the generated sequence in terminal"""
+    print("=========================================")
+    for inst in generated_multi_track_dict.items():
+        print(inst)
+    print("=========================================")
+
+    """" write to JSON file """
+    filename = WriteTextMidiToFile(
+        generated_multi_track_sequence,
+        generated_sequence_files_path,
+        feature_dict=generate_features_dict,
+    ).text_midi_to_file()
+
+    """" decode the sequence to MIDI """
+    tokenizer = get_tokenizer()
+    TextDecoder(tokenizer).write_to_midi(
+        generated_multi_track_sequence, filename=filename.split(".")[0]
+    )
+    print("Et voilà! Your MIDI file is ready! But don't expect too much...")
