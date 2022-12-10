@@ -60,12 +60,11 @@ def forcing_bar_length(input_prompt, newly_generated_only, bar_count, expected_l
                 generated_text += spl + "BAR_END "
 
         generated_text += "TRACK_END"
-        bar_count_checks = True
         generated_text = input_prompt + generated_text
         print(f"Generated sequence trunkated at {expected_length} bars")
 
     elif bar_count - expected_length < 0:  # Do nothing it the sequence if too short
         generated_text = input_prompt + newly_generated_only
-        bar_count_checks = False
 
+    bar_count_checks = True
     return generated_text, bar_count_checks
