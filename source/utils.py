@@ -8,6 +8,7 @@ from zipfile import ZipFile, ZIP_DEFLATED
 from scipy.io.wavfile import write
 import numpy as np
 from pydub import AudioSegment
+import shutil
 
 
 def writeToFile(path, content):
@@ -227,3 +228,9 @@ def write_mp3(waveform, output_path, bitrate="92k"):
     AudioSegment.from_wav(wav_path).export(output_path, format="mp3", bitrate=bitrate)
     # remove the wav file
     wav_path.unlink()
+
+
+def copy_file(input_file, output_dir):
+    """Copy an input file to the output_dir"""
+    output_file = output_dir / input_file.name
+    shutil.copy(input_file, output_file)
