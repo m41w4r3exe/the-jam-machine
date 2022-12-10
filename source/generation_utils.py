@@ -17,7 +17,9 @@ def define_generation_dir(model_repo_path):
 def bar_count_check(sequence, n_bars):
     """check if the sequence contains the right number of bars"""
     sequence = sequence.split(" ")
-    # find occurences of "BAR_START" in a str
+    # find occurences of "BAR_END" in a "sequence"
+    # I don't check for "BAR_START" because it is not always included in "sequence"
+    # e.g. BAR_START is included the prompt when generating one more bar
     bar_count = 0
     for seq in sequence:
         if seq == "BAR_END":
