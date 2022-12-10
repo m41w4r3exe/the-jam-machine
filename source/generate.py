@@ -9,6 +9,7 @@ from load import LoadModel
 from tqdm import tqdm
 from constants import INSTRUMENT_CLASSES
 import numpy as np
+from familizer import Familizer
 
 ## import for execution
 from decoder import TextDecoder
@@ -147,6 +148,7 @@ class GenerateMidiText:
         self.hyperparameter_dict = self.create_hyperparameter_dictionary(
             self, inst_list, density_list
         )
+        self.generated_piece = generated_piece
         return generated_piece
 
     def wrapping_piece_and_hyperparams():
@@ -262,7 +264,7 @@ if __name__ == "__main__":
         for _ in range(N_FILES_TO_GENERATE):
             print(f"========================================")
             # 1 - instantiate
-            genesis = GenerateMidiText(
+            generate_midi = GenerateMidiText(
                 model,
                 tokenizer,
                 DEVICE,
@@ -270,14 +272,14 @@ if __name__ == "__main__":
                 force_sequence_length=force_sequence_length,
             )
             # 2- generate the first 8 bars for each instrument
-            generated_piece = genesis.generate_piece(
+            generated_piece = generate_midi.generate_piece(
                 inst_list=instrument_promt_list,
                 density_list=density_list,
             )
             # 3 - generate the next 8 bars for each instrument
             # TO IMPROVE
             # input_prompt = generated_piece_dict["INST=DRUMS"]
-            # added_sequence = genesis.generate_n_more_bars(input_prompt, n_bars=8)
+            # added_sequence = generate_midi.generate_n_more_bars(input_prompt, n_bars=8)
             # added_sequence = f"{input_prompt}{added_sequence}TRACK_END "
             # """" Write to JSON file """
             # WriteTextMidiToFile(
@@ -288,16 +290,20 @@ if __name__ == "__main__":
 
             # print the generated sequence in terminal
             print("=========================================")
-            for inst in genesis.generated_piece_dict.items():
+            for inst in generate_midi.generated_piece_dict.items():
                 print(inst)
             print("=========================================")
 
             # write to JSON file
             filename = WriteTextMidiToFile(
-                generated_piece,
+                generate_midi,
                 generated_sequence_files_path,
-                hyperparameter_dict=genesis.hyperparameter_dict,
             ).text_midi_to_file()
+
+            # familliarized
+            # vindiesel=Familizer()
+            # vindiesel.reverse_family()
+            #
 
             # decode the sequence to MIDI
             decode_tokenizer = get_tokenizer()
