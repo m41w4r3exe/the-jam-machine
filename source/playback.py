@@ -11,7 +11,7 @@ def get_music(midi_file):
     """
     Load a midi file and return the PrettyMIDI object and the audio signal
     """
-    music = PrettyMIDI(midi_file=midi_file)
+    music = PrettyMIDI(midi_file=str(midi_file))
     waveform = music.fluidsynth()
     return music, waveform
 
