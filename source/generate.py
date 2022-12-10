@@ -2,7 +2,6 @@ from utils import WriteTextMidiToFile, get_tokenizer
 from generation_utils import (
     define_generation_dir,
     bar_count_check,
-    print_inst_classes,
     check_if_prompt_inst_in_tokenizer_vocab,
     forcing_bar_length,
 )
@@ -239,12 +238,13 @@ class GenerateMidiText:
 
 if __name__ == "__main__":
 
-    """ " worker"""
+    # worker
     DEVICE = "cpu"
+
+    # define generation parameters
     N_FILES_TO_GENERATE = 1
     Temperatures_to_try = [0.5]
 
-    """" define generation parameters """
     USE_FAMILIARIZED_MODEL = True
     force_sequence_length = True
 
@@ -258,22 +258,22 @@ if __name__ == "__main__":
         density_list = [2, 2, 2, 1]
     inst_density_list = zip(instrument_promt_list, density_list)
 
-    """" define generation directory """
+    # define generation directory
     generated_sequence_files_path = define_generation_dir(model_repo)
 
-    """" load model and tokenizer """
+    # load model and tokenizer
     model, tokenizer = LoadModel(
         model_repo, from_huggingface=True
     ).load_model_and_tokenizer()
 
-    """" check if the prompt makes sense"""
+    # does the prompt make sense
     check_if_prompt_inst_in_tokenizer_vocab(tokenizer, instrument_promt_list)
 
     for temperature in Temperatures_to_try:
         print(f"================= TEMPERATURE {temperature} =======================")
         for _ in range(N_FILES_TO_GENERATE):
             print(f"========================================")
-            """instantiate the class for generation"""
+            # 1 - instantiate
             genesis = GenerateMidiText(
                 model,
                 tokenizer,
@@ -281,8 +281,7 @@ if __name__ == "__main__":
                 temperature=temperature,
                 force_sequence_length=force_sequence_length,
             )
-
-            """ " generate a multi-track sequence"""
+            # 2- generate the first 8 bars for each instrument
             (
                 generated_multi_track_sequence,
                 generated_multi_track_dict,
@@ -291,8 +290,8 @@ if __name__ == "__main__":
                 inst_list=instrument_promt_list,
                 density_list=density_list,
             )
-
-            # """" Generate the next 8 bars """ TO DO
+            # 3 - generate the next 8 bars for each instrument
+            # TO IMPROVE
             # input_prompt = generated_multi_track_dict["INST=DRUMS"]
             # added_sequence = genesis.generate_n_more_bars(input_prompt, n_bars=8)
             # added_sequence = f"{input_prompt}{added_sequence}TRACK_END "
@@ -303,20 +302,20 @@ if __name__ == "__main__":
             #     hyperparameter_dict=hyperparameter_dict,
             # ).text_midi_to_file()
 
-            """ print the generated sequence in terminal"""
+            # print the generated sequence in terminal
             print("=========================================")
             for inst in generated_multi_track_dict.items():
                 print(inst)
             print("=========================================")
 
-            """" write to JSON file """
+            # write to JSON file
             filename = WriteTextMidiToFile(
                 generated_multi_track_sequence,
                 generated_sequence_files_path,
                 hyperparameter_dict=hyperparameter_dict,
             ).text_midi_to_file()
 
-            """" decode the sequence to MIDI """
+            # decode the sequence to MIDI """
             decode_tokenizer = get_tokenizer()
             TextDecoder(decode_tokenizer).write_to_midi(
                 generated_multi_track_sequence, filename=filename.split(".")[0]
