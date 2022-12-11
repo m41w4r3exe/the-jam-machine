@@ -234,18 +234,19 @@ if __name__ == "__main__":
 
     # define generation parameters
     N_FILES_TO_GENERATE = 1
-    Temperatures_to_try = [0.1]
+    Temperatures_to_try = [0.95]
 
-    USE_FAMILIARIZED_MODEL = True
-    force_sequence_length = False
+    USE_FAMILIZED_MODEL = True
+    force_sequence_length = True
 
-    if USE_FAMILIARIZED_MODEL:
-        model_repo = "misnaej/the-jam-machine-elec-famil"
-        instrument_promt_list = ["3", "DRUMS", "4", "5"]
+    if USE_FAMILIZED_MODEL:
+        # model_repo = "misnaej/the-jam-machine-elec-famil"
+        model_repo = "misnaej/the-jam-machine-elec-famil-ft32"
+        instrument_promt_list = ["0", "DRUMS", "4", "3"]
         density_list = [2, 2, 2, 1]
     else:
         model_repo = "misnaej/the-jam-machine"
-        instrument_promt_list = ["30", "DRUMS", "33", "51"]
+        instrument_promt_list = ["30", "DRUMS", "33", "5"]
         density_list = [2, 2, 2, 1]
 
     # define generation directory
