@@ -21,6 +21,8 @@ pyfluidsynth = "*"
 pydub = "*"
 pip = "*"
 ffmpeg = "*"
+transformers = "*"
+torch = "*"
 
 [dev-packages]
 
