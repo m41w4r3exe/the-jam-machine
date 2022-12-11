@@ -5,6 +5,8 @@ from constants import INSTRUMENT_CLASSES
 from decoder import TextDecoder
 from utils import get_miditok
 from playback import get_music
+import librosa.display
+
 
 model_repo = "misnaej/the-jam-machine"
 model, tokenizer = LoadModel(
@@ -33,10 +35,11 @@ def generator(temp, density, instrument, state):
         generated_text, "temporary.mid"
     )  # Returns miditoolkit, not compatible with pretty_midi
     p_midi, audio = get_music("temporary.mid")
-    # piano_roll = p_midi.get_piano_roll(fs=4410) # Not working
+    piano_roll = p_midi.get_piano_roll(fs=4410)  # Not working
+    img = librosa.display.specshow(piano_roll, sr=100, x_axis="time", y_axis="cqt_note")
     state = generated_text
 
-    return generated_text, (44100, audio), state
+    return generated_text, (44100, audio), img, state
 
 
 with gr.Blocks() as demo:
@@ -54,10 +57,13 @@ with gr.Blocks() as demo:
             piano_roll = gr.Image(label="Piano Roll", image_mode="L")
             audio = gr.Audio(label="Audio")
             gen_btn = gr.Button("Generate")
+
             gen_btn.click(
                 fn=generator,
                 inputs=[temp, density, inst, state],
-                outputs=[output_txt, audio, state],
+                outputs=[output_txt, audio, piano_roll, state],
             )
+    with gr.Row():
+        temp = gr.Number(value=0.75, label="Temperature")
 
 demo.launch()
