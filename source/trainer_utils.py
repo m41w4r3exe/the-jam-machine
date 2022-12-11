@@ -50,12 +50,33 @@ def train_tokenizer(tokenizer_path, train_data, verbose=True):
     return tokenizer
 
 
-def check_tokenized_data(dataset, tokenized_dataset):
+def check_tokenized_data(dataset, tokenized_dataset, plot_path=False):
     assert "input_ids" in list(tokenized_dataset[0]), list(tokenized_dataset[0])
     for i, data in enumerate(dataset["text"][:100:20]):
         print("----")
         print(data)
         print(tokenized_dataset[i]["input_ids"])
+    if plot_path != False:
+        inst_tokens = []
+        for data in dataset["text"]:
+            inst_tokens += [
+                token.strip("INST=") for token in data.split(" ") if "INST=" in token
+            ]
+        token_occ = np.array(
+            [[token, int(inst_tokens.count(token))] for token in np.unique(inst_tokens)]
+        ).T
+        sorted_occurences = np.sort(token_occ[1].astype(int))
+        sorted_tokens = [
+            token_occ[0][idx] for idx in np.argsort(token_occ[1].astype(int))
+        ]
+        plt.plot(sorted_occurences, color="Black")
+        plt.xticks(ticks=range(len(sorted_tokens)), labels=sorted_tokens, rotation=45)
+        plt.title("Distribution of instrument tokens in dataset")
+        plt.xlabel("Instrument tokens")
+        plt.ylabel("Count")
+        plt.savefig(f"{plot_path}/_token_distribution_in_dataset.png")
+        plt.show()
+        plt.close()
 
 
 def set_paths(base_path, model_name, datafolder, model_run_in="local"):

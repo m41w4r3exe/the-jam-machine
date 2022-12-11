@@ -59,7 +59,7 @@ tokenizer = train_tokenizer(tokenizer_path, train_data)
 # Tokenize Dateset
 print("=======Tokenizing Train dataset========")
 train_data_tokenized = TokenizeDataset(tokenizer).batch_tokenization(train_data)
-check_tokenized_data(train_data, train_data_tokenized)
+check_tokenized_data(train_data, train_data_tokenized, plot_path=dataset_path)
 
 print("=======Tokenizing Validation dataset========")
 validate_data_tokenized = TokenizeDataset(tokenizer).batch_tokenization(validate_data)
