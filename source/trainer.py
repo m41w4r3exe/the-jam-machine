@@ -1,5 +1,5 @@
-# RUN 3 lines below in a separate cell in Google Colab
-# !pip install transformers tokenizers wandb huggingface_hub datasets datetime nvidia-ml-py3
+# RUN 3 lines below in a seperate cell in Google Colab
+# !pip install transformers tokenizers wandb huggingface_hub datasets datetime
 # from huggingface_hub import notebook_login
 # notebook_login()
 
@@ -29,7 +29,6 @@ from tokenizers.trainers import WordLevelTrainer
 from datetime import datetime
 import wandb
 from datasets import load_dataset
-from pynvml import *
 from trainer_utils import get_history, plot_history
 
 
@@ -47,8 +46,9 @@ TRAIN_EPOCHS = 5
 
 """Set paths either from Google Drive or locally"""
 formattedtime = datetime.now().strftime("%d-%m__%H-%M-%S")
+model_name = f"model_{formattedtime}"
 try:
-    from google.colab import drive
+    from google.colab import drive  # type: ignore
 
     wandb.init(project=f"the-jammy-machine")
     drive.mount("/content/gdrive")

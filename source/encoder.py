@@ -7,7 +7,7 @@ from utils import (
     split_dots,
     chain,
     get_text,
-    get_tokenizer,
+    get_miditok,
 )
 
 # TODO: Move remainder_ts logic to divide_timeshift method
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     midi_filename = "the_strokes-reptilia"
     midi = MidiFile(f"midi/{midi_filename}.mid")
 
-    tokenizer = get_tokenizer()
+    tokenizer = get_miditok()
 
     piece_text = MIDIEncoder(tokenizer).get_piece_text(midi)
     writeToFile(f"midi/encoded_txts/{midi_filename}.txt", piece_text)

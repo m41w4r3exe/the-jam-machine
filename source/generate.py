@@ -1,4 +1,4 @@
-from utils import WriteTextMidiToFile, get_tokenizer
+from utils import WriteTextMidiToFile, get_miditok
 from generation_utils import (
     define_generation_dir,
     bar_count_check,
@@ -6,7 +6,6 @@ from generation_utils import (
     forcing_bar_length,
 )
 from load import LoadModel
-from tqdm import tqdm
 from constants import INSTRUMENT_CLASSES
 import numpy as np
 
@@ -35,6 +34,9 @@ class GenerateMidiText:
         self.temperature = temperature
         self.generate_until = "TRACK_END"
         self.force_sequence_length = force_sequence_length
+
+    def set_temperature(self, temperature):
+        self.temperature = temperature
 
     def tokenize_input_prompt(self, input_prompt, verbose=True):
         input_prompt_ids = self.tokenizer.encode(input_prompt, return_tensors="pt")
@@ -316,7 +318,7 @@ if __name__ == "__main__":
             ).text_midi_to_file()
 
             # decode the sequence to MIDI """
-            decode_tokenizer = get_tokenizer()
+            decode_tokenizer = get_miditok()
             TextDecoder(decode_tokenizer).write_to_midi(
                 generated_multi_track_sequence, filename=filename.split(".")[0]
             )

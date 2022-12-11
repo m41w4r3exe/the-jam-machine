@@ -17,12 +17,19 @@ pretty-midi = "*"
 note-seq = "*"
 huggingface-hub = "*"
 ipykernel = "*"
+pyFluidSynth = "*"
 pyfluidsynth = "*"
 pydub = "*"
 pip = "*"
 ffmpeg = "*"
+gradio = "*"
+transformers = "*"
+torch = "*"
+torchvision = "*"
+datasets = "*"
 
 [dev-packages]
+black = "*"
 
 [requires]
 python_version = "3.10"
