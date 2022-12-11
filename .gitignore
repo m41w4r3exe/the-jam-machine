@@ -149,7 +149,11 @@ notebooks/collab_notebook_model/old
 
 # generated files
 midi/generated/misnaej/the-jam-machine/ignore
-
+midi/generated/misnaej/the-jam-machine-elec-famil/ignore
+midi/generated/misnaej/the-jam-machine/varying_temperature
+midi/generated/misnaej/the-jam-machine/varying_temperature.zip
+midi/generated/misnaej/the-jam-machine-elec-famil/varying_temperature_ckpt20000
+midi/generated/misnaej/the-jam-machine-elec-famil/varying_temperature_ckpt20000.zip
 # VSCode
 .vscode
 

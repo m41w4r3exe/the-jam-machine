@@ -20,6 +20,7 @@ ipykernel = "*"
 pyfluidsynth = "*"
 pydub = "*"
 pip = "*"
+ffmpeg = "*"
 
 [dev-packages]
 
