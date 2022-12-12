@@ -10,6 +10,7 @@ streamlit = "*"
 numpy = "*"
 matplotlib = "*"
 pyfluidsynth = "*"
+watchdog = "*"
 
 [dev-packages]
 black = "*"
