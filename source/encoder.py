@@ -1,14 +1,6 @@
 from miditoolkit import MidiFile
 from miditok import Event
-from utils import (
-    writeToFile,
-    to_base10,
-    to_beat_str,
-    split_dots,
-    chain,
-    get_text,
-    get_tokenizer,
-)
+from utils import *
 
 # TODO: Move remainder_ts logic to divide_timeshift method
 # TODO: Add method comments

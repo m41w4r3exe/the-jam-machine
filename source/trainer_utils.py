@@ -30,7 +30,8 @@ class TokenizeDataset:
         return dataset_tokenized
 
 
-def train_tokenizer(tokenizer_path, train_data, verbose=True):
+def train_tokenizer(model_path, train_data, verbose=True):
+    tokenizer_path = f"{model_path}/tokenizer.json"
     if not os.path.isfile(tokenizer_path):
         tokenizer = Tokenizer(WordLevel(unk_token="[UNK]"))
         tokenizer.pre_tokenizer = WhitespaceSplit()
@@ -81,8 +82,7 @@ def check_tokenized_data(dataset, tokenized_dataset, plot_path=False):
 
 def set_paths(base_path, model_name, datafolder, model_run_in="local"):
     """Set paths either from Google Drive or locally"""
-    # formattedtime = datetime.now().strftime("%d-%m__%H-%M-%S")
-    formattedtime = "10-12__23-08-42"
+    formattedtime = datetime.now().strftime("%d-%m__%H-%M-%S")
     if model_run_in == "gdrive":
         from google.colab import drive
 

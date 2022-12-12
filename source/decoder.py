@@ -1,11 +1,4 @@
-from utils import (
-    readFromFile,
-    get_event,
-    to_base10,
-    to_beat_str,
-    get_datetime,
-    get_tokenizer,
-)
+from utils import *
 from miditok import Event
 
 

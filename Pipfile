@@ -21,6 +21,11 @@ pyfluidsynth = "*"
 pydub = "*"
 pip = "*"
 ffmpeg = "*"
+wandb = "*"
+tokenizers = "*"
+huggingface_hub = "*"
+datetime = "*"
+datasets = "==2.6.1"
 
 [dev-packages]
 

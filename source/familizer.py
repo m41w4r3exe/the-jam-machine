@@ -117,15 +117,15 @@ if __name__ == "__main__":
     familizer = Familizer(n_jobs)
 
     # Choose directory to process for program
-    input_directory = Path("../data/music_picks/encoded_samples/validate").resolve()  # fmt: skip
+    input_directory = Path("/Users/loopbender/Downloads/elec_gmusic copy/validate").resolve()  # fmt: skip
     output_directory = input_directory / "family"
 
     # familize files
     familizer.to_family(input_directory, output_directory)
 
     # Choose directory to process for family
-    input_directory = Path("../data/music_picks/encoded_samples/validate/family").resolve()  # fmt: skip
-    output_directory = input_directory.parent / "program"
+    # input_directory = Path("../data/music_picks/encoded_samples/validate/family").resolve()  # fmt: skip
+    # output_directory = input_directory.parent / "program"
 
     # programize files
-    familizer.to_program(input_directory, output_directory)
+    # familizer.to_program(input_directory, output_directory)
