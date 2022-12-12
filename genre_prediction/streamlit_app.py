@@ -78,8 +78,8 @@ def generate_predictions(test_df):
 
 
 if __name__ == "__main__":
-    st.title("Music Genre Prediction")
-    st.subheader("Upload a MIDI file to predict its genre:")
+    st.title("Midi File Selection and Genre Prediction")
+    st.subheader("Explore a midi file repository, compute statistics and listen")
     all_paths = set_saving_path()
     dropdown = True
     testfolder = "/Users/jean/WORK/DSR_2022_b32/music_portfolio/the_jam_machine_github/the-jam-machine/midi/dataset/kaggle_lakh_artist_select/Wonder_Stevie"
@@ -131,7 +131,8 @@ if __name__ == "__main__":
         st.audio(waveform, format="audio/wav", sample_rate=44100)
 
     # Do prediction if user clicks on predict button
-    if False:  # change by True to get the genre prediction
+    if True:  # change by True to get the genre prediction
+        st.subheader("A random forrest classifier predicts the genre of a midi file")
         if st.button("Predict genre"):
             if uploaded_file is not None:
                 prediction = generate_predictions(statistics)
@@ -145,18 +146,39 @@ if __name__ == "__main__":
                 st.write("No file uploaded")
 
     # Save file if user clicks on save button
-
+    st.subheader("Move or delete the file")
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
+        goodfile_f = st.text_input(
+            "Your local directory to save your good files", testfolder
+        )
         if st.button("Good file"):
-            move_file(uploaded_file_path, f"{all_paths['goodfile_path']}/{file_select}")
+            try:
+                move_file(uploaded_file_path, f"{goodfile_f}/{file_select}")
+            except:
+                move_file(
+                    uploaded_file_path, f"{all_paths['goodfile_path']}/{file_select}"
+                )
+
     with col2:
+        meh_f = st.text_input("Your local directory to save your meh files", testfolder)
         if st.button("Mehh file"):
-            move_file(uploaded_file_path, f"{all_paths['mehfile_path']}/{file_select}")
+            try:
+                move_file(uploaded_file_path, f"{meh_f}/{file_select}")
+            except:
+                move_file(
+                    uploaded_file_path, f"{all_paths['mehfile_path']}/{file_select}"
+                )
     with col3:
-        if st.button("Shit file"):
-            move_file(uploaded_file_path, f"{all_paths['badfile_path']}/{file_select}")
+        bad_f = st.text_input("Your local directory to save your bad files", testfolder)
+        if st.button("Bad file"):
+            try:
+                move_file(uploaded_file_path, f"{bad_f}/{file_select}")
+            except:
+                move_file(
+                    uploaded_file_path, f"{all_paths['badfile_path']}/{file_select}"
+                )
 
     with col4:
         if st.button("Delete file"):
