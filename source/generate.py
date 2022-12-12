@@ -241,7 +241,8 @@ if __name__ == "__main__":
 
     if USE_FAMILIZED_MODEL:
         # model_repo = "misnaej/the-jam-machine-elec-famil"
-        model_repo = "misnaej/the-jam-machine-elec-famil-ft32"
+        # model_repo = "misnaej/the-jam-machine-elec-famil-ft32"
+        model_repo = "misnaej/the-jam-machine-wdtef6l"
         instrument_promt_list = ["0", "DRUMS", "4", "3"]
         density_list = [2, 2, 2, 1]
     else:
@@ -300,11 +301,6 @@ if __name__ == "__main__":
                 generate_midi,
                 generated_sequence_files_path,
             ).text_midi_to_file()
-
-            # familliarized
-            # vindiesel=Familizer()
-            # vindiesel.reverse_family()
-            #
 
             # decode the sequence to MIDI
             decode_tokenizer = get_tokenizer()
