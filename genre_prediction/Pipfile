@@ -9,7 +9,7 @@ scikit-learn = "*"
 streamlit = "*"
 numpy = "*"
 matplotlib = "*"
-pretty-midi = "*"
+pyfluidsynth = "*"
 
 [dev-packages]
 black = "*"
