@@ -25,7 +25,7 @@ PER_DEVICE_TRAIN_BATCH_SIZE = 4
 GRADIENT_ACCUMULATION_STEPS = 8
 TRAIN_EPOCHS = 5
 
-# wandb.init(project=f"the-jammy-machine")
+wandb.init(project=f"the-jammy-machine")
 MODEL_PATH = f"models/{DATASET_NAME}"
 if not os.path.exists(MODEL_PATH):
     print(f"Creating model path: {MODEL_PATH}")
