@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 import pretty_midi
+import pandas as pd
 
 
 def compute_list_average(l):
@@ -215,3 +216,34 @@ def get_music(midi_file):
     music = pretty_midi.PrettyMIDI(midi_file=midi_file)
     waveform = music.fluidsynth(fs=44100)
     return music, waveform
+
+
+def get_midi_file_list(path):
+    midi_file_list = os.listdir(f"{path}")
+    return [file for file in midi_file_list if file.endswith(".mid")]
+
+
+def compute_folder_statistics(path):
+    file_list = sorted(get_midi_file_list(path))
+    folder_statistics = {}
+    logerror = []
+    for index, thefile in enumerate(file_list):
+        try:
+            folder_statistics[index] = compute_statistics(f"{path}/{thefile}")
+        except:
+            logerror.append(f"invalidfile: {thefile}")
+    folder_statistics = pd.DataFrame.from_dict(folder_statistics, orient="index")
+    return folder_statistics, logerror
+
+
+def show_minimal_stat_table(statistics):
+    return statistics.loc[
+        :,
+        [
+            "md5",
+            "n_instruments",
+            "instrument_families",
+            "n_notes",
+            "main_time_signature",
+        ],
+    ]

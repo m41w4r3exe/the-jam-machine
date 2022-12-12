@@ -82,49 +82,53 @@ if __name__ == "__main__":
     st.subheader("Upload a MIDI file to predict its genre:")
     all_paths = set_saving_path()
     dropdown = True
+    testfolder = "/Users/jean/WORK/DSR_2022_b32/music_portfolio/the_jam_machine_github/the-jam-machine/midi/dataset/kaggle_lakh_artist_select/Wonder_Stevie"
+    # midi_file_list = get_midi_file_list(select_file_path)
+    select_file_path = None
+    midi_file_list = None
     if dropdown:
-        st.write("Local directory with midi files")
-        select_file_path = st.text_input(
-            "Enter a path to a folder",
-            "/Users/jean/WORK/DSR_2022_b32/music_portfolio/the_jam_machine_github/the-jam-machine/midi/dataset/electronic/electronic_deduped",
-        )
+        select_file_path = st.text_input("Local directory with midi files", testfolder)
         # select_file_path = "/Users/jean/WORK/DSR_2022_b32/music_portfolio/the_jam_machine_github/the-jam-machine/midi/dataset/electronic/electronic_deduped"
-        midi_file_list = os.listdir(select_file_path)
+
+    if select_file_path is not None:
+        midi_file_list = get_midi_file_list(select_file_path)
+
+        # compute folder statistics
+        st.subheader("Folder statistics:")
+        if st.button("Compute folder statistics"):
+            folder_statistics, errorlog = compute_folder_statistics(select_file_path)
+            if len(errorlog) > 0:
+                st.subheader("Error log:")
+                [st.text(er) for er in errorlog]  # display error log
+            st.table(show_minimal_stat_table(folder_statistics))  # statistic table
+    print(midi_file_list)
+    if midi_file_list is not None:
         # select midi file from dropdown menu
         file_select = st.selectbox(
             "Select a file",
             (midi_file_list),
         )
-        st.write("You selected:", file_select)
+        st.text(f"You selected: {file_select}")
         # file_select = "2edbfd8e175633e707830e0cf2fa6e5e.mid"
         uploaded_file_path = f"{select_file_path}/{file_select}"
         uploaded_file = io.open(uploaded_file_path, "rb")
-
     else:
         # Let user upload midi file
         uploaded_file = st.file_uploader("Choose a MIDI file", type="mid")
 
-    st.subheader("Statistics:")
+    st.subheader("File statistics:")
     try:
         statistics = compute_statistics(uploaded_file_path)
         statistics = pd.DataFrame(statistics, index=[0])
-        st.table(
-            statistics.loc[
-                :,
-                [
-                    "n_instruments",
-                    "instrument_families",
-                    "n_notes",
-                    "main_time_signature",
-                ],
-            ]
-        )
+        st.table(show_minimal_stat_table(statistics))
+
     except:
         st.text("an error occured while computing the file statistics")
 
-    st.subheader("Play the Midi file:")
-    _, waveform = get_music(uploaded_file)
-    st.audio(waveform, format="audio/wav", sample_rate=44100)
+    if st.button("Load file"):
+        st.subheader("Play the Midi file:")
+        _, waveform = get_music(uploaded_file)
+        st.audio(waveform, format="audio/wav", sample_rate=44100)
 
     # Do prediction if user clicks on predict button
     if False:
@@ -141,7 +145,7 @@ if __name__ == "__main__":
                 st.write("No file uploaded")
 
     # Save file if user clicks on save button
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         if st.button("Good file"):
@@ -152,3 +156,10 @@ if __name__ == "__main__":
     with col3:
         if st.button("Shit file"):
             move_file(uploaded_file_path, f"{all_paths['badfile_path']}/{file_select}")
+
+    with col4:
+        if st.button("Delete file"):
+            if st.button("Confirm"):
+                delete_file(uploaded_file_path)
+
+# streamlit run streamlit_app.py
