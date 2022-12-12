@@ -95,13 +95,13 @@ if __name__ == "__main__":
 
         # compute folder statistics
         st.subheader("Folder statistics:")
-        if st.button("Compute folder statistics"):
+        if st.button("Compute folder statistics") or len(midi_file_list) < 20:
             folder_statistics, errorlog = compute_folder_statistics(select_file_path)
             if len(errorlog) > 0:
                 st.subheader("Error log:")
                 [st.text(er) for er in errorlog]  # display error log
             st.table(show_minimal_stat_table(folder_statistics))  # statistic table
-    print(midi_file_list)
+
     if midi_file_list is not None:
         # select midi file from dropdown menu
         file_select = st.selectbox(
@@ -121,17 +121,17 @@ if __name__ == "__main__":
         statistics = compute_statistics(uploaded_file_path)
         statistics = pd.DataFrame(statistics, index=[0])
         st.table(show_minimal_stat_table(statistics))
-
     except:
         st.text("an error occured while computing the file statistics")
 
+    # load the file to if the load button is pushed
     if st.button("Load file"):
         st.subheader("Play the Midi file:")
         _, waveform = get_music(uploaded_file)
         st.audio(waveform, format="audio/wav", sample_rate=44100)
 
     # Do prediction if user clicks on predict button
-    if False:
+    if False:  # change by True to get the genre prediction
         if st.button("Predict genre"):
             if uploaded_file is not None:
                 prediction = generate_predictions(statistics)
@@ -145,6 +145,7 @@ if __name__ == "__main__":
                 st.write("No file uploaded")
 
     # Save file if user clicks on save button
+
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
