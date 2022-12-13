@@ -1,6 +1,6 @@
-# !pip install huggingface-cli nvidia-ml-py3
-# !pipenv install ?
-# MUST: Run 'huggingface-cli login' and paste your user token
+# MUST: Run 'huggingface-cli login' and 'wanddb login'
+# sudo apt install git-lfs
+# !pip install transformers tokenizers wandb huggingface_hub datasets datetime nvidia-ml-py3
 
 import os
 from transformers import (
@@ -13,32 +13,37 @@ from transformers import (
 import wandb
 from datasets import load_dataset
 from trainer_utils import *
+from datetime import datetime
+from huggingface_hub import create_repo
+
+formattedtime = datetime.now().strftime("%d-%m__%H-%M-%S")
 
 # CONFIG:
-DATASET_NAME = "electronic-familized"
+DATASET_NAME = "elec-gmusic-familized"
 HF_DATASET_REPO = f"JammyMachina/{DATASET_NAME}"
-HF_MODEL_REPO = f"{HF_DATASET_REPO}-model"
-TRAIN_FROM_CHECKPOINT = None  # Example: fullpath/model/checkpoint-80000
-ADDITIONAL_TRAIN_EPOCHS = 0  # only used if TRAIN_FROM_CHECKPOINT is not None
+HF_MODEL_REPO = f"{HF_DATASET_REPO}-model-{formattedtime}"
+TRAIN_FROM_CHECKPOINT = None  # Must be full path: {HF_MODEL_REPO}/checkpoint-80000
 EVAL_STEPS = 1000
 PER_DEVICE_TRAIN_BATCH_SIZE = 4
-GRADIENT_ACCUMULATION_STEPS = 8
+GRADIENT_ACCUMULATION_STEPS = 16
 TRAIN_EPOCHS = 5
-
-wandb.init(project=f"the-jammy-machine")
 MODEL_PATH = f"models/{DATASET_NAME}"
+
 if not os.path.exists(MODEL_PATH):
     print(f"Creating model path: {MODEL_PATH}")
-    os.mkdir(MODEL_PATH)
+    os.makedirs(MODEL_PATH, exist_ok=True)
+
+wandb.init(project="the-jammy-machine")
+create_repo(HF_MODEL_REPO, exist_ok=True)
 
 data = load_dataset(
     HF_DATASET_REPO, data_files={"train": "train/*.zip", "eval": "validate/*.zip"}
 )
 tokenizer = train_tokenizer(MODEL_PATH, data["train"])
-
 print("=======Tokenizing dataset========")
 data_tokenized = TokenizeDataset(tokenizer).batch_tokenization(data)
-check_tokenized_data(data, data_tokenized, plot_path=MODEL_PATH)
+check_tokenized_data(data["train"], data_tokenized["train"], plot_path=MODEL_PATH)
+check_tokenized_data(data["eval"], data_tokenized["eval"])
 
 # Model, Data collator and Trainer
 model = GPT2LMHeadModel(
@@ -83,13 +88,8 @@ trainer = Trainer(
     eval_dataset=data_tokenized["eval"],
 )
 
-# Train the model
-if TRAIN_FROM_CHECKPOINT is not None:
-    trainer.args.num_train_epochs += ADDITIONAL_TRAIN_EPOCHS
-    result = trainer.train(TRAIN_FROM_CHECKPOINT)
-else:
-    result = trainer.train()
 
+result = trainer.train(TRAIN_FROM_CHECKPOINT)
 print("Training finished")
 print(result)
 
