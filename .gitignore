@@ -164,3 +164,6 @@ midi_encoded
 wandb
 # Mac
 .DS_Store
+
+# Temporary MIDI files
+temporary.mid
