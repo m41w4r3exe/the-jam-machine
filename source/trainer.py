@@ -1,6 +1,10 @@
-# MUST: Run 'huggingface-cli login' and 'wanddb login'
-# sudo apt install git-lfs
-# !pip install transformers tokenizers wandb huggingface_hub datasets datetime nvidia-ml-py3
+# Commands to run on a new machine:
+# $ sudo apt install git-lfs
+# $ pip install transformers tokenizers wandb huggingface_hub datasets datetime
+
+HF_READ_TOKEN = "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"
+HF_WRITE_TOKEN = "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"
+WANDB_KEY = "156af33a7166789bdccefbe9d465fe87b82f2e5e"
 
 import os
 from transformers import (
@@ -17,27 +21,28 @@ from datetime import datetime
 from huggingface_hub import create_repo
 
 formattedtime = datetime.now().strftime("%d-%m__%H-%M-%S")
-
 # CONFIG:
 DATASET_NAME = "elec-gmusic-familized"
 HF_DATASET_REPO = f"JammyMachina/{DATASET_NAME}"
-HF_MODEL_REPO = f"{HF_DATASET_REPO}-model-{formattedtime}"
+HF_MODEL_REPO = f"{HF_DATASET_REPO}-mdl"
 TRAIN_FROM_CHECKPOINT = None  # Must be full path: {HF_MODEL_REPO}/checkpoint-80000
-EVAL_STEPS = 1000
-PER_DEVICE_TRAIN_BATCH_SIZE = 4
-GRADIENT_ACCUMULATION_STEPS = 16
-TRAIN_EPOCHS = 5
+EVAL_STEPS = 256
+TRAIN_EPOCHS = 6
 MODEL_PATH = f"models/{DATASET_NAME}"
+PER_DEVICE_TRAIN_BATCH_SIZE = 32
+GRADIENT_ACCUMULATION_STEPS = 16
 
 if not os.path.exists(MODEL_PATH):
     print(f"Creating model path: {MODEL_PATH}")
     os.makedirs(MODEL_PATH, exist_ok=True)
 
 wandb.init(project="the-jammy-machine")
-create_repo(HF_MODEL_REPO, exist_ok=True)
+create_repo(HF_MODEL_REPO, exist_ok=True, token=HF_WRITE_TOKEN)
 
 data = load_dataset(
-    HF_DATASET_REPO, data_files={"train": "train/*.zip", "eval": "validate/*.zip"}
+    HF_DATASET_REPO,
+    data_files={"train": "train/*.zip", "eval": "validate/*.zip"},
+    use_auth_token=HF_READ_TOKEN,
 )
 tokenizer = train_tokenizer(MODEL_PATH, data["train"])
 print("=======Tokenizing dataset========")
@@ -64,7 +69,7 @@ training_args = TrainingArguments(
     eval_steps=EVAL_STEPS,
     learning_rate=5e-4,
     weight_decay=0.1,
-    warmup_steps=1_000,
+    warmup_steps=200,
     lr_scheduler_type="cosine",
     per_device_train_batch_size=PER_DEVICE_TRAIN_BATCH_SIZE,
     gradient_accumulation_steps=GRADIENT_ACCUMULATION_STEPS,
@@ -78,6 +83,7 @@ training_args = TrainingArguments(
     seed=42,
     push_to_hub=True,
     hub_model_id=HF_MODEL_REPO,
+    hub_token=HF_WRITE_TOKEN,
 )
 data_collator = DataCollatorForLanguageModeling(tokenizer, mlm=False)
 trainer = Trainer(
