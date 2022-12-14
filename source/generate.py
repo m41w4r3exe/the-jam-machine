@@ -280,16 +280,15 @@ if __name__ == "__main__":
                 density_list=density_list,
             )
             # 3 - generate the next 8 bars for each instrument
-            # TO IMPROVE
-            # input_prompt = generated_piece_dict["INST=DRUMS"]
-            # added_sequence = generate_midi.generate_n_more_bars(input_prompt, n_bars=8)
-            # added_sequence = f"{input_prompt}{added_sequence}TRACK_END "
-            # """" Write to JSON file """
-            # WriteTextMidiToFile(
-            #     added_sequence,
-            #     generated_sequence_files_path,
-            #     hyperparameter_dict=hyperparameter_dict,
-            # ).text_midi_to_file()
+            input_prompt = generated_piece_dict["INST=DRUMS"]
+            added_sequence = generate_midi.generate_n_more_bars(input_prompt, n_bars=8)
+            added_sequence = f"{input_prompt}{added_sequence}TRACK_END "
+            """" Write to JSON file """
+            WriteTextMidiToFile(
+                added_sequence,
+                generated_sequence_files_path,
+                hyperparameter_dict=hyperparameter_dict,
+            ).text_midi_to_file()
 
             # print the generated sequence in terminal
             print("=========================================")
