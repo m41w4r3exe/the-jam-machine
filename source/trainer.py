@@ -1,6 +1,7 @@
 # Commands to run on a new machine:
+# $ git clone https://github.com/m41w4r3exe/the-jam-machine
 # $ sudo apt install git-lfs
-# $ pip install transformers tokenizers wandb huggingface_hub datasets datetime
+# $ pip install transformers tokenizers wandb huggingface_hub datasets
 
 import os
 from transformers import (
@@ -13,10 +14,8 @@ from transformers import (
 import wandb
 from datasets import load_dataset
 from trainer_utils import *
-from datetime import datetime
-from huggingface_hub import create_repo
+from huggingface_hub import create_repo, HfApi
 
-formattedtime = datetime.now().strftime("%d-%m__%H-%M-%S")
 # CONFIG:
 DATASET_NAME = "elec-gmusic-familized"
 HF_DATASET_REPO = f"JammyMachina/{DATASET_NAME}"
@@ -29,15 +28,14 @@ PER_DEVICE_TRAIN_BATCH_SIZE = 32
 GRADIENT_ACCUMULATION_STEPS = 16
 HF_READ_TOKEN = "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"  # Tokens from malwarexe, very bad thing to do, don't tell anyone
 HF_WRITE_TOKEN = "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"
-WANDB_KEY = "156af33a7166789bdccefbe9d465fe87b82f2e5e"
 
 if not os.path.exists(MODEL_PATH):
     print(f"Creating model path: {MODEL_PATH}")
     os.makedirs(MODEL_PATH, exist_ok=True)
 
-os.environ["WANDB_API_KEY"] = WANDB_KEY
+os.environ["WANDB_API_KEY"] = "156af33a7166789bdccefbe9d465fe87b82f2e5e"
 wandb.init(project="the-jammy-machine")
-create_repo(HF_MODEL_REPO, exist_ok=True, token=HF_WRITE_TOKEN)
+create_repo(HF_MODEL_REPO, token=HF_WRITE_TOKEN, exist_ok=True)
 
 data = load_dataset(
     HF_DATASET_REPO,
@@ -94,18 +92,28 @@ trainer = Trainer(
     eval_dataset=data_tokenized["eval"],
 )
 
+tokenizer.save_pretrained(MODEL_PATH, push_to_hub=True)
+trainer.state.save_to_json(f"{MODEL_PATH}/trainer_state.json")
+with open(f"{MODEL_PATH}/training_args.json", "w") as f:
+    f.write(training_args.to_json_string())
+
+api = HfApi(token=HF_WRITE_TOKEN)
+api.upload_folder(
+    folder_path=MODEL_PATH,
+    path_in_repo="initial",
+    repo_id=HF_MODEL_REPO,
+    ignore_patterns="./git/*",
+)
+
 result = trainer.train(TRAIN_FROM_CHECKPOINT)
 print("Training finished")
 print(result)
 
 # Save the tokenizer, latest status of trained model
-tokenizer.save_pretrained(MODEL_PATH)
-model.save_pretrained(MODEL_PATH)
+model.save_pretrained(MODEL_PATH, push_to_hub=True)
+trainer.push_to_hub()
 wandb.finish()
-trainer.state.save_to_json(f"{MODEL_PATH}/trainer_state.json")
 
 # Ploting the history of the training
 history = get_history(trainer)
-plot_history(history)
-
-trainer.push_to_hub()
+plot_history(history, MODEL_PATH, HF_MODEL_REPO)

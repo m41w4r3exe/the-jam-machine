@@ -1,8 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-from pathlib import Path
-from datetime import datetime
 
 from transformers import PreTrainedTokenizerFast
 from tokenizers import Tokenizer
@@ -78,31 +76,6 @@ def check_tokenized_data(dataset, tokenized_dataset, plot_path=False):
         plt.savefig(f"{plot_path}/_token_distribution_in_dataset.png")
         plt.show()
         plt.close()
-
-
-def set_paths(base_path, model_name, datafolder, model_run_in="local"):
-    """Set paths either from Google Drive or locally"""
-    formattedtime = datetime.now().strftime("%d-%m__%H-%M-%S")
-    if model_run_in == "gdrive":
-        from google.colab import drive
-
-        drive.mount("/content/gdrive")
-        base_path = f"/content/gdrive/MyDrive/{base_path}"
-    elif model_run_in == "local":
-        pass
-
-    dataset_path = f"{base_path}/{datafolder}"
-    model_path = f"{base_path}/{model_name}_{formattedtime}"
-    tokenizer_path = f"{model_path}/tokenizer.json"
-    if not os.path.exists(model_path):
-        print(f"Creating model path: {model_path}")
-        os.mkdir(model_path)
-
-    return {
-        "tokenizer_path": tokenizer_path,
-        "dataset_path": dataset_path,
-        "model_path": model_path,
-    }
 
 
 def get_history(trainer):
