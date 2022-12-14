@@ -111,6 +111,14 @@ trainer.state.save_to_json(f"{MODEL_PATH}/trainer_state.json")
 with open(f"{MODEL_PATH}/training_args.json", "w") as f:
     f.write(training_args.to_json_string())
 
+api = HfApi(token=HF_WRITE_TOKEN)
+api.upload_folder(
+    folder_path=MODEL_PATH,
+    path_in_repo="manual_upload",
+    repo_id=HF_MODEL_REPO,
+    ignore_patterns="**/.git/*",
+)
+
 result = trainer.train()
 print("Training finished")
 print(result)
