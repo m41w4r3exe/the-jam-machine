@@ -27,7 +27,7 @@ EVAL_STEPS = 256
 TRAIN_EPOCHS = 6
 PER_DEVICE_TRAIN_BATCH_SIZE = 32
 GRADIENT_ACCUMULATION_STEPS = 16
-HF_READ_TOKEN = "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"
+HF_READ_TOKEN = "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"  # Tokens from malwarexe, very bad thing to do, don't tell anyone
 HF_WRITE_TOKEN = "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"
 WANDB_KEY = "156af33a7166789bdccefbe9d465fe87b82f2e5e"
 
