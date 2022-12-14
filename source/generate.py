@@ -1,4 +1,4 @@
-from utils import WriteTextMidiToFile, get_tokenizer
+from utils import WriteTextMidiToFile, get_miditok
 from generation_utils import (
     define_generation_dir,
     bar_count_check,
@@ -33,6 +33,9 @@ class GenerateMidiText:
         self.temperature = temperature
         self.generate_until = "TRACK_END"
         self.force_sequence_length = force_sequence_length
+
+    def set_temperature(self, temperature):
+        self.temperature = temperature
 
     def tokenize_input_prompt(self, input_prompt, verbose=True):
         input_prompt_ids = self.tokenizer.encode(input_prompt, return_tensors="pt")
@@ -231,7 +234,7 @@ if __name__ == "__main__":
 
     # define generation parameters
     N_FILES_TO_GENERATE = 1
-    Temperatures_to_try = [0.95]
+    Temperatures_to_try = [0.7, 0.75]
 
     USE_FAMILIZED_MODEL = True
     force_sequence_length = True
@@ -239,11 +242,10 @@ if __name__ == "__main__":
     if USE_FAMILIZED_MODEL:
         # model_repo = "misnaej/the-jam-machine-elec-famil"
         # model_repo = "misnaej/the-jam-machine-elec-famil-ft32"
-        # model_repo = "misnaej/the-jam-machine-wdtef6l"
-
         model_repo = "JammyMachina/elec-gmusic-familized-model-13-12__17-35-53"
-        instrument_promt_list = ["0", "DRUMS", "4", "3"]
-        density_list = [2, 2, 2, 1]
+        instrument_promt_list = ["3", "4"]
+        # DRUMS = drums, 0 = piano, 1 = chromatic percussion, 2 = organ, 3 = guitar, 4 = bass, 5 = strings, 6 = ensemble, 7 = brass, 8 = reed, 9 = pipe, 10 = synth lead, 11 = synth pad, 12 = synth effects, 13 = ethnic, 14 = percussive, 15 = sound effects
+        density_list = [4, 1]
     else:
         model_repo = "misnaej/the-jam-machine"
         instrument_promt_list = ["30", "DRUMS", "33", "5"]
@@ -301,10 +303,10 @@ if __name__ == "__main__":
                 generated_sequence_files_path,
             ).text_midi_to_file()
 
-            # decode the sequence to MIDI
-            decode_tokenizer = get_tokenizer()
-            TextDecoder(decode_tokenizer).write_to_midi(
-                generated_piece, filename=filename.split(".")[0]
+            # decode the sequence to MIDI """
+            decode_tokenizer = get_miditok()
+            TextDecoder(decode_tokenizer).get_midi(
+                generated_piece, filename=filename.split(".")[0] + ".mid"
             )
             print("Et voilà! Your MIDI file is ready! But don't expect too much...")
 

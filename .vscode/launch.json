@@ -4,9 +4,6 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
-
-
-
     {
       "name": "mmd_metadata.py",
       "type": "python",
@@ -78,8 +75,7 @@
       "program": "genre_prediction/streamlit_app.py",
       "console": "integratedTerminal",
       "justMyCode": false
-    }
-    ,
+    },
     {
       "name": "copy_md5.py",
       "type": "python",
@@ -87,8 +83,7 @@
       "program": "source/copy_md5.py",
       "console": "integratedTerminal",
       "justMyCode": false
-    }
-    ,
+    },
     {
       "name": "Familizer",
       "type": "python",
