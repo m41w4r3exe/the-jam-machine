@@ -19,7 +19,7 @@ from trainer_utils import *
 from huggingface_hub import create_repo, HfApi
 
 # CONFIG:
-DATASET_NAME = "elec-gmusic-familized"
+DATASET_NAME = "improved_4bars"
 HF_DATASET_REPO = f"JammyMachina/{DATASET_NAME}"
 HF_MODEL_REPO = f"{HF_DATASET_REPO}-mdl"
 MODEL_PATH = f"models/{DATASET_NAME}"
