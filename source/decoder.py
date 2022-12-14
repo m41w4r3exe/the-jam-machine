@@ -185,7 +185,7 @@ class TextDecoder:
                 is_drum = 1
             if self.familized:
                 inst = Familizer().get_program_number(int(inst)) + 1
-            instruments.append((inst, is_drum))
+            instruments.append((int(inst), is_drum))
         return tuple(instruments)
 
 

@@ -238,7 +238,7 @@ if __name__ == "__main__":
     N_FILES_TO_GENERATE = 1
     Temperatures_to_try = [0.95]
 
-    USE_FAMILIZED_MODEL = True
+    USE_FAMILIZED_MODEL = False
     force_sequence_length = True
 
     if USE_FAMILIZED_MODEL:
@@ -306,7 +306,7 @@ if __name__ == "__main__":
 
             # decode the sequence to MIDI """
             decode_tokenizer = get_miditok()
-            TextDecoder(decode_tokenizer).write_to_midi(
-                generated_piece, filename=filename.split(".")[0]
+            TextDecoder(decode_tokenizer, USE_FAMILIZED_MODEL).get_midi(
+                generated_piece, filename=filename.split(".")[0] + ".mid"
             )
             print("Et voilà! Your MIDI file is ready! But don't expect too much...")

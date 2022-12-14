@@ -5,10 +5,8 @@ from constants import INSTRUMENT_CLASSES
 from decoder import TextDecoder
 from utils import get_miditok
 from playback import get_music
-import librosa.display
 
-
-model_repo = "misnaej/the-jam-machine"
+model_repo = "JammyMachina/elec-gmusic-familized-model-13-12__17-35-53"
 model, tokenizer = LoadModel(
     model_repo, from_huggingface=True
 ).load_model_and_tokenizer()
@@ -28,40 +26,38 @@ def generator(temp, density, instrument, state):
         {"family_number": "DRUMS"},
     )["family_number"]
 
-    generated_text = genesis.generate_one_sequence(
+    generated_text = genesis.generate_one_track(
         input_prompt=state, instrument=inst, density=density
     )
     midi = decoder.get_midi(
         generated_text, "temporary.mid"
     )  # Returns miditoolkit, not compatible with pretty_midi
     p_midi, audio = get_music("temporary.mid")
-    piano_roll = p_midi.get_piano_roll(fs=4410)  # Not working
-    img = librosa.display.specshow(piano_roll, sr=100, x_axis="time", y_axis="cqt_note")
     state = generated_text
-
-    return generated_text, (44100, audio), img, state
+    return generated_text, (44100, audio), state
 
 
 with gr.Blocks() as demo:
     state = gr.State("PIECE_START")
     with gr.Row():
-        with gr.Column(scale=1, min_width=100):
-            temp = gr.Number(value=0.75, label="Temperature")
+        with gr.Column(scale=1, min_width=10):
             inst = gr.Dropdown(
                 ["Drums", "Bass", "Piano", "Synth Lead", "Synth Pad"],
                 value="Drums",
                 label="Instrument",
             )
-            density = gr.Dropdown([0, 1, 2, 3], value=2, label="Density")
-            output_txt = gr.Textbox(label="output")
-            piano_roll = gr.Image(label="Piano Roll", image_mode="L")
+            with gr.Row():
+                temp = gr.Number(value=0.75, label="Temperature")
+                density = gr.Dropdown([0, 1, 2, 3], value=2, label="Density")
+        with gr.Column(scale=1, min_width=100):
+            output_txt = gr.Textbox(label="output", lines=6, max_lines=6)
+        with gr.Column(scale=1, min_width=100):
             audio = gr.Audio(label="Audio")
             gen_btn = gr.Button("Generate")
-
             gen_btn.click(
                 fn=generator,
                 inputs=[temp, density, inst, state],
-                outputs=[output_txt, audio, piano_roll, state],
+                outputs=[output_txt, audio, state],
             )
     with gr.Row():
         temp = gr.Number(value=0.75, label="Temperature")
