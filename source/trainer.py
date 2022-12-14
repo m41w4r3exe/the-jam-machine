@@ -2,10 +2,6 @@
 # $ sudo apt install git-lfs
 # $ pip install transformers tokenizers wandb huggingface_hub datasets datetime
 
-HF_READ_TOKEN = "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"
-HF_WRITE_TOKEN = "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"
-WANDB_KEY = "156af33a7166789bdccefbe9d465fe87b82f2e5e"
-
 import os
 from transformers import (
     DataCollatorForLanguageModeling,
@@ -25,17 +21,21 @@ formattedtime = datetime.now().strftime("%d-%m__%H-%M-%S")
 DATASET_NAME = "elec-gmusic-familized"
 HF_DATASET_REPO = f"JammyMachina/{DATASET_NAME}"
 HF_MODEL_REPO = f"{HF_DATASET_REPO}-mdl"
+MODEL_PATH = f"models/{DATASET_NAME}"
 TRAIN_FROM_CHECKPOINT = None  # Must be full path: {HF_MODEL_REPO}/checkpoint-80000
 EVAL_STEPS = 256
 TRAIN_EPOCHS = 6
-MODEL_PATH = f"models/{DATASET_NAME}"
 PER_DEVICE_TRAIN_BATCH_SIZE = 32
 GRADIENT_ACCUMULATION_STEPS = 16
+HF_READ_TOKEN = "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"
+HF_WRITE_TOKEN = "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"
+WANDB_KEY = "156af33a7166789bdccefbe9d465fe87b82f2e5e"
 
 if not os.path.exists(MODEL_PATH):
     print(f"Creating model path: {MODEL_PATH}")
     os.makedirs(MODEL_PATH, exist_ok=True)
 
+os.environ["WANDB_API_KEY"] = WANDB_KEY
 wandb.init(project="the-jammy-machine")
 create_repo(HF_MODEL_REPO, exist_ok=True, token=HF_WRITE_TOKEN)
 
@@ -93,7 +93,6 @@ trainer = Trainer(
     train_dataset=data_tokenized["train"],
     eval_dataset=data_tokenized["eval"],
 )
-
 
 result = trainer.train(TRAIN_FROM_CHECKPOINT)
 print("Training finished")
