@@ -245,9 +245,9 @@ if __name__ == "__main__":
         # model_repo = "misnaej/the-jam-machine-elec-famil"
         # model_repo = "misnaej/the-jam-machine-elec-famil-ft32"
         model_repo = "JammyMachina/elec-gmusic-familized-model-13-12__17-35-53"
-        instrument_promt_list = ["DRUMS", "4", "3"]
+        instrument_promt_list = ['3', '4']
         # DRUMS = drums, 0 = piano, 1 = chromatic percussion, 2 = organ, 3 = guitar, 4 = bass, 5 = strings, 6 = ensemble, 7 = brass, 8 = reed, 9 = pipe, 10 = synth lead, 11 = synth pad, 12 = synth effects, 13 = ethnic, 14 = percussive, 15 = sound effects
-        density_list = [2, 2, 4]
+        density_list = [4, 1]
     else:
         model_repo = "misnaej/the-jam-machine"
         instrument_promt_list = ["30", "DRUMS", "33", "5"]
