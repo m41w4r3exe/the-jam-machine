@@ -23,9 +23,9 @@ DATASET_NAME = "elec-gmusic-familized"
 HF_DATASET_REPO = f"JammyMachina/{DATASET_NAME}"
 HF_MODEL_REPO = f"{HF_DATASET_REPO}-mdl"
 MODEL_PATH = f"models/{DATASET_NAME}"
-TRAIN_FROM_CHECKPOINT = True  # Must be full path: {HF_MODEL_REPO}/checkpoint-80000
-EVAL_STEPS = 4096
-TRAIN_EPOCHS = 6
+TRAIN_FROM_CHECKPOINT = False  # Must be full path: {HF_MODEL_REPO}/checkpoint-80000
+EVAL_STEPS = 2048
+TRAIN_EPOCHS = 10
 PER_DEVICE_TRAIN_BATCH_SIZE = 10
 GRADIENT_ACCUMULATION_STEPS = 1
 HF_READ_TOKEN = "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"  # Tokens from malwarexe, very bad thing to do, don't tell anyone
@@ -68,7 +68,7 @@ else:
             pad_token_id=tokenizer.pad_token_id,
             n_embd=512,
             n_head=8,
-            n_layer=6,
+            n_layer=8,
             n_positions=2048,
         )
     )
@@ -81,7 +81,7 @@ training_args = TrainingArguments(
     eval_steps=EVAL_STEPS,
     learning_rate=5e-4,
     weight_decay=0.1,
-    warmup_steps=200,
+    warmup_steps=5000,
     lr_scheduler_type="cosine",
     per_device_train_batch_size=PER_DEVICE_TRAIN_BATCH_SIZE,
     gradient_accumulation_steps=GRADIENT_ACCUMULATION_STEPS,
