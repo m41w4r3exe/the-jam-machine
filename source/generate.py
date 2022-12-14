@@ -238,7 +238,7 @@ if __name__ == "__main__":
     N_FILES_TO_GENERATE = 1
     Temperatures_to_try = [0.7, 0.75]
 
-    USE_FAMILIZED_MODEL = True
+    USE_FAMILIZED_MODEL = False
     force_sequence_length = True
 
     if USE_FAMILIZED_MODEL:
@@ -250,8 +250,8 @@ if __name__ == "__main__":
         density_list = [4, 1]
     else:
         model_repo = "misnaej/the-jam-machine"
-        instrument_promt_list = ["30", "DRUMS", "33", "5"]
-        density_list = [2, 2, 2, 1]
+        instrument_promt_list = ["30", "DRUMS", "33"]
+        density_list = [2, 2, 2]
 
     # define generation directory
     generated_sequence_files_path = define_generation_dir(model_repo)
@@ -307,7 +307,7 @@ if __name__ == "__main__":
 
             # decode the sequence to MIDI """
             decode_tokenizer = get_miditok()
-            TextDecoder(decode_tokenizer).get_midi(
+            TextDecoder(decode_tokenizer, USE_FAMILIZED_MODEL).get_midi(
                 generated_piece, filename=filename.split(".")[0] + '.mid'
             )
             print("Et voilà! Your MIDI file is ready! But don't expect too much...")
