@@ -243,6 +243,7 @@ def show_minimal_stat_table(statistics):
             "md5",
             "n_instruments",
             "instrument_families",
+            "track_length_in_seconds",
             "n_notes",
             "main_time_signature",
         ],
