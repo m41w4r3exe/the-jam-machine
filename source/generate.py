@@ -6,10 +6,7 @@ from generation_utils import (
     forcing_bar_length,
 )
 from load import LoadModel
-from tqdm import tqdm
 from constants import INSTRUMENT_CLASSES
-import numpy as np
-from familizer import Familizer
 
 ## import for execution
 from decoder import TextDecoder
@@ -142,7 +139,7 @@ class GenerateMidiText:
                 instrument=instrument,
                 density=density,
             )
-            last_track = "TRACK_START " + generated_piece.split("TRACK_START")[-1]
+            last_track = "TRACK_START" + generated_piece.split("TRACK_START")[-1]
             self.generated_piece_dict[f"TRACK_{count}_INST={instrument}"] = last_track
 
         self.hyperparameter_dict = self.create_hyperparameter_dictionary(
@@ -242,7 +239,9 @@ if __name__ == "__main__":
     if USE_FAMILIZED_MODEL:
         # model_repo = "misnaej/the-jam-machine-elec-famil"
         # model_repo = "misnaej/the-jam-machine-elec-famil-ft32"
-        model_repo = "misnaej/the-jam-machine-wdtef6l"
+        # model_repo = "misnaej/the-jam-machine-wdtef6l"
+
+        model_repo = "JammyMachina/elec-gmusic-familized-model-13-12__17-35-53"
         instrument_promt_list = ["0", "DRUMS", "4", "3"]
         density_list = [2, 2, 2, 1]
     else:
@@ -308,3 +307,14 @@ if __name__ == "__main__":
                 generated_piece, filename=filename.split(".")[0]
             )
             print("Et voilà! Your MIDI file is ready! But don't expect too much...")
+
+
+"""TO DO
+- sequence dictionnary: add track by track entry
+- add a function to delete a track
+- add a function to convert dictionary to text
+- add a function to reorder the tracks in a dictionary
+- add a prompt_generation function from a dictionary
+    - inputs -> (tracks,  bars), track_order
+
+"""
