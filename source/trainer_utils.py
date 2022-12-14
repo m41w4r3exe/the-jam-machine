@@ -47,6 +47,7 @@ def plot_history(history, model_path, hf_repo):
     plt.legend()
     plt.xlabel("epochs")
     plt.ylabel("loss")
-    plt.show()
+
     plt.savefig(f"{model_path}/training_history.png")
+    plt.show()
     plt.close()
