@@ -10,6 +10,8 @@ from transformers import (
     GPT2LMHeadModel,
     TrainingArguments,
     Trainer,
+    AutoTokenizer,
+    AutoModelForCausalLM,
 )
 import wandb
 from datasets import load_dataset
@@ -21,11 +23,11 @@ DATASET_NAME = "elec-gmusic-familized"
 HF_DATASET_REPO = f"JammyMachina/{DATASET_NAME}"
 HF_MODEL_REPO = f"{HF_DATASET_REPO}-mdl"
 MODEL_PATH = f"models/{DATASET_NAME}"
-TRAIN_FROM_CHECKPOINT = None  # Must be full path: {HF_MODEL_REPO}/checkpoint-80000
-EVAL_STEPS = 256
+TRAIN_FROM_CHECKPOINT = True  # Must be full path: {HF_MODEL_REPO}/checkpoint-80000
+EVAL_STEPS = 4096
 TRAIN_EPOCHS = 6
-PER_DEVICE_TRAIN_BATCH_SIZE = 32
-GRADIENT_ACCUMULATION_STEPS = 16
+PER_DEVICE_TRAIN_BATCH_SIZE = 10
+GRADIENT_ACCUMULATION_STEPS = 1
 HF_READ_TOKEN = "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"  # Tokens from malwarexe, very bad thing to do, don't tell anyone
 HF_WRITE_TOKEN = "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"
 
@@ -42,23 +44,35 @@ data = load_dataset(
     data_files={"train": "train/*.zip", "eval": "validate/*.zip"},
     use_auth_token=HF_READ_TOKEN,
 )
-tokenizer = train_tokenizer(MODEL_PATH, data["train"])
+
+if TRAIN_FROM_CHECKPOINT:
+    tokenizer = AutoTokenizer.from_pretrained(
+        HF_MODEL_REPO, use_auth_token=HF_READ_TOKEN
+    )
+else:
+    tokenizer = train_tokenizer(MODEL_PATH, data["train"])
+
 print("=======Tokenizing dataset========")
 data_tokenized = TokenizeDataset(tokenizer).batch_tokenization(data)
-check_tokenized_data(data["train"], data_tokenized["train"], plot_path=MODEL_PATH)
-check_tokenized_data(data["eval"], data_tokenized["eval"])
+# check_tokenized_data(data["train"], data_tokenized["train"], plot_path=MODEL_PATH)
+# check_tokenized_data(data["eval"], data_tokenized["eval"])
 
-# Model, Data collator and Trainer
-model = GPT2LMHeadModel(
-    GPT2Config(
-        vocab_size=tokenizer.vocab_size,
-        pad_token_id=tokenizer.pad_token_id,
-        n_embd=512,
-        n_head=8,
-        n_layer=6,
-        n_positions=2048,
+if TRAIN_FROM_CHECKPOINT:
+    model = AutoModelForCausalLM.from_pretrained(
+        HF_MODEL_REPO, use_auth_token=HF_READ_TOKEN
     )
-)
+else:
+    model = GPT2LMHeadModel(
+        GPT2Config(
+            vocab_size=tokenizer.vocab_size,
+            pad_token_id=tokenizer.pad_token_id,
+            n_embd=512,
+            n_head=8,
+            n_layer=6,
+            n_positions=2048,
+        )
+    )
+
 training_args = TrainingArguments(
     output_dir=MODEL_PATH,
     overwrite_output_dir=True,
@@ -92,25 +106,17 @@ trainer = Trainer(
     eval_dataset=data_tokenized["eval"],
 )
 
-tokenizer.save_pretrained(MODEL_PATH, push_to_hub=True)
+tokenizer.save_pretrained(MODEL_PATH, push_to_hub=True, use_auth_token=HF_WRITE_TOKEN)
 trainer.state.save_to_json(f"{MODEL_PATH}/trainer_state.json")
 with open(f"{MODEL_PATH}/training_args.json", "w") as f:
     f.write(training_args.to_json_string())
 
-api = HfApi(token=HF_WRITE_TOKEN)
-api.upload_folder(
-    folder_path=MODEL_PATH,
-    path_in_repo="initial",
-    repo_id=HF_MODEL_REPO,
-    ignore_patterns="./git/*",
-)
-
-result = trainer.train(TRAIN_FROM_CHECKPOINT)
+result = trainer.train()
 print("Training finished")
 print(result)
 
 # Save the tokenizer, latest status of trained model
-model.save_pretrained(MODEL_PATH, push_to_hub=True)
+model.save_pretrained(MODEL_PATH, push_to_hub=True, use_auth_token=HF_WRITE_TOKEN)
 trainer.push_to_hub()
 wandb.finish()
 
