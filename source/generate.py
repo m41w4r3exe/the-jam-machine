@@ -236,7 +236,7 @@ if __name__ == "__main__":
 
     # define generation parameters
     N_FILES_TO_GENERATE = 1
-    Temperatures_to_try = [0.95]
+    Temperatures_to_try = [0.7, 0.75]
 
     USE_FAMILIZED_MODEL = True
     force_sequence_length = True
@@ -244,9 +244,10 @@ if __name__ == "__main__":
     if USE_FAMILIZED_MODEL:
         # model_repo = "misnaej/the-jam-machine-elec-famil"
         # model_repo = "misnaej/the-jam-machine-elec-famil-ft32"
-        model_repo = "misnaej/the-jam-machine-wdtef6l"
-        instrument_promt_list = ["0", "DRUMS", "4", "3"]
-        density_list = [2, 2, 2, 1]
+        model_repo = "JammyMachina/elec-gmusic-familized-model-13-12__17-35-53"
+        instrument_promt_list = ["DRUMS", "4", "3"]
+        # DRUMS = drums, 0 = piano, 1 = chromatic percussion, 2 = organ, 3 = guitar, 4 = bass, 5 = strings, 6 = ensemble, 7 = brass, 8 = reed, 9 = pipe, 10 = synth lead, 11 = synth pad, 12 = synth effects, 13 = ethnic, 14 = percussive, 15 = sound effects
+        density_list = [2, 2, 4]
     else:
         model_repo = "misnaej/the-jam-machine"
         instrument_promt_list = ["30", "DRUMS", "33", "5"]
@@ -306,7 +307,7 @@ if __name__ == "__main__":
 
             # decode the sequence to MIDI """
             decode_tokenizer = get_miditok()
-            TextDecoder(decode_tokenizer).write_to_midi(
-                generated_piece, filename=filename.split(".")[0]
+            TextDecoder(decode_tokenizer).get_midi(
+                generated_piece, filename=filename.split(".")[0] + '.mid'
             )
             print("Et voilà! Your MIDI file is ready! But don't expect too much...")
