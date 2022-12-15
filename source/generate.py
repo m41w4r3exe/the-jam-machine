@@ -17,14 +17,13 @@ class GenerateMidiText:
         tokenizer,
         device="cpu",
         temperature=0.75,
-        model_n_bar=8,
         force_sequence_length=False,
     ):
         self.model = model
         self.tokenizer = tokenizer
         self.device = device
         self.max_length = model.config.n_positions
-        self.model_n_bar = model_n_bar
+
         print(
             f"Attention length set to {self.max_length} -> 'model.config.n_positions'"
         )
@@ -33,9 +32,13 @@ class GenerateMidiText:
         self.force_sequence_length = force_sequence_length
         self.generated_piece_dict = {}
         self.generated_piece_bar_by_bar_dict = {}
+        self.set_nb_bars_generated()
 
     def set_temperature(self, temperature):
         self.temperature = temperature
+
+    def set_nb_bars_generated(self, n_bars=8):  # default is a 8 bar model
+        self.model_n_bar = n_bars
 
     def tokenize_input_prompt(self, input_prompt, verbose=True):
         input_prompt_ids = self.tokenizer.encode(input_prompt, return_tensors="pt")
@@ -53,7 +56,7 @@ class GenerateMidiText:
     ):
         """
         generate a sequence of token ids based on input_prompt_ids
-        The sequence length depends on the trained model (8 bars in our case)
+        The sequence length depends on the trained model (self.model_n_bar)
         """
         generated_ids = self.model.generate(
             input_prompt_ids,
@@ -81,10 +84,14 @@ class GenerateMidiText:
         instrument=None,
         density=None,
         verbose=True,
-        expected_length=8,
+        expected_length=None,
     ):
+        if expected_length is None:
+            expected_length = self.model_n_bar
+
         """generate a additional track:
         full_piece = input_prompt + generated"""
+
         if instrument is not None:
             input_prompt = f"{input_prompt} TRACK_START INST={str(instrument)} "
             if density is not None:
@@ -101,9 +108,11 @@ class GenerateMidiText:
         bar_count_checks = False
 
         while not bar_count_checks:  # regenerate until right length
-            input_prompt_ids = self.tokenize_input_prompt(input_prompt)
-            generated_tokens = self.generate_sequence_of_token_ids(input_prompt_ids)
-            full_piece = self.convert_ids_to_text(generated_tokens)
+            input_prompt_ids = self.tokenize_input_prompt(input_prompt, verbose=verbose)
+            generated_tokens = self.generate_sequence_of_token_ids(
+                input_prompt_ids, verbose=verbose
+            )
+            full_piece = self.convert_ids_to_text(generated_tokens, verbose=verbose)
             generated = full_piece[len(input_prompt) :]
             # bar_count_checks
             bar_count_checks, bar_count = bar_count_check(generated, expected_length)
@@ -113,7 +122,7 @@ class GenerateMidiText:
 
             if not bar_count_checks and self.force_sequence_length:
                 # if the generated sequence is not the expected length
-                full_piece, bar_count_checks = forcing_bar_length(
+                full_piece, bar_count_checks = forcing_bar_count(
                     input_prompt,
                     generated,
                     bar_count,
@@ -154,17 +163,19 @@ class GenerateMidiText:
     def wrapping_piece_and_hyperparams():
         pass
 
-    def generate_n_more_bars(self, n_bars=8):
+    def generate_n_more_bars(self, n_bars, verbose=True):
         """Generate n more bars from the input_prompt"""
-        for _ in range(n_bars):
+        print(f"================== ")
+        print(f"Adding {n_bars} more bars to the piece ")
+        for bar_id in range(n_bars):
+            print(f"----- Extra bar #{bar_id+1}")
             for track_key in sorted(self.generated_piece_dict.keys()):
+                print(f"---- ----- {track_key}")
                 # self.generated_piece_dict[f"{track}_new_bars"] = ""
                 bar_count_matches = False
                 while bar_count_matches is False:
                     input_prompt = self.process_prompt_for_next_bar(self, track_key)
-                    input_prompt, new_bar = self.generate_one_more_bar(
-                        self, input_prompt
-                    )
+                    input_prompt, new_bar = self.generate_one_more_bar(input_prompt)
                     bar_count_matches, _ = bar_count_check(new_bar, 1)
                 self.add_new_bar_to_dict(self, track_key, new_bar)
 
@@ -181,28 +192,24 @@ class GenerateMidiText:
             self.generated_piece_dict[track].split("BAR_START ")
         ):
             if index == 0:
-                self.generated_piece_bar_by_bar_dict[track][f"bar_{index}"] = bar
+                self.generated_piece_bar_by_bar_dict[track][f"track_init"] = bar
             elif index < len(self.generated_piece_dict[track].split("BAR_START ")) - 1:
                 self.generated_piece_bar_by_bar_dict[track][
-                    f"bar_{index}"
+                    f"bar_{index-1}"
                 ] = f"BAR_START {bar}"
             else:
                 self.generated_piece_bar_by_bar_dict[track][
-                    f"bar_{index}"
+                    f"bar_{index-1}"
                 ] = f"BAR_START {bar}".strip("TRACK_END")
-        self.generated_piece_bar_by_bar_dict[track]["max_bar_index"] = index
+        self.generated_piece_bar_by_bar_dict[track]["max_bar_index"] = index - 1
 
     def bar_dict_to_text(self):
         text = ""
         for track in self.generated_piece_bar_by_bar_dict.keys():
             max_bar_index = self.generated_piece_bar_by_bar_dict[track]["max_bar_index"]
-            text += self.generated_piece_bar_by_bar_dict[track][f"bar_0"]
-            for bar in range(1, max_bar_index + 1):
+            text += self.generated_piece_bar_by_bar_dict[track][f"track_init"]
+            for bar in range(max_bar_index + 1):
                 text += self.generated_piece_bar_by_bar_dict[track][f"bar_{bar}"]
-                # if bar % 8 == 0:
-                text += "TRACK_END "
-                # if bar != max_bar_index:
-                #     text += self.generated_piece_bar_by_bar_dict[track][f"bar_0"]
 
             text += "TRACK_END "
 
@@ -221,12 +228,12 @@ class GenerateMidiText:
                 f"TRACK_{order[count]}_{inst}"
             ] = self.generated_piece_dict.pop(track)
 
-    @staticmethod
     def generate_one_more_bar(self, processed_prompt):
         """Generate one more bar from the input_prompt"""
         prompt_plus_bar = self.generate_one_track(
             input_prompt=processed_prompt,
             expected_length=1,
+            verbose=False,
         )
         # remove the processed_prompt - but keeping "BAR_START " - and the TRACK_END
         added_bar = prompt_plus_bar[
@@ -252,7 +259,7 @@ class GenerateMidiText:
         track_max_bar = self.generated_piece_bar_by_bar_dict[track_key]["max_bar_index"]
 
         pre_promt = ""
-        processed_prompt = self.generated_piece_bar_by_bar_dict[track_key]["bar_0"]
+        processed_prompt = self.generated_piece_bar_by_bar_dict[track_key]["track_init"]
 
         for (
             current_track_key,
@@ -261,21 +268,21 @@ class GenerateMidiText:
             if current_track_key != track_key:
                 # if another track is longer it means that one bar was already added there
                 # so it should be included in the prompt
+                # iter: keep only the last (self.model_n_bar) bars
                 if current_track["max_bar_index"] > track_max_bar:
-                    pre_promt += current_track["bar_0"]
-                    for bar in range(
-                        1 + track_max_bar - (self.model_n_bar - 1),
-                        current_track["max_bar_index"] + 1,
-                    ):
+                    pre_promt += current_track["track_init"]
+                    iter = range(current_track["max_bar_index"] + 1)[
+                        -(self.model_n_bar) :
+                    ]
+                    for bar in iter:
                         pre_promt += current_track[f"bar_{bar}"]
 
                     pre_promt += "TRACK_END "
 
             elif current_track_key == track_key:
-                # processing the bar to add to
-                for bar in range(
-                    1 + track_max_bar - (self.model_n_bar - 1), 1 + track_max_bar
-                ):
+                # iterc: keep only the last (self.model_n_bar - 1) bars
+                iterc = range(track_max_bar + 1)[-(self.model_n_bar - 1) :]
+                for bar in iterc:
                     processed_prompt += current_track[f"bar_{bar}"]
                 processed_prompt += "BAR_START "
 
@@ -288,17 +295,17 @@ if __name__ == "__main__":
     DEVICE = "cpu"
 
     # define generation parameters
-    N_FILES_TO_GENERATE = 1
-    Temperatures_to_try = [0.75]
+    N_FILES_TO_GENERATE = 4
+    Temperatures_to_try = [0.75, 0.85]
 
-    USE_FAMILIZED_MODEL = False
+    USE_FAMILIZED_MODEL = True
     force_sequence_length = True
 
     if USE_FAMILIZED_MODEL:
         # model_repo = "misnaej/the-jam-machine-elec-famil"
         # model_repo = "misnaej/the-jam-machine-elec-famil-ft32"
         model_repo = "JammyMachina/elec-gmusic-familized-model-13-12__17-35-53"
-        instrument_promt_list = ["DRUMS", "3", "4", "0"]
+        instrument_promt_list = ["DRUMS", "3", "4", "6"]
         # DRUMS = drums, 0 = piano, 1 = chromatic percussion, 2 = organ, 3 = guitar, 4 = bass, 5 = strings, 6 = ensemble, 7 = brass, 8 = reed, 9 = pipe, 10 = synth lead, 11 = synth pad, 12 = synth effects, 13 = ethnic, 14 = percussive, 15 = sound effects
         density_list = [2, 1, 2, 3]
     else:
@@ -337,7 +344,9 @@ if __name__ == "__main__":
             )
             # 3 - generate the next 8 bars for each instrument
             # input_prompt = generate_midi.generated_piece_dict["INST=DRUMS"]
-            generate_midi.generate_n_more_bars(n_bars=8)
+            generate_midi.generate_n_more_bars(
+                generate_midi.model_n_bar
+            )  # let's double the length
             generate_midi.generated_piece = generate_midi.bar_dict_to_text()
 
             # print the generated sequence in terminal
@@ -361,12 +370,7 @@ if __name__ == "__main__":
 
 
 """TO DO
-- add errror if density is not in tokenizer vocab
-- sequence dictionnary: add track by track entry
+- add errror if density is not in tokenizer vocab -> TODO
 - add a function to delete a track -> TO TEST
-- add a function to convert dictionary to text
 - add a function to reorder the tracks in a dictionary -> TO TEST
-- add a prompt_generation function from a dictionary
-    - inputs -> (tracks,  bars), track_order
-
 """
