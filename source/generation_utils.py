@@ -50,7 +50,7 @@ def check_if_prompt_inst_in_tokenizer_vocab(tokenizer, inst_prompt_list):
             )
 
 
-def forcing_bar_length(input_prompt, generated, bar_count, expected_length):
+def forcing_bar_count(input_prompt, generated, bar_count, expected_length):
     """Forcing the generated sequence to have the expected length
     expected_length and bar_count refers to the length of newly_generated_only (without input prompt)"""
 
