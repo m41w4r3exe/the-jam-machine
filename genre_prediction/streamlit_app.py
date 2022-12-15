@@ -7,8 +7,7 @@ import os
 import io
 import streamlit as st
 import pandas as pd
-import pretty_midi
-import pandas as pd
+from streamlit_app_utils import *
 
 # from sklearn.preprocessing import LabelEncoder
 from midi_preprocessing import DataPreprocessing
@@ -78,226 +77,112 @@ def generate_predictions(test_df):
     return nlah.inverse_transform(prediction)[0]
 
 
-def compute_list_average(l):
-    """
-    Given a list of numbers, compute the average.
-
-    Parameters
-    ----------
-    l : list
-        List of numbers.
-
-    Returns
-    -------
-    average : float
-        Average of the numbers in the list.
-    """
-    return sum(l) / len(l)
-
-
-def categorize_midi_instrument(program_number):
-    """
-    Given a MIDI instrument program number, categorize it into a high-level
-    instrument family.
-
-    Parameters
-    ----------
-    program_number : int
-        MIDI instrument program number.
-
-    Returns
-    -------
-    instrument_family : str
-        Name of the instrument family.
-    """
-    # See http://www.midi.org/techspecs/gm1sound.php
-
-    if 0 <= program_number <= 7:
-        return "Piano"
-    elif 8 <= program_number <= 15:
-        return "Chromatic Percussion"
-    elif 16 <= program_number <= 23:
-        return "Organ"
-    elif 24 <= program_number <= 31:
-        return "Guitar"
-    elif 32 <= program_number <= 39:
-        return "Bass"
-    elif 40 <= program_number <= 47:
-        return "Strings"
-    elif 48 <= program_number <= 55:
-        return "Ensemble"
-    elif 56 <= program_number <= 63:
-        return "Brass"
-    elif 64 <= program_number <= 71:
-        return "Reed"
-    elif 72 <= program_number <= 79:
-        return "Pipe"
-    elif 80 <= program_number <= 87:
-        return "Synth Lead"
-    elif 88 <= program_number <= 95:
-        return "Synth Pad"
-    elif 96 <= program_number <= 103:
-        return "Synth Effects"
-    elif 104 <= program_number <= 111:
-        return "Ethnic"
-    elif 112 <= program_number <= 119:
-        return "Percussive"
-    elif 120 <= program_number <= 127:
-        return "Sound Effects"
-
-
-def compute_statistics(midi_file):
-    """
-    Given a path to a MIDI file, compute a dictionary of statistics about it
-
-    Parameters
-    ----------
-    midi_file : str
-        Path to a MIDI file.
-
-    Returns
-    -------
-    statistics : dict
-        Dictionary reporting the values for different events in the file.
-    """
-    pm = pretty_midi.PrettyMIDI(midi_file)
-    # Extract informative events from the MIDI file
-    statistics = {
-        # get name of file
-        "md5": Path(midi_file).stem,
-        # instruments
-        "n_instruments": len(pm.instruments),
-        "n_unique_instruments": len(set([i.program for i in pm.instruments])),
-        "instruments": ", ".join([str(i.program) for i in pm.instruments]),
-        "instrument_families": ", ".join(
-            set([categorize_midi_instrument(i.program) for i in pm.instruments])
-        ),
-        "number_of_instrument_families": len(
-            set([categorize_midi_instrument(i.program) for i in pm.instruments])
-        ),
-        # notes
-        "n_notes": sum([len(i.notes) for i in pm.instruments]),
-        "n_unique_notes": len(set([n.pitch for i in pm.instruments for n in i.notes])),
-        "average_n_unique_notes_per_instrument": compute_list_average(
-            [len(set([n.pitch for n in i.notes])) for i in pm.instruments]
-        ),
-        "average_note_duration": compute_list_average(
-            [n.end - n.start for i in pm.instruments for n in i.notes]
-        ),
-        "average_note_velocity": compute_list_average(
-            [n.velocity for i in pm.instruments for n in i.notes]
-        ),
-        "average_note_pitch": compute_list_average(
-            [n.pitch for i in pm.instruments for n in i.notes]
-        ),
-        "range_of_note_pitches": (
-            max([n.pitch for i in pm.instruments for n in i.notes])
-            - min([n.pitch for i in pm.instruments for n in i.notes])
-        ),
-        "average_range_of_note_pitches_per_instrument": compute_list_average(
-            [
-                max([n.pitch for n in i.notes]) - (min([n.pitch for n in i.notes]))
-                for i in pm.instruments
-            ]
-        ),
-        "number_of_note_pitch_classes": len(
-            set([n.pitch % 12 for i in pm.instruments for n in i.notes])
-        ),
-        "average_number_of_note_pitch_classes_per_instrument": compute_list_average(
-            [len(set([n.pitch % 12 for n in i.notes])) for i in pm.instruments]
-        ),
-        "number_of_octaves": len(
-            set([n.pitch // 12 for i in pm.instruments for n in i.notes])
-        ),
-        "average_number_of_octaves_per_instrument": compute_list_average(
-            [len(set([n.pitch // 12 for n in i.notes])) for i in pm.instruments]
-        ),
-        "number_of_notes_per_second": len([n for i in pm.instruments for n in i.notes])
-        / pm.get_end_time(),
-        "shortest_note_length": min(
-            [n.end - n.start for i in pm.instruments for n in i.notes]
-        ),
-        "longest_note_length": max(
-            [n.end - n.start for i in pm.instruments for n in i.notes]
-        ),
-        # key signatures
-        "main_key_signature": 55,  # hacky
-        "n_key_changes": len(pm.key_signature_changes),
-        # tempo
-        "n_tempo_changes": len(pm.get_tempo_changes()[1]),
-        "tempo_estimate": round(pm.estimate_tempo()),  # weird results
-        # time signatures
-        "main_time_signature": [
-            str(ts.numerator) + "/" + str(ts.denominator)
-            for ts in pm.time_signature_changes
-        ][
-            0
-        ],  # hacky
-        "n_time_signature_changes": len(pm.time_signature_changes),
-        # track length
-        "track_length_in_seconds": round(pm.get_end_time()),
-        # lyrics
-        "lyrics_nb_words": len([l.text for l in pm.lyrics]),
-        "lyrics_unique_words": len(set([l.text for l in pm.lyrics])),
-        "lyrics_bool": len(pm.lyrics) > 0,
-    }
-    return statistics
-
-
-def get_music(midi_file):
-    """
-    Load a midi file and return the PrettyMIDI object and the audio signal
-    """
-    music = pretty_midi.PrettyMIDI(midi_file=midi_file)
-    waveform = music.fluidsynth()
-    return music, waveform
-
-
 if __name__ == "__main__":
-    st.title("Music Genre Prediction")
-    st.subheader("Upload a MIDI file to predict its genre:")
-
+    st.title("Midi File Selection and Genre Prediction")
+    st.subheader("Explore a midi file repository, compute statistics and listen")
+    all_paths = set_saving_path()
     dropdown = True
+    testfolder = "/Users/jean/WORK/DSR_2022_b32/music_portfolio/the_jam_machine_github/the-jam-machine/midi/dataset/kaggle_lakh_artist_select/Wonder_Stevie"
+    # midi_file_list = get_midi_file_list(select_file_path)
+    select_file_path = None
+    midi_file_list = None
     if dropdown:
-        st.write("Local directory with midi files")
-        select_file_path = st.text_input(
-            "Enter a path to a folder",
-            "/Users/jean/WORK/DSR_2022_b32/music_portfolio/the_jam_machine_github/the-jam-machine/midi/dataset/electronic/electronic_deduped",
-        )
+        select_file_path = st.text_input("Local directory with midi files", testfolder)
         # select_file_path = "/Users/jean/WORK/DSR_2022_b32/music_portfolio/the_jam_machine_github/the-jam-machine/midi/dataset/electronic/electronic_deduped"
-        midi_file_list = os.listdir(select_file_path)
+
+    if select_file_path is not None:
+        midi_file_list = get_midi_file_list(select_file_path)
+
+        # compute folder statistics
+        st.subheader("Folder statistics:")
+        if st.button("Compute folder statistics") or len(midi_file_list) < 20:
+            folder_statistics, errorlog = compute_folder_statistics(select_file_path)
+            if len(errorlog) > 0:
+                st.subheader("Error log:")
+                [st.text(er) for er in errorlog]  # display error log
+            st.table(show_minimal_stat_table(folder_statistics))  # statistic table
+
+    if midi_file_list is not None:
         # select midi file from dropdown menu
         file_select = st.selectbox(
             "Select a file",
             (midi_file_list),
         )
-        st.write("You selected:", file_select)
+        st.text(f"You selected: {file_select}")
         # file_select = "2edbfd8e175633e707830e0cf2fa6e5e.mid"
         uploaded_file_path = f"{select_file_path}/{file_select}"
         uploaded_file = io.open(uploaded_file_path, "rb")
-
     else:
         # Let user upload midi file
         uploaded_file = st.file_uploader("Choose a MIDI file", type="mid")
 
-    st.subheader("Play the Midi file:")
-    _, waveform = get_music(uploaded_file)
-    st.audio(waveform, format="audio/wav", sample_rate=44100)
+    st.subheader("File statistics:")
+    try:
+        statistics = compute_statistics(uploaded_file_path)
+        statistics = pd.DataFrame(statistics, index=[0])
+        st.table(show_minimal_stat_table(statistics))
+    except:
+        st.text("an error occured while computing the file statistics")
+
+    # load the file to if the load button is pushed
+    if st.button("Load file"):
+        st.subheader("Play the Midi file:")
+        _, waveform = get_music(uploaded_file)
+        st.audio(waveform, format="audio/wav", sample_rate=44100)
 
     # Do prediction if user clicks on predict button
-    if True:  # st.button("Predict genre"):
-        if uploaded_file is not None:
-            # Compute statistics on the midi file
-            statistics = compute_statistics(uploaded_file_path)
-            # Convert statistics to dataframe
-            statistics = pd.DataFrame(statistics, index=[0])
-            # Predict genre
-            prediction = generate_predictions(statistics)
-            # Display prediction
-            st.subheader("Predicted genre:")
-            st.write(prediction)
-            # except Exception as e:
-            #     st.write("Error: {}".format(e))
-            #     # st.write("Error: invalid MIDI file")
-        else:
-            st.write("No file uploaded")
+    if True:  # change by True to get the genre prediction
+        st.subheader("A random forrest classifier predicts the genre of a midi file")
+        if st.button("Predict genre"):
+            if uploaded_file is not None:
+                prediction = generate_predictions(statistics)
+                # Display prediction
+                st.subheader("Predicted genre:")
+                st.write(prediction)
+                # except Exception as e:
+                #     st.write("Error: {}".format(e))
+                #     # st.write("Error: invalid MIDI file")
+            else:
+                st.write("No file uploaded")
+
+    # Save file if user clicks on save button
+    st.subheader("Move or delete the file")
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        goodfile_f = st.text_input(
+            "Your local directory to save your good files", testfolder
+        )
+        if st.button("Good file"):
+            try:
+                move_file(uploaded_file_path, f"{goodfile_f}/{file_select}")
+            except:
+                move_file(
+                    uploaded_file_path, f"{all_paths['goodfile_path']}/{file_select}"
+                )
+
+    with col2:
+        meh_f = st.text_input("Your local directory to save your meh files", testfolder)
+        if st.button("Mehh file"):
+            try:
+                move_file(uploaded_file_path, f"{meh_f}/{file_select}")
+            except:
+                move_file(
+                    uploaded_file_path, f"{all_paths['mehfile_path']}/{file_select}"
+                )
+    with col3:
+        bad_f = st.text_input("Your local directory to save your bad files", testfolder)
+        if st.button("Bad file"):
+            try:
+                move_file(uploaded_file_path, f"{bad_f}/{file_select}")
+            except:
+                move_file(
+                    uploaded_file_path, f"{all_paths['badfile_path']}/{file_select}"
+                )
+
+    with col4:
+        if st.button("Delete file"):
+            if st.button("Confirm"):
+                delete_file(uploaded_file_path)
+
+# streamlit run streamlit_app.py

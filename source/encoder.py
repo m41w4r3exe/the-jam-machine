@@ -10,6 +10,7 @@ from utils import *
 # Question: How to determine difference between 8 very long notes in 8 bar and 6 empty bar + 8 very short notes in last 2 bar?
 # TODO: Data augmentation: hopping 1 bar and re-encode almost same notes
 # TODO: Data augmentation: octave or pitch shift?
+# TODO: Solve the one-instrument tracks problem
 
 
 class MIDIEncoder:
@@ -157,7 +158,7 @@ if __name__ == "__main__":
     midi_filename = "the_strokes-reptilia"
     midi = MidiFile(f"midi/{midi_filename}.mid")
 
-    tokenizer = get_tokenizer()
+    tokenizer = get_miditok()
 
     piece_text = MIDIEncoder(tokenizer).get_piece_text(midi)
     writeToFile(f"midi/encoded_txts/{midi_filename}.txt", piece_text)

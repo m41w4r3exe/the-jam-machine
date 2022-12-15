@@ -26,8 +26,13 @@ tokenizers = "*"
 huggingface_hub = "*"
 datetime = "*"
 datasets = "==2.6.1"
+gradio = "*"
+transformers = "*"
+torch = "*"
+torchvision = "*"
 
 [dev-packages]
+black = "*"
 
 [requires]
 python_version = "3.10"

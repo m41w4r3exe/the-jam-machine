@@ -5,6 +5,7 @@
     "version": "0.2.0",
     "configurations": [
 
+
     {"name":"Python: Current File","type":"python","request":"launch","program":"${file}","console":"integratedTerminal","justMyCode":true},
         {
             "name": "Python: midi_train",
@@ -29,6 +30,15 @@
             "type": "python",
             "request": "launch",
             "program": "streamlit_app.py",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        }
+        ,
+        {
+            "name": "app_utils",
+            "type": "python",
+            "request": "launch",
+            "program": "app_utils.py",
             "console": "integratedTerminal",
             "justMyCode": false
         }
