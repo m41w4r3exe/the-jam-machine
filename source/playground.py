@@ -2,6 +2,7 @@ import gradio as gr
 from load import LoadModel
 from generate import GenerateMidiText
 from constants import INSTRUMENT_CLASSES
+from encoder import MIDIEncoder
 from decoder import TextDecoder
 from utils import get_miditok
 from playback import get_music
@@ -60,6 +61,31 @@ with gr.Blocks() as demo:
                 outputs=[output_txt, audio, state],
             )
     with gr.Row():
-        temp = gr.Number(value=0.75, label="Temperature")
+        with gr.Column(scale=1, min_width=10):
+            gr.Markdown(
+                """
+            # Creative prompt!
+            Input your own piece and start jamming.
+            """
+            )
+
+            def upload_file(files):
+                file_paths = [file.name for file in files]
+                return file_paths
+
+            file_output = gr.File()
+            upload_button = gr.UploadButton(
+                "Click to Upload a File",
+                file_types=[".mid"],
+                file_count="single",
+            )
+            upload_button.upload(upload_file, upload_button, file_output)
+            # gr.Textbox(label="load your midi prompt", lines=6, max_lines=6)
+            midi = gr.Button("Import Midi Promt")
+            tok_midi_to_text = get_miditok()
+            piece_text = MIDIEncoder(tok_midi_to_text).get_piece_text(midi)
+            # writeToFile(f"midi/encoded_txts/{midi_filename}.txt", piece_text)
+
+            # greet_btn.click(fn=greet, inputs=name, outputs=output)
 
 demo.launch()
