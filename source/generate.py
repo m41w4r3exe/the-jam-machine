@@ -112,9 +112,11 @@ class GenerateMidiText:
         bar_count_checks = False
 
         while not bar_count_checks:  # regenerate until right length
-            input_prompt_ids = self.tokenize_input_prompt(input_prompt)
-            generated_tokens = self.generate_sequence_of_token_ids(input_prompt_ids)
-            full_piece = self.convert_ids_to_text(generated_tokens)
+            input_prompt_ids = self.tokenize_input_prompt(input_prompt, verbose=verbose)
+            generated_tokens = self.generate_sequence_of_token_ids(
+                input_prompt_ids, verbose=verbose
+            )
+            full_piece = self.convert_ids_to_text(generated_tokens, verbose=verbose)
             generated = full_piece[len(input_prompt) :]
             # bar_count_checks
             bar_count_checks, bar_count = bar_count_check(generated, expected_length)
@@ -167,7 +169,7 @@ class GenerateMidiText:
 
     def generate_n_more_bars(self, n_bars, verbose=True):
         """Generate n more bars from the input_prompt"""
-
+        print(f"================== ")
         print(f"Adding {n_bars} more bars to the piece ")
         for bar_id in range(n_bars):
             print(f"----- Extra bar #{bar_id+1}")
@@ -177,9 +179,7 @@ class GenerateMidiText:
                 bar_count_matches = False
                 while bar_count_matches is False:
                     input_prompt = self.process_prompt_for_next_bar(self, track_key)
-                    input_prompt, new_bar = self.generate_one_more_bar(
-                        self, input_prompt
-                    )
+                    input_prompt, new_bar = self.generate_one_more_bar(input_prompt)
                     bar_count_matches, _ = bar_count_check(new_bar, 1)
                 self.add_new_bar_to_dict(self, track_key, new_bar)
 
@@ -232,7 +232,6 @@ class GenerateMidiText:
                 f"TRACK_{order[count]}_{inst}"
             ] = self.generated_piece_dict.pop(track)
 
-    @staticmethod
     def generate_one_more_bar(self, processed_prompt):
         """Generate one more bar from the input_prompt"""
         prompt_plus_bar = self.generate_one_track(
@@ -300,8 +299,8 @@ if __name__ == "__main__":
     DEVICE = "cpu"
 
     # define generation parameters
-    N_FILES_TO_GENERATE = 1
-    Temperatures_to_try = [0.75]
+    N_FILES_TO_GENERATE = 4
+    Temperatures_to_try = [0.75, 0.85]
 
     USE_FAMILIZED_MODEL = True
     force_sequence_length = True
@@ -310,7 +309,7 @@ if __name__ == "__main__":
         # model_repo = "misnaej/the-jam-machine-elec-famil"
         # model_repo = "misnaej/the-jam-machine-elec-famil-ft32"
         model_repo = "JammyMachina/elec-gmusic-familized-model-13-12__17-35-53"
-        instrument_promt_list = ["DRUMS", "3", "4", "0"]
+        instrument_promt_list = ["DRUMS", "3", "4", "6"]
         # DRUMS = drums, 0 = piano, 1 = chromatic percussion, 2 = organ, 3 = guitar, 4 = bass, 5 = strings, 6 = ensemble, 7 = brass, 8 = reed, 9 = pipe, 10 = synth lead, 11 = synth pad, 12 = synth effects, 13 = ethnic, 14 = percussive, 15 = sound effects
         density_list = [2, 1, 2, 3]
     else:
@@ -375,12 +374,7 @@ if __name__ == "__main__":
 
 
 """TO DO
-- add errror if density is not in tokenizer vocab
-- sequence dictionnary: add track by track entry
+- add errror if density is not in tokenizer vocab -> TODO
 - add a function to delete a track -> TO TEST
-- add a function to convert dictionary to text
 - add a function to reorder the tracks in a dictionary -> TO TEST
-- add a prompt_generation function from a dictionary
-    - inputs -> (tracks,  bars), track_order
-
 """
