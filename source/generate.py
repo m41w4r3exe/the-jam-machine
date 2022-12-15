@@ -63,6 +63,7 @@ class GenerateMidiText:
             max_length=self.max_length,
             do_sample=True,
             temperature=self.temperature,
+            encoder_no_repeat_ngram_size=10
             eos_token_id=self.tokenizer.encode(self.generate_until)[0],  # good
         )
 
@@ -345,7 +346,7 @@ if __name__ == "__main__":
             # 3 - generate the next 8 bars for each instrument
             # input_prompt = generate_midi.generated_piece_dict["INST=DRUMS"]
             generate_midi.generate_n_more_bars(
-                generate_midi.model_n_bar
+                generate_midi.model_n_bar * 1
             )  # let's double the length
             generate_midi.generated_piece = generate_midi.bar_dict_to_text()
 
