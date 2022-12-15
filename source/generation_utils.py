@@ -64,9 +64,11 @@ def forcing_bar_count(input_prompt, generated, bar_count, expected_length):
         full_piece += "TRACK_END"
         full_piece = input_prompt + full_piece
         print(f"Generated sequence trunkated at {expected_length} bars")
+        bar_count_checks = True
 
     elif bar_count - expected_length < 0:  # Do nothing it the sequence if too short
         full_piece = input_prompt + generated
+        bar_count_checks = False
+        print(f"--- Generated sequence is too short - Force Regeration ---")
 
-    bar_count_checks = True
     return full_piece, bar_count_checks

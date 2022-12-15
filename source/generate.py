@@ -1,4 +1,3 @@
-from utils import WriteTextMidiToFile, get_tokenizer
 from generation_utils import *
 from utils import WriteTextMidiToFile, get_miditok
 from load import LoadModel
@@ -33,6 +32,13 @@ class GenerateMidiText:
         self.generated_piece_dict = {}
         self.generated_piece_bar_by_bar_dict = {}
         self.set_nb_bars_generated()
+        self.set_improvisation_level(0)
+
+    def set_improvisation_level(self, improvisation_value):
+        self.no_repeat_ngram_size = improvisation_value
+        print("--------------------")
+        print(f"no_repeat_ngram_size set to {improvisation_value}")
+        print("--------------------")
 
     def set_temperature(self, temperature):
         self.temperature = temperature
@@ -63,7 +69,7 @@ class GenerateMidiText:
             max_length=self.max_length,
             do_sample=True,
             temperature=self.temperature,
-            encoder_no_repeat_ngram_size=10
+            no_repeat_ngram_size=self.no_repeat_ngram_size,  # default = 0
             eos_token_id=self.tokenizer.encode(self.generate_until)[0],  # good
         )
 
@@ -281,7 +287,7 @@ class GenerateMidiText:
                     pre_promt += "TRACK_END "
 
             elif current_track_key == track_key:
-                # iterc: keep only the last (self.model_n_bar - 1) bars
+                # iterc: keep only the last (self.model_n_bar - 2) bars
                 iterc = range(track_max_bar + 1)[-(self.model_n_bar - 1) :]
                 for bar in iterc:
                     processed_prompt += current_track[f"bar_{bar}"]
@@ -296,8 +302,8 @@ if __name__ == "__main__":
     DEVICE = "cpu"
 
     # define generation parameters
-    N_FILES_TO_GENERATE = 4
-    Temperatures_to_try = [0.75, 0.85]
+    N_FILES_TO_GENERATE = 1
+    Temperatures_to_try = [0.6]
 
     USE_FAMILIZED_MODEL = True
     force_sequence_length = True
@@ -305,10 +311,14 @@ if __name__ == "__main__":
     if USE_FAMILIZED_MODEL:
         # model_repo = "misnaej/the-jam-machine-elec-famil"
         # model_repo = "misnaej/the-jam-machine-elec-famil-ft32"
-        model_repo = "JammyMachina/elec-gmusic-familized-model-13-12__17-35-53"
-        instrument_promt_list = ["DRUMS", "3", "4", "6"]
+        # model_repo = "JammyMachina/elec-gmusic-familized-model-13-12__17-35-53"
+        # n_bar_generated = 8
+
+        model_repo = "JammyMachina/improved_4bars-mdl"
+        n_bar_generated = 4
+        instrument_promt_list = ["4", "DRUMS", "3", "11", "10"]
         # DRUMS = drums, 0 = piano, 1 = chromatic percussion, 2 = organ, 3 = guitar, 4 = bass, 5 = strings, 6 = ensemble, 7 = brass, 8 = reed, 9 = pipe, 10 = synth lead, 11 = synth pad, 12 = synth effects, 13 = ethnic, 14 = percussive, 15 = sound effects
-        density_list = [2, 1, 2, 3]
+        density_list = [3, 3, 2, 2, 2]
     else:
         model_repo = "misnaej/the-jam-machine"
         instrument_promt_list = ["30", "DRUMS", "0", "83"]
@@ -338,16 +348,27 @@ if __name__ == "__main__":
                 temperature=temperature,
                 force_sequence_length=force_sequence_length,
             )
+            # set the n_bar for this model
+            generate_midi.set_nb_bars_generated(n_bars=n_bar_generated)
+            # generate_midi.set_improvisation_level(0)
             # 2- generate the first 8 bars for each instrument
             generated_piece = generate_midi.generate_piece(
                 inst_list=instrument_promt_list,
                 density_list=density_list,
             )
-            # 3 - generate the next 8 bars for each instrument
-            # input_prompt = generate_midi.generated_piece_dict["INST=DRUMS"]
-            generate_midi.generate_n_more_bars(
-                generate_midi.model_n_bar * 1
-            )  # let's double the length
+            # 3 - force the model to improvise
+            generate_midi.set_improvisation_level(6)
+            # 4 - generate the next 4 bars for each instrument
+            generate_midi.generate_n_more_bars(4)
+            # 5 - lower the improvisation level
+            generate_midi.set_improvisation_level(16)
+            generate_midi.generate_n_more_bars(8)
+            # generate_midi.set_improvisation_level(4)
+            # generate_midi.generate_n_more_bars(2)
+            # generate_midi.set_improvisation_level(8)
+            # generate_midi.generate_n_more_bars(8)
+            # # generate_midi.set_improvisation_level(6)
+            # # generate_midi.generate_n_more_bars(4)
             generate_midi.generated_piece = generate_midi.bar_dict_to_text()
 
             # print the generated sequence in terminal
