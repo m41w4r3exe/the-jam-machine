@@ -160,7 +160,7 @@ class GenerateMidiText:
 
     def generate_n_more_bars(self, n_bars=8):
         """Generate n more bars from the input_prompt"""
-        for bar_index in range(n_bars):
+        for _ in range(n_bars):
             for track_key in sorted(self.generated_piece_dict.keys()):
                 # self.generated_piece_dict[f"{track}_new_bars"] = ""
                 bar_count_matches = False
@@ -201,8 +201,13 @@ class GenerateMidiText:
         for track in self.generated_piece_bar_by_bar_dict.keys():
             max_bar_index = self.generated_piece_bar_by_bar_dict[track]["max_bar_index"]
             text += self.generated_piece_bar_by_bar_dict[track][f"bar_0"]
-            for bar in range(1, max_bar_index + 1):
+            for bar in range(1, 8 + 1):
                 text += self.generated_piece_bar_by_bar_dict[track][f"bar_{bar}"]
+                # if bar % 8 == 0:
+                text += "TRACK_END "
+                # if bar != max_bar_index:
+                #     text += self.generated_piece_bar_by_bar_dict[track][f"bar_0"]
+
             text += "TRACK_END "
 
         return text
@@ -353,8 +358,8 @@ if __name__ == "__main__":
 
             # decode the sequence to MIDI """
             decode_tokenizer = get_miditok()
-            TextDecoder(decode_tokenizer).get_midi(
-                generated_piece, filename=filename.split(".")[0] + ".mid"
+            TextDecoder(decode_tokenizer, USE_FAMILIZED_MODEL).get_midi(
+                generate_midi.generated_piece, filename=filename.split(".")[0] + ".mid"
             )
             print("Et voilà! Your MIDI file is ready! But don't expect too much...")
 
