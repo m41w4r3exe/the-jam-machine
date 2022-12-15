@@ -106,27 +106,27 @@ trainer = Trainer(
     eval_dataset=data_tokenized["eval"],
 )
 
-tokenizer.save_pretrained(MODEL_PATH, push_to_hub=True, use_auth_token=HF_WRITE_TOKEN)
-trainer.state.save_to_json(f"{MODEL_PATH}/trainer_state.json")
 with open(f"{MODEL_PATH}/training_args.json", "w") as f:
     f.write(training_args.to_json_string())
-
-api = HfApi(token=HF_WRITE_TOKEN)
-api.upload_folder(
-    folder_path=MODEL_PATH,
-    path_in_repo="manual_upload",
-    repo_id=HF_MODEL_REPO,
-    ignore_patterns="**/.git/*",
-)
 
 result = trainer.train()
 print("Training finished")
 print(result)
 
-# Save the tokenizer, latest status of trained model
+
+tokenizer.save_pretrained(MODEL_PATH, push_to_hub=True, use_auth_token=HF_WRITE_TOKEN)
+trainer.state.save_to_json(f"{MODEL_PATH}/trainer_state.json")
 model.save_pretrained(MODEL_PATH, push_to_hub=True, use_auth_token=HF_WRITE_TOKEN)
 trainer.push_to_hub()
 wandb.finish()
+
+HfApi().upload_folder(
+    folder_path=MODEL_PATH,
+    path_in_repo="manual_upload",
+    repo_id=HF_MODEL_REPO,
+    ignore_patterns="**/.git/*",
+    token=HF_WRITE_TOKEN,
+)
 
 # Ploting the history of the training
 history = get_history(trainer)
