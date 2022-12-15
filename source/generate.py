@@ -292,7 +292,7 @@ if __name__ == "__main__":
     DEVICE = "cpu"
 
     # define generation parameters
-    N_FILES_TO_GENERATE = 4
+    N_FILES_TO_GENERATE = 1
     Temperatures_to_try = [0.75]
 
     USE_FAMILIZED_MODEL = False
