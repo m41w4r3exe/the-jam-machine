@@ -201,7 +201,7 @@ class GenerateMidiText:
         for track in self.generated_piece_bar_by_bar_dict.keys():
             max_bar_index = self.generated_piece_bar_by_bar_dict[track]["max_bar_index"]
             text += self.generated_piece_bar_by_bar_dict[track][f"bar_0"]
-            for bar in range(1, 8 + 1):
+            for bar in range(1, max_bar_index + 1):
                 text += self.generated_piece_bar_by_bar_dict[track][f"bar_{bar}"]
                 # if bar % 8 == 0:
                 text += "TRACK_END "
@@ -292,7 +292,7 @@ if __name__ == "__main__":
     DEVICE = "cpu"
 
     # define generation parameters
-    N_FILES_TO_GENERATE = 1
+    N_FILES_TO_GENERATE = 4
     Temperatures_to_try = [0.75]
 
     USE_FAMILIZED_MODEL = False
@@ -302,13 +302,13 @@ if __name__ == "__main__":
         # model_repo = "misnaej/the-jam-machine-elec-famil"
         # model_repo = "misnaej/the-jam-machine-elec-famil-ft32"
         model_repo = "JammyMachina/elec-gmusic-familized-model-13-12__17-35-53"
-        instrument_promt_list = ["DRUMS", "3", "4"]  # , "0"]
+        instrument_promt_list = ["DRUMS", "3", "4", "0"]
         # DRUMS = drums, 0 = piano, 1 = chromatic percussion, 2 = organ, 3 = guitar, 4 = bass, 5 = strings, 6 = ensemble, 7 = brass, 8 = reed, 9 = pipe, 10 = synth lead, 11 = synth pad, 12 = synth effects, 13 = ethnic, 14 = percussive, 15 = sound effects
-        density_list = [2, 1, 2]  # , 3]
+        density_list = [2, 1, 2, 3]
     else:
         model_repo = "misnaej/the-jam-machine"
-        instrument_promt_list = ["30", "DRUMS"]
-        density_list = [2, 2]
+        instrument_promt_list = ["30", "DRUMS", "0", "83"]
+        density_list = [3, 2, 3, 3]
         pass
 
     # define generation directory
