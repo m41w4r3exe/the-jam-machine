@@ -388,7 +388,7 @@ if __name__ == "__main__":
     DEVICE = "cpu"
 
     # define generation parameters
-    N_FILES_TO_GENERATE = 1
+    N_FILES_TO_GENERATE = 4
     Temperatures_to_try = [0.75]
 
     USE_FAMILIZED_MODEL = True
@@ -406,12 +406,12 @@ if __name__ == "__main__":
         instrument_promt_list = ["4", "DRUMS", "3", "0"]
         # DRUMS = drums, 0 = piano, 1 = chromatic percussion, 2 = organ, 3 = guitar, 4 = bass, 5 = strings, 6 = ensemble, 7 = brass, 8 = reed, 9 = pipe, 10 = synth lead, 11 = synth pad, 12 = synth effects, 13 = ethnic, 14 = percussive, 15 = sound effects
         density_list = [3, 3, 2, 3]
-        temperature_list = [0.7, 0.5, 0.75, 0.75]
+        # temperature_list = [0.7, 0.7, 0.75, 0.75]
     else:
         model_repo = "misnaej/the-jam-machine"
         instrument_promt_list = ["30", "DRUMS", "0", "83"]
         density_list = [3, 2, 3, 3]
-        temperature_list = [0.7, 0.5, 0.75, 0.75]
+        # temperature_list = [0.7, 0.5, 0.75, 0.75]
         pass
 
     # define generation directory
@@ -425,8 +425,10 @@ if __name__ == "__main__":
     # does the prompt make sense
     check_if_prompt_inst_in_tokenizer_vocab(tokenizer, instrument_promt_list)
 
-    for temperature in Temperatures_to_try:
-        print(f"================= TEMPERATURE {temperature} =======================")
+    for temperature_list in Temperatures_to_try:
+        print(
+            f"================= TEMPERATURE {temperature_list} ======================="
+        )
         for _ in range(N_FILES_TO_GENERATE):
             print(f"========================================")
             # 1 - instantiate
@@ -471,6 +473,7 @@ if __name__ == "__main__":
 
 
 """
+- TODO: add improvisation level in bar dictionnary
 - TODO: update hyperparameters dictionnary when adding new bars
 - TODO: add errror if density is not in tokenizer vocab
 - TODO: add a function to delete a track -> TO TEST
