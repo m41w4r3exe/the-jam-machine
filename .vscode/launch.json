@@ -5,6 +5,14 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "playground.py",
+      "type": "python",
+      "request": "launch",
+      "program": "source/playground.py",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
       "name": "mmd_metadata.py",
       "type": "python",
       "request": "launch",

@@ -23,10 +23,10 @@ DATASET_NAME = "improved_4bars"
 HF_DATASET_REPO = f"JammyMachina/{DATASET_NAME}"
 HF_MODEL_REPO = f"{HF_DATASET_REPO}-mdl"
 MODEL_PATH = f"models/{DATASET_NAME}"
-TRAIN_FROM_CHECKPOINT = False  # Must be full path: {HF_MODEL_REPO}/checkpoint-80000
-EVAL_STEPS = 2048
-TRAIN_EPOCHS = 10
-PER_DEVICE_TRAIN_BATCH_SIZE = 10
+TRAIN_FROM_CHECKPOINT = True
+EVAL_STEPS = 1024
+TRAIN_EPOCHS = 5
+PER_DEVICE_TRAIN_BATCH_SIZE = 7
 GRADIENT_ACCUMULATION_STEPS = 1
 HF_READ_TOKEN = "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"  # Tokens from malwarexe, very bad thing to do, don't tell anyone
 HF_WRITE_TOKEN = "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"
@@ -59,7 +59,9 @@ data_tokenized = TokenizeDataset(tokenizer).batch_tokenization(data)
 
 if TRAIN_FROM_CHECKPOINT:
     model = AutoModelForCausalLM.from_pretrained(
-        HF_MODEL_REPO, use_auth_token=HF_READ_TOKEN
+        HF_MODEL_REPO,
+        use_auth_token=HF_READ_TOKEN,
+        revision="d1262472162d86c420ed8bf6a8e54270a6186993",
     )
 else:
     model = GPT2LMHeadModel(
@@ -79,10 +81,10 @@ training_args = TrainingArguments(
     num_train_epochs=TRAIN_EPOCHS,
     evaluation_strategy="steps",
     eval_steps=EVAL_STEPS,
-    learning_rate=5e-4,
-    weight_decay=0.1,
-    warmup_steps=5000,
-    lr_scheduler_type="cosine",
+    learning_rate=5e-5,
+    # weight_decay=0.1,
+    # warmup_steps=5000,
+    # lr_scheduler_type="cosine",
     per_device_train_batch_size=PER_DEVICE_TRAIN_BATCH_SIZE,
     gradient_accumulation_steps=GRADIENT_ACCUMULATION_STEPS,
     fp16=True,
@@ -122,7 +124,6 @@ wandb.finish()
 
 HfApi().upload_folder(
     folder_path=MODEL_PATH,
-    path_in_repo="manual_upload",
     repo_id=HF_MODEL_REPO,
     ignore_patterns="**/.git/*",
     token=HF_WRITE_TOKEN,

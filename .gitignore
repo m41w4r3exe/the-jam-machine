@@ -166,4 +166,5 @@ wandb
 .DS_Store
 
 # Temporary MIDI files
-temporary.mid
+tmp/*.mid
+source/tmp/*.mid
