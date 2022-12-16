@@ -441,13 +441,18 @@ if __name__ == "__main__":
             # 2- generate the first 8 bars for each instrument
             generate_midi.generate_piece()
             # 3 - force the model to improvise
-            generate_midi.set_improvisation_level(6)
+            generate_midi.set_improvisation_level(8)
             # 4 - generate the next 4 bars for each instrument
             generate_midi.generate_n_more_bars(4)
             # 5 - lower the improvisation level
             generate_midi.set_improvisation_level(0)
             # 6 - generate 8 more bars the improvisation level
-            generate_midi.generate_n_more_bars(8)
+            generate_midi.generate_n_more_bars(4)
+            generate_midi.set_improvisation_level(8)
+            generate_midi.generate_n_more_bars(4)
+            generate_midi.set_improvisation_level(0)
+            generate_midi.generate_n_more_bars(4)
+
             generate_midi.generated_piece = generate_midi.bar_dict_to_text()
 
             # print the generated sequence in terminal
