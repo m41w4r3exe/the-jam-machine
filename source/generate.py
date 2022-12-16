@@ -147,11 +147,11 @@ class GenerateMidiText:
         for (inst_idx, intrument) in enumerate(self.instruments):
             if intrument == self.hyperparameter_dictionary[track]["instruments"]:
                 idx = inst_idx
-        self.hyperparameter_dictionary[track][f"bar_{bar_index}"] = {
-            "density": self.densities[idx],
-            "temperature": self.temperature[idx],
-            "improv_level": self.no_repeat_ngram_size,
-        }
+            self.hyperparameter_dictionary[track][f"bar_{bar_index}"] = {
+                "density": self.densities[idx],
+                "temperature": self.temperature[idx],
+                "improv_level": self.no_repeat_ngram_size,
+            }
 
     def update_hyperparameter_dictionnary__add_track(self, track, instrument):
         self.create_track_entry_in_hyperparameter_dict(track)
@@ -219,6 +219,14 @@ class GenerateMidiText:
             print("Converting token sequence to MidiText...")
         return generated_text
 
+    def get_new_track_id(self, instrument):
+        track_id = len(self.generated_piece_bar_by_bar_dict)
+        return f"TRACK_{track_id}_INST={instrument}"
+
+    def get_last_generated_track(self, full_piece):
+        track = "TRACK_START" + full_piece.split("TRACK_START")[-1]
+        return track
+
     def generate_one_track(
         self,
         input_prompt="PIECE_START",
@@ -274,6 +282,10 @@ class GenerateMidiText:
                     expected_length,
                 )
 
+            track_id = self.get_new_track_id(instrument)
+            track = self.get_last_generated_track(full_piece)
+            self.update_all_dictionnaries__add_track(instrument, track_id, track)
+
         return full_piece
 
     """ Piece generation - Basics """
@@ -299,10 +311,6 @@ class GenerateMidiText:
                 density=density,
                 temperature=temperature,
             )
-            track_id = f"TRACK_{count}_INST={instrument}"
-            last_track = "TRACK_START" + generated_piece.split("TRACK_START")[-1]
-
-            self.update_all_dictionnaries__add_track(instrument, track_id, last_track)
 
         return generated_piece
 
