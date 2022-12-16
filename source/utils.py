@@ -129,7 +129,7 @@ class WriteTextMidiToFile:  # utils saving to file
     def __init__(self, generate_midi, output_path):
         self.generated_midi = generate_midi.generated_piece
         self.output_path = output_path
-        self.hyperparameter_dict = generate_midi.hyperparameter_dict
+        self.hyperparameter_dict = generate_midi.hyperparameter_dictionary
 
     def hashing_seq(self):
         self.current_time = get_datetime()
