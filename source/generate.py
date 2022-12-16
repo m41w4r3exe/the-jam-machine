@@ -31,7 +31,7 @@ class GenerateMidiText:
         self.set_temperatures()
 
     def initialize_dictionaries(self):
-        self.generated_piece_dict = {}
+        self.piece_dict = {}
         self.generated_piece_bar_by_bar_dict = {}
         self.create_hyperparameter_dictionary()
 
@@ -75,24 +75,15 @@ class GenerateMidiText:
     def set_nb_bars_generated(self, n_bars=8):  # default is a 8 bar model
         self.model_n_bar = n_bars
 
-    """ Generation Tools - Track and Bar Dictionnaries """
+    """ Generation Tools - Dictionnaries """
 
-    @staticmethod
-    def add_new_bar_to_dict(self, track_key, new_bar):
-        max_index = self.generated_piece_bar_by_bar_dict[track_key]["max_bar_index"]
-        self.generated_piece_bar_by_bar_dict[track_key][f"bar_{max_index+1}"] = new_bar
-        self.generated_piece_bar_by_bar_dict[track_key]["max_bar_index"] += 1
-        self.generated_piece_dict[track_key] += new_bar
-
-    def track_to_bar_dict(self, track):
+    def update_bar_dict__add_track(self, track):
         self.generated_piece_bar_by_bar_dict[track] = {}
-        for index, bar in enumerate(
-            self.generated_piece_dict[track].split("BAR_START ")
-        ):
+        for index, bar in enumerate(self.piece_dict[track].split("BAR_START ")):
             if index == 0:
                 dict_entry = f"track_init"
                 self.generated_piece_bar_by_bar_dict[track][dict_entry] = bar
-            elif index < len(self.generated_piece_dict[track].split("BAR_START ")) - 1:
+            elif index < len(self.piece_dict[track].split("BAR_START ")) - 1:
                 dict_entry = f"bar_{index-1}"
                 self.generated_piece_bar_by_bar_dict[track][
                     dict_entry
@@ -109,6 +100,13 @@ class GenerateMidiText:
             )
         self.generated_piece_bar_by_bar_dict[track]["max_bar_index"] = index - 1
 
+    @staticmethod
+    def update_bar_dict__add_one_bar(self, track_key, new_bar):
+        max_index = self.generated_piece_bar_by_bar_dict[track_key]["max_bar_index"]
+        self.generated_piece_bar_by_bar_dict[track_key][f"bar_{max_index+1}"] = new_bar
+        self.generated_piece_bar_by_bar_dict[track_key]["max_bar_index"] += 1
+        self.piece_dict[track_key] += new_bar
+
     def bar_dict_to_text(self):
         text = ""
         for track in self.generated_piece_bar_by_bar_dict.keys():
@@ -121,20 +119,20 @@ class GenerateMidiText:
 
         return text
 
-    def delete_one_track(self, track):
-        self.generated_piece_dict.pop(track)
+    def delete_one_track(self, track):  # TO BE TESTED
+        self.piece_dict.pop(track)
+        self.generated_piece_bar_by_bar_dict.pop(track)
 
-    def reorder_tracks(self, order=None):
+    def reorder_tracks(self, order=None):  # TO BE TESTED
         if order is None:  # default order
-            order = range(len(self.generated_piece_dict.keys))
+            order = range(len(self.piece_dict.keys))
 
-        for count, track in enumerate(self.generated_piece_dict.keys):
+        for count, track in enumerate(self.piece_dict.keys):
             inst = track.split("_")[-1]
-            self.generated_piece_dict[
+            self.piece_dict[f"TRACK_{order[count]}_{inst}"] = self.piece_dict.pop(track)
+            self.generated_piece_bar_by_bar_dict[
                 f"TRACK_{order[count]}_{inst}"
-            ] = self.generated_piece_dict.pop(track)
-
-    """Hyperparameter Dictionary"""
+            ] = self.generated_piece_bar_by_bar_dict.pop(track)
 
     def create_hyperparameter_dictionary(self):
         self.hyperparameter_dictionary = {
@@ -145,6 +143,7 @@ class GenerateMidiText:
 
     def update_hyperparameter_dictionnary_bar(self, track, bar_index):
         # get the track instrument index to get the density and temperature
+        self.create_track_entry_in_hyperparameter_dict(track)
         for (inst_idx, intrument) in enumerate(self.instruments):
             if intrument == self.hyperparameter_dictionary[track]["instruments"]:
                 idx = inst_idx
@@ -153,10 +152,21 @@ class GenerateMidiText:
             "temperature": self.temperature[idx],
         }
 
-    def update_hyperparameter_dictionnary_track(self, track, instrument):
+    def update_hyperparameter_dictionnary__add_track(self, track, instrument):
+        self.create_track_entry_in_hyperparameter_dict(track)
+        self.hyperparameter_dictionary[track]["instruments"] = instrument
+
+    def update_piece_dict__add_track(self, track_id, track):
+        self.piece_dict[track_id] = track
+
+    def create_track_entry_in_hyperparameter_dict(self, track):
         if track not in self.hyperparameter_dictionary.keys():
             self.hyperparameter_dictionary[track] = {}
-        self.hyperparameter_dictionary[track]["instruments"] = instrument
+
+    def update_all_dictionnaries__add_track(self, instrument, track_id, track):
+        self.update_hyperparameter_dictionnary__add_track(track_id, instrument)
+        self.update_piece_dict__add_track(track_id, track)
+        self.update_bar_dict__add_track(track_id)
 
     def wrapping_piece_and_hyperparams():
         pass
@@ -289,10 +299,9 @@ class GenerateMidiText:
                 temperature=temperature,
             )
             track_id = f"TRACK_{count}_INST={instrument}"
-            self.update_hyperparameter_dictionnary_track(track_id, instrument)
             last_track = "TRACK_START" + generated_piece.split("TRACK_START")[-1]
-            self.generated_piece_dict[track_id] = last_track
-            self.track_to_bar_dict(track_id)
+
+            self.update_all_dictionnaries__add_track(instrument, track_id, last_track)
 
         return generated_piece
 
@@ -362,15 +371,15 @@ class GenerateMidiText:
         print(f"Adding {n_bars} more bars to the piece ")
         for bar_id in range(n_bars):
             print(f"----- Extra bar #{bar_id+1}")
-            for track_key in sorted(self.generated_piece_dict.keys()):
+            for track_key in sorted(self.piece_dict.keys()):
                 print(f"---- ----- {track_key}")
-                # self.generated_piece_dict[f"{track}_new_bars"] = ""
+                # self.piece_dict[f"{track}_new_bars"] = ""
                 bar_count_matches = False
                 while bar_count_matches is False:
                     input_prompt = self.process_prompt_for_next_bar(self, track_key)
                     input_prompt, new_bar = self.generate_one_more_bar(input_prompt)
                     bar_count_matches, _ = bar_count_check(new_bar, 1)
-                self.add_new_bar_to_dict(self, track_key, new_bar)
+                self.update_bar_dict__add_one_bar(self, track_key, new_bar)
 
 
 if __name__ == "__main__":
@@ -430,7 +439,7 @@ if __name__ == "__main__":
             generate_midi.set_temperatures(temperature_list)
             generate_midi.set_improvisation_level(0)
             # 2- generate the first 8 bars for each instrument
-            generated_piece = generate_midi.generate_piece()
+            generate_midi.generate_piece()
             # 3 - force the model to improvise
             generate_midi.set_improvisation_level(6)
             # 4 - generate the next 4 bars for each instrument
@@ -443,7 +452,7 @@ if __name__ == "__main__":
 
             # print the generated sequence in terminal
             print("=========================================")
-            for inst in generate_midi.generated_piece_dict.items():
+            for inst in generate_midi.piece_dict.items():
                 print(inst)
             print("=========================================")
 
@@ -462,6 +471,7 @@ if __name__ == "__main__":
 
 
 """
+- TODO: update hyperparameters dictionnary when adding new bars
 - TODO: add errror if density is not in tokenizer vocab
 - TODO: add a function to delete a track -> TO TEST
 - TODO: add a function to reorder the tracks in a dictionary -> TO TEST
