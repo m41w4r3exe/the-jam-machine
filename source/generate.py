@@ -142,16 +142,17 @@ class GenerateMidiText:
         }
 
     def update_hyperparameter_dictionnary_bar(self, track, bar_index):
-        # get the track instrument index to get the density and temperature
+        # get the track instrument index to get the density and temperature TO FIX
         self.create_track_entry_in_hyperparameter_dict(track)
-        for (inst_idx, intrument) in enumerate(self.instruments):
-            if intrument == self.hyperparameter_dictionary[track]["instruments"]:
-                idx = inst_idx
-            self.hyperparameter_dictionary[track][f"bar_{bar_index}"] = {
-                "density": self.densities[idx],
-                "temperature": self.temperature[idx],
-                "improv_level": self.no_repeat_ngram_size,
-            }
+        # for (inst_idx, intrument) in enumerate(self.instruments):
+        #     if intrument == self.hyperparameter_dictionary[track]["instruments"]:
+        #         idx = inst_idx
+
+        # self.hyperparameter_dictionary[track][f"bar_{bar_index}"] = {
+        #     "density": self.densities[idx],
+        #     "temperature": self.temperature[idx],
+        #     "improv_level": self.no_repeat_ngram_size,
+        # }
 
     def update_hyperparameter_dictionnary__add_track(self, track, instrument):
         self.create_track_entry_in_hyperparameter_dict(track)
