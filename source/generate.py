@@ -150,6 +150,7 @@ class GenerateMidiText:
         self.hyperparameter_dictionary[track][f"bar_{bar_index}"] = {
             "density": self.densities[idx],
             "temperature": self.temperature[idx],
+            "improv_level": self.no_repeat_ngram_size,
         }
 
     def update_hyperparameter_dictionnary__add_track(self, track, instrument):
