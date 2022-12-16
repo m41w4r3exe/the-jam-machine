@@ -461,8 +461,8 @@ if __name__ == "__main__":
             print("Et voilà! Your MIDI file is ready! GO JAM!")
 
 
-"""TO DO
-- add errror if density is not in tokenizer vocab -> TODO
-- add a function to delete a track -> TO TEST
-- add a function to reorder the tracks in a dictionary -> TO TEST
+"""
+- TODO: add errror if density is not in tokenizer vocab
+- TODO: add a function to delete a track -> TO TEST
+- TODO: add a function to reorder the tracks in a dictionary -> TO TEST
 """
