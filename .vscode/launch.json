@@ -4,6 +4,7 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
+
     {
       "name": "mmd_metadata.py",
       "type": "python",
@@ -89,6 +90,14 @@
       "type": "python",
       "request": "launch",
       "program": "source/familizer.py",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "Playground",
+      "type": "python",
+      "request": "launch",
+      "program": "source/playground.py",
       "console": "integratedTerminal",
       "justMyCode": false
     }
