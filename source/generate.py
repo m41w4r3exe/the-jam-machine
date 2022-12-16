@@ -75,6 +75,65 @@ class GenerateMidiText:
     def set_nb_bars_generated(self, n_bars=8):  # default is a 8 bar model
         self.model_n_bar = n_bars
 
+    """ Generation Tools - Track and Bar Dictionnaries """
+
+    @staticmethod
+    def add_new_bar_to_dict(self, track_key, new_bar):
+        max_index = self.generated_piece_bar_by_bar_dict[track_key]["max_bar_index"]
+        self.generated_piece_bar_by_bar_dict[track_key][f"bar_{max_index+1}"] = new_bar
+        self.generated_piece_bar_by_bar_dict[track_key]["max_bar_index"] += 1
+        self.generated_piece_dict[track_key] += new_bar
+
+    def track_to_bar_dict(self, track):
+        self.generated_piece_bar_by_bar_dict[track] = {}
+        for index, bar in enumerate(
+            self.generated_piece_dict[track].split("BAR_START ")
+        ):
+            if index == 0:
+                dict_entry = f"track_init"
+                self.generated_piece_bar_by_bar_dict[track][dict_entry] = bar
+            elif index < len(self.generated_piece_dict[track].split("BAR_START ")) - 1:
+                dict_entry = f"bar_{index-1}"
+                self.generated_piece_bar_by_bar_dict[track][
+                    dict_entry
+                ] = f"BAR_START {bar}"
+            else:
+                dict_entry = f"bar_{index-1}"
+                self.generated_piece_bar_by_bar_dict[track][
+                    dict_entry
+                ] = f"BAR_START {bar}".strip("TRACK_END")
+
+            self.update_hyperparameter_dictionnary_bar(
+                track,
+                dict_entry,
+            )
+        self.generated_piece_bar_by_bar_dict[track]["max_bar_index"] = index - 1
+
+    def bar_dict_to_text(self):
+        text = ""
+        for track in self.generated_piece_bar_by_bar_dict.keys():
+            max_bar_index = self.generated_piece_bar_by_bar_dict[track]["max_bar_index"]
+            text += self.generated_piece_bar_by_bar_dict[track][f"track_init"]
+            for bar in range(max_bar_index + 1):
+                text += self.generated_piece_bar_by_bar_dict[track][f"bar_{bar}"]
+
+            text += "TRACK_END "
+
+        return text
+
+    def delete_one_track(self, track):
+        self.generated_piece_dict.pop(track)
+
+    def reorder_tracks(self, order=None):
+        if order is None:  # default order
+            order = range(len(self.generated_piece_dict.keys))
+
+        for count, track in enumerate(self.generated_piece_dict.keys):
+            inst = track.split("_")[-1]
+            self.generated_piece_dict[
+                f"TRACK_{order[count]}_{inst}"
+            ] = self.generated_piece_dict.pop(track)
+
     """Hyperparameter Dictionary"""
 
     def create_hyperparameter_dictionary(self):
@@ -99,7 +158,10 @@ class GenerateMidiText:
             self.hyperparameter_dictionary[track] = {}
         self.hyperparameter_dictionary[track]["instruments"] = instrument
 
-    """Generation"""
+    def wrapping_piece_and_hyperparams():
+        pass
+
+    """Basic generation tools"""
 
     def tokenize_input_prompt(self, input_prompt, verbose=True):
         """Tokenizing prompt
@@ -203,6 +265,8 @@ class GenerateMidiText:
 
         return full_piece
 
+    """ Piece generation - Basics """
+
     def generate_piece(self):
         """generate a sequence with mutiple tracks
         - inst_list sets the list of instruments of the order of generation
@@ -232,94 +296,7 @@ class GenerateMidiText:
 
         return generated_piece
 
-    def wrapping_piece_and_hyperparams():
-        pass
-
-    def generate_n_more_bars(self, n_bars, verbose=True):
-        """Generate n more bars from the input_prompt"""
-        print(f"================== ")
-        print(f"Adding {n_bars} more bars to the piece ")
-        for bar_id in range(n_bars):
-            print(f"----- Extra bar #{bar_id+1}")
-            for track_key in sorted(self.generated_piece_dict.keys()):
-                print(f"---- ----- {track_key}")
-                # self.generated_piece_dict[f"{track}_new_bars"] = ""
-                bar_count_matches = False
-                while bar_count_matches is False:
-                    input_prompt = self.process_prompt_for_next_bar(self, track_key)
-                    input_prompt, new_bar = self.generate_one_more_bar(input_prompt)
-                    bar_count_matches, _ = bar_count_check(new_bar, 1)
-                self.add_new_bar_to_dict(self, track_key, new_bar)
-
-    @staticmethod
-    def add_new_bar_to_dict(self, track_key, new_bar):
-        max_index = self.generated_piece_bar_by_bar_dict[track_key]["max_bar_index"]
-        self.generated_piece_bar_by_bar_dict[track_key][f"bar_{max_index+1}"] = new_bar
-        self.generated_piece_bar_by_bar_dict[track_key]["max_bar_index"] += 1
-        self.generated_piece_dict[track_key] += new_bar
-
-    def track_to_bar_dict(self, track):
-        self.generated_piece_bar_by_bar_dict[track] = {}
-        for index, bar in enumerate(
-            self.generated_piece_dict[track].split("BAR_START ")
-        ):
-            if index == 0:
-                dict_entry = f"track_init"
-                self.generated_piece_bar_by_bar_dict[track][dict_entry] = bar
-            elif index < len(self.generated_piece_dict[track].split("BAR_START ")) - 1:
-                dict_entry = f"bar_{index-1}"
-                self.generated_piece_bar_by_bar_dict[track][
-                    dict_entry
-                ] = f"BAR_START {bar}"
-            else:
-                dict_entry = f"bar_{index-1}"
-                self.generated_piece_bar_by_bar_dict[track][
-                    dict_entry
-                ] = f"BAR_START {bar}".strip("TRACK_END")
-
-            self.update_hyperparameter_dictionnary_bar(
-                track,
-                dict_entry,
-            )
-        self.generated_piece_bar_by_bar_dict[track]["max_bar_index"] = index - 1
-
-    def bar_dict_to_text(self):
-        text = ""
-        for track in self.generated_piece_bar_by_bar_dict.keys():
-            max_bar_index = self.generated_piece_bar_by_bar_dict[track]["max_bar_index"]
-            text += self.generated_piece_bar_by_bar_dict[track][f"track_init"]
-            for bar in range(max_bar_index + 1):
-                text += self.generated_piece_bar_by_bar_dict[track][f"bar_{bar}"]
-
-            text += "TRACK_END "
-
-        return text
-
-    def delete_one_track(self, track):
-        self.generated_piece_dict.pop(track)
-
-    def reorder_tracks(self, order=None):
-        if order is None:  # default order
-            order = range(len(self.generated_piece_dict.keys))
-
-        for count, track in enumerate(self.generated_piece_dict.keys):
-            inst = track.split("_")[-1]
-            self.generated_piece_dict[
-                f"TRACK_{order[count]}_{inst}"
-            ] = self.generated_piece_dict.pop(track)
-
-    def generate_one_more_bar(self, processed_prompt):
-        """Generate one more bar from the input_prompt"""
-        prompt_plus_bar = self.generate_one_track(
-            input_prompt=processed_prompt,
-            expected_length=1,
-            verbose=False,
-        )
-        # remove the processed_prompt - but keeping "BAR_START " - and the TRACK_END
-        added_bar = prompt_plus_bar[
-            len(processed_prompt) - len("BAR_START ") : -len("TRACK_END")
-        ]
-        return prompt_plus_bar, added_bar
+    """ Piece generation - Extra Bars """
 
     @staticmethod
     def process_prompt_for_next_bar(self, track_key):
@@ -365,6 +342,35 @@ class GenerateMidiText:
                 processed_prompt += "BAR_START "
 
         return pre_promt + processed_prompt
+
+    def generate_one_more_bar(self, processed_prompt):
+        """Generate one more bar from the input_prompt"""
+        prompt_plus_bar = self.generate_one_track(
+            input_prompt=processed_prompt,
+            expected_length=1,
+            verbose=False,
+        )
+        # remove the processed_prompt - but keeping "BAR_START " - and the TRACK_END
+        added_bar = prompt_plus_bar[
+            len(processed_prompt) - len("BAR_START ") : -len("TRACK_END")
+        ]
+        return prompt_plus_bar, added_bar
+
+    def generate_n_more_bars(self, n_bars, verbose=True):
+        """Generate n more bars from the input_prompt"""
+        print(f"================== ")
+        print(f"Adding {n_bars} more bars to the piece ")
+        for bar_id in range(n_bars):
+            print(f"----- Extra bar #{bar_id+1}")
+            for track_key in sorted(self.generated_piece_dict.keys()):
+                print(f"---- ----- {track_key}")
+                # self.generated_piece_dict[f"{track}_new_bars"] = ""
+                bar_count_matches = False
+                while bar_count_matches is False:
+                    input_prompt = self.process_prompt_for_next_bar(self, track_key)
+                    input_prompt, new_bar = self.generate_one_more_bar(input_prompt)
+                    bar_count_matches, _ = bar_count_check(new_bar, 1)
+                self.add_new_bar_to_dict(self, track_key, new_bar)
 
 
 if __name__ == "__main__":
