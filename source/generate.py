@@ -453,7 +453,7 @@ if __name__ == "__main__":
             # 2- generate the first 8 bars for each instrument
             generate_midi.generate_piece()
             # 3 - force the model to improvise
-            generate_midi.set_improvisation_level(6)
+            generate_midi.set_improvisation_level(0)
             # 4 - generate the next 4 bars for each instrument
             generate_midi.generate_n_more_bars(4)
             # 5 - lower the improvisation level
