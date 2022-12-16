@@ -120,28 +120,28 @@ def get_event(text, value=None):
 
 # TODO: Make this singleton
 def get_miditok():
-    pitch_range = range(21, 109)
+    pitch_range = range(21, 109)  # pitch_range = range(0, 120)
     beat_res = {(0, 400): 8}
     return MIDILike(pitch_range, beat_res)
 
 
 class WriteTextMidiToFile:  # utils saving to file
     def __init__(self, generate_midi, output_path):
-        self.generate_midi = generate_midi.generated_piece
+        self.generated_midi = generate_midi.generated_piece
         self.output_path = output_path
-        self.hyperparameter_dict = generate_midi.hyperparameter_dict
+        self.hyperparameter_dict = generate_midi.hyperparameter_dictionary
 
     def hashing_seq(self):
         self.current_time = get_datetime()
         self.output_path_filename = f"{self.output_path}/{self.current_time}.json"
 
     def wrapping_seq_hyperparameters_in_dict(self):
-        assert type(self.generate_midi) is str, "error: generate_midi must be a string"
+        assert type(self.generated_midi) is str, "error: generate_midi must be a string"
         assert (
             type(self.hyperparameter_dict) is dict
         ), "error: feature_dict must be a dictionnary"
         return {
-            "generate_midi": self.generate_midi,
+            "generate_midi": self.generated_midi,
             "features": self.hyperparameter_dict,
         }
 

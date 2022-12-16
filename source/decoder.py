@@ -1,11 +1,5 @@
+from utils import *
 from familizer import Familizer
-from utils import (
-    readFromFile,
-    get_event,
-    to_base10,
-    to_beat_str,
-    get_miditok,
-)
 from miditok import Event
 
 

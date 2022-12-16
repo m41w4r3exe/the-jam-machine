@@ -50,7 +50,7 @@ def check_if_prompt_inst_in_tokenizer_vocab(tokenizer, inst_prompt_list):
             )
 
 
-def forcing_bar_length(input_prompt, generated, bar_count, expected_length):
+def forcing_bar_count(input_prompt, generated, bar_count, expected_length):
     """Forcing the generated sequence to have the expected length
     expected_length and bar_count refers to the length of newly_generated_only (without input prompt)"""
 
@@ -64,9 +64,11 @@ def forcing_bar_length(input_prompt, generated, bar_count, expected_length):
         full_piece += "TRACK_END"
         full_piece = input_prompt + full_piece
         print(f"Generated sequence trunkated at {expected_length} bars")
+        bar_count_checks = True
 
     elif bar_count - expected_length < 0:  # Do nothing it the sequence if too short
         full_piece = input_prompt + generated
+        bar_count_checks = False
+        print(f"--- Generated sequence is too short - Force Regeration ---")
 
-    bar_count_checks = True
     return full_piece, bar_count_checks
