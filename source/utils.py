@@ -120,7 +120,7 @@ def get_event(text, value=None):
 
 # TODO: Make this singleton
 def get_miditok():
-    pitch_range = range(21, 109)  # pitch_range = range(0, 120)
+    pitch_range = range(0, 140)  # was (21, 109)
     beat_res = {(0, 400): 8}
     return MIDILike(pitch_range, beat_res)
 
