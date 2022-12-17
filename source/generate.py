@@ -289,7 +289,7 @@ class GenerateMidiText:
         """
         track = self.generated_piece_bar_by_bar_dict[track_idx]
         # for bars which are not the bar to prolong
-        pre_promt = ""
+        pre_promt = "PIECE_START "
         for i, othertracks in enumerate(self.generated_piece_bar_by_bar_dict):
             if i != track_idx:
                 if len(othertracks["bars"]) > len(track["bars"]):
