@@ -95,13 +95,21 @@ class GenerateMidiText:
     def get_all_instr_bars(self, track_id):
         return self.piece_by_track[track_id]["bars"]
 
+    def get_last_generated_track(self, full_piece):
+        track = "TRACK_START" + full_piece.split("TRACK_START")[-1]
+        return track
+
+    def get_selected_track_as_text(self, track_id):
+        text = "TRACK_START "
+        for bar in self.piece_by_track[track_id]["bars"]:
+            text += bar
+        text += "TRACK_END "
+        return text
+
     def get_whole_piece_from_bar_dict(self):
         text = "PIECE_START "
-        for track in self.piece_by_track:
-            text += "TRACK_START "
-            for bar in track["bars"]:
-                text += bar
-            text += "TRACK_END "
+        for track_id, _ in enumerate(self.piece_by_track):
+            text += self.get_selected_track_as_text(track_id)
         return text
 
     def delete_one_track(self, track):  # TO BE TESTED
@@ -159,10 +167,6 @@ class GenerateMidiText:
         if verbose:
             print("Converting token sequence to MidiText...")
         return generated_text
-
-    def get_last_generated_track(self, full_piece):
-        track = "TRACK_START" + full_piece.split("TRACK_START")[-1]
-        return track
 
     def generate_until_track_end(
         self,

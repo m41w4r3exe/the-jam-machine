@@ -56,7 +56,7 @@ def delete_one_track(track_index):
     return generated_text
 
 
-def define_prompt():
+def define_prompt(state, genesis):
     if len(state) == 0:
         prompt = "PIECE_START"
     else:
@@ -82,7 +82,7 @@ def generator(regenerate, add_bars, temp, density, instrument, add_bar_count, st
     # Generate
     if not add_bars:
         # generate or regenerate new track
-        prompt = define_prompt()
+        prompt = define_prompt(state, genesis)
         generated_text = genesis.generate_one_new_track(
             inst, density, temp, input_prompt=prompt
         )
@@ -93,9 +93,10 @@ def generator(regenerate, add_bars, temp, density, instrument, add_bar_count, st
     decoder.get_midi(generated_text, "tmp/mixed.mid")
     _, mixed_audio = get_music("tmp/mixed.mid")
 
-    inst_text = generated_text
+    inst_text = genesis.get_selected_track_as_text(inst_index)
     for each in state:
         inst_text = inst_text.replace(each, "")
+
     inst_midi_name = f"tmp/{instrument}.mid"
     decoder.get_midi(inst_text, inst_midi_name)
     inst_midi, inst_audio = get_music(inst_midi_name)
