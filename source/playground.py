@@ -84,7 +84,8 @@ def generator(regenerate, add_bars, temp, density, instrument, add_bar_count, st
         )
     else:
         # NEW BARS
-        genesis.generate_n_more_bars(add_bar_count, inst_index)
+        # genesis.generate_n_more_bars(add_bar_count, inst_index) # for only one instrument
+        genesis.generate_n_more_bars(add_bar_count)  # for all instruments
         generated_text = genesis.get_whole_piece_from_bar_dict()
 
     decoder.get_midi(generated_text, "tmp/mixed.mid")
@@ -153,4 +154,6 @@ TODO: row fuckikng height to fix
 TODO: add a button to save the generated midi
 TODO: improve the piano roll - maybe using librosa to check if it works/looks good already by default
 TODO: adding a reset button to reload the model
+TODO: update all piano_rolls, audio and text when adding bars
+TODO: mapping instrument names to specific instrument and not random
 """

@@ -297,7 +297,7 @@ class GenerateMidiText:
                     for bar in track["bars"][-self.model_n_bar :]:
                         pre_promt += bar
                     pre_promt += "TRACK_END "
-                elif len_diff <= 0:
+                elif False:  # len_diff <= 0: # THIS GENERATES EMPTINESS
                     # adding an empty bars at the end of the other tracks if they have not been processed yet
                     pre_promt += othertracks["bars"][0]
                     for bar in track["bars"][-(self.model_n_bar - 1) :]:
