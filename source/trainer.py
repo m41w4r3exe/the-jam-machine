@@ -125,7 +125,7 @@ wandb.finish()
 HfApi().upload_folder(
     folder_path=MODEL_PATH,
     repo_id=HF_MODEL_REPO,
-    ignore_patterns="**/.git/*",
+    ignore_patterns=[".git/*", "**/.git/*"],
     token=HF_WRITE_TOKEN,
 )
 
