@@ -154,7 +154,7 @@ TODO: row fuckikng height to fix
 TODO: add a button to save the generated midi
 TODO: improve the piano roll - maybe using librosa to check if it works/looks good already by default
 TODO: adding a reset button to reload the model
-TODO: update all piano_rolls, audio and text when adding bars
+TODO: update all piano_rolls, audio and text of OTHER INSTRUMENTS when adding bars with one instrument. Or changing the way to add bars
 TODO: mapping instrument names to specific instrument and not
 TODO: reset state of tick boxes after used maybe (regenerate, add bars) ; 
 TODO: block regenerate if add bar on
