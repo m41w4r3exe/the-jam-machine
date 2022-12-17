@@ -120,7 +120,7 @@ def get_event(text, value=None):
 
 # TODO: Make this singleton
 def get_miditok():
-    pitch_range = range(21, 109)  # pitch_range = range(0, 120)
+    pitch_range = range(0, 140)  # was (21, 109)
     beat_res = {(0, 400): 8}
     return MIDILike(pitch_range, beat_res)
 
@@ -237,3 +237,10 @@ def copy_file(input_file, output_dir):
     """Copy an input file to the output_dir"""
     output_file = output_dir / input_file.name
     shutil.copy(input_file, output_file)
+
+
+def index_has_substring(list, substring):
+    for i, s in enumerate(list):
+        if substring in s:
+            return i
+    return -1
