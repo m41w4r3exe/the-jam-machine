@@ -8,7 +8,20 @@ from decoder import TextDecoder
 
 
 class GenerateMidiText:
-    """Generating music with Class"""
+    """Generating music with Class
+
+    LOGIC:
+
+    FOR GENERATING FROM SCRATCH:
+    - self.generate_one_new_track()
+    it calls
+        - self.generate_until_track_end()
+
+    FOR GENERATING NEW BARS:
+    - self.generate_one_more_bar()
+    it calls
+        - self.process_prompt_for_next_bar()
+        - self.generate_until_track_end()"""
 
     def __init__(self, model, tokenizer):
         self.model = model
@@ -31,7 +44,7 @@ class GenerateMidiText:
         self.set_temperatures()
 
     def initialize_dictionaries(self):
-        self.generated_piece_bar_by_bar_dict = []
+        self.piece_by_track = []
 
     def set_device(self, device="cpu"):
         self.device = ("cpu",)
@@ -76,8 +89,8 @@ class GenerateMidiText:
     """ Generation Tools - Dictionnaries """
 
     def initiate_track_dict(self, instr, density, temperature):
-        label = len(self.generated_piece_bar_by_bar_dict)
-        self.generated_piece_bar_by_bar_dict.append(
+        label = len(self.piece_by_track)
+        self.piece_by_track.append(
             {
                 "label": f"track_{label}",
                 "instrument": instr,
@@ -94,15 +107,13 @@ class GenerateMidiText:
                 continue
             else:
                 if "TRACK_START" in bar:
-                    self.generated_piece_bar_by_bar_dict[track_id]["bars"].append(bar)
+                    self.piece_by_track[track_id]["bars"].append(bar)
                 else:
-                    self.generated_piece_bar_by_bar_dict[track_id]["bars"].append(
-                        "BAR_START " + bar
-                    )
+                    self.piece_by_track[track_id]["bars"].append("BAR_START " + bar)
 
     def get_whole_piece_from_bar_dict(self):
         text = "PIECE_START "
-        for track in self.generated_piece_bar_by_bar_dict:
+        for track in self.piece_by_track:
             text += "TRACK_START "
             for bar in track["bars"]:
                 text += bar
@@ -111,7 +122,7 @@ class GenerateMidiText:
 
     def delete_one_track(self, track):  # TO BE TESTED
         self.piece_dict.pop(track)
-        self.generated_piece_bar_by_bar_dict.pop(track)
+        self.piece_by_track.pop(track)
 
     # def update_piece_dict__add_track(self, track_id, track):
     #     self.piece_dict[track_id] = track
@@ -260,8 +271,8 @@ class GenerateMidiText:
         # it is returned by self.generate_until_track_end"""
 
         generated_piece = "PIECE_START"
-        for count, (instrument, density, temperature) in enumerate(
-            zip(self.instruments, self.densities, self.temperature)
+        for instrument, density, temperature in zip(
+            self.instruments, self.densities, self.temperature
         ):
             self.generate_one_new_track(
                 instrument,
@@ -287,10 +298,10 @@ class GenerateMidiText:
         Returns:
             the processed prompt for generating the next bar
         """
-        track = self.generated_piece_bar_by_bar_dict[track_idx]
+        track = self.piece_by_track[track_idx]
         # for bars which are not the bar to prolong
         pre_promt = "PIECE_START "
-        for i, othertracks in enumerate(self.generated_piece_bar_by_bar_dict):
+        for i, othertracks in enumerate(self.piece_by_track):
             if i != track_idx:
                 if len(othertracks["bars"]) > len(track["bars"]):
                     pre_promt += othertracks["bars"][0]
@@ -334,7 +345,7 @@ class GenerateMidiText:
         print(f"Adding {n_bars} more bars to the piece ")
         for bar_id in range(n_bars):
             print(f"----- added bar #{bar_id+1} --")
-            for i, track in enumerate(self.generated_piece_bar_by_bar_dict):
+            for i, track in enumerate(self.piece_by_track):
                 print(f"--------- {track['label']}")
                 self.generate_one_more_bar(i)
 
@@ -430,6 +441,11 @@ if __name__ == "__main__":
 
 
 """
+NOTES
+
+
+
+
 - TODO: add improvisation level in bar dictionnary
 - TODO: update hyperparameters dictionnary when adding new bars
 - TODO: add errror if density is not in tokenizer vocab
