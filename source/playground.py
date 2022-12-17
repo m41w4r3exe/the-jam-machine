@@ -66,17 +66,17 @@ def generator(regenerate, temp, density, instrument, add_bar_count, state):
     prompt = ""
     inst_index = index_has_substring(state, "INST=" + str(inst))
 
-    if inst_index != -1:
-        inst_bars = get_bars(state[inst_index])
+    if inst_index != -1:  # if not last instrument generated
+        inst_bars = genesis.get_all_instr_bars(inst_index)
         prompt = inst_bars[0] + "".join(inst_bars[-7:]) + "BAR_START "
         if regenerate:
             state.pop(inst_index)
 
-    if len(state) == 0:
+    if len(state) == 0:  # if firts intrument ever generated
         prompt = "PIECE_START"
 
-    generated_text = genesis.generate_one_track(
-        input_prompt=prompt, instrument=inst, density=density
+    generated_text = genesis.generate_one_new_track(
+        inst, density, temp, input_prompt=prompt
     )
 
     decoder.get_midi(generated_text, "tmp/mixed.mid")
@@ -90,7 +90,7 @@ def generator(regenerate, temp, density, instrument, add_bar_count, state):
     inst_midi, inst_audio = get_music(inst_midi_name)
     piano_roll = plot_piano_roll(inst_midi.instruments[0].notes)
 
-    new_inst_bars = get_bars(inst_text)
+    new_inst_bars = genesis.get_all_instr_bars(inst_index)
 
     state.append(inst_text)
 

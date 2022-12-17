@@ -111,6 +111,9 @@ class GenerateMidiText:
                 else:
                     self.piece_by_track[track_id]["bars"].append("BAR_START " + bar)
 
+    def get_all_instr_bars(self, track_id):
+        return self.piece_by_track[track_id]["bars"]
+
     def get_whole_piece_from_bar_dict(self):
         text = "PIECE_START "
         for track in self.piece_by_track:
