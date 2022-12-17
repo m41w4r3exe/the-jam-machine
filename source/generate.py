@@ -347,7 +347,7 @@ if __name__ == "__main__":
 
     # define generation parameters
     N_FILES_TO_GENERATE = 1
-    Temperatures_to_try = [0.75]
+    Temperatures_to_try = [0.9]
 
     USE_FAMILIZED_MODEL = True
     force_sequence_length = True
@@ -361,9 +361,9 @@ if __name__ == "__main__":
 
         # model_repo = "JammyMachina/improved_4bars-mdl"
         # n_bar_generated = 4
-        instrument_promt_list = ["4", "DRUMS"]  # , "3"]
+        instrument_promt_list = ["4", "DRUMS", "3"]
         # DRUMS = drums, 0 = piano, 1 = chromatic percussion, 2 = organ, 3 = guitar, 4 = bass, 5 = strings, 6 = ensemble, 7 = brass, 8 = reed, 9 = pipe, 10 = synth lead, 11 = synth pad, 12 = synth effects, 13 = ethnic, 14 = percussive, 15 = sound effects
-        density_list = [2, 3]  # , 2]
+        density_list = [3, 3, 1]
         # temperature_list = [0.7, 0.7, 0.75]
     else:
         model_repo = "misnaej/the-jam-machine"
@@ -400,13 +400,13 @@ if __name__ == "__main__":
             # 2- generate the first 8 bars for each instrument
             generate_midi.generate_piece()
             # 3 - force the model to improvise
-            # generate_midi.set_improvisation_level(6)
+            generate_midi.set_improvisation_level(10)
             # 4 - generate the next 4 bars for each instrument
-            generate_midi.generate_n_more_bars(4)
+            generate_midi.generate_n_more_bars(8)
             # 5 - lower the improvisation level
-            # generate_midi.set_improvisation_level(0)
+            generate_midi.set_improvisation_level(0)
             # 6 - generate 8 more bars the improvisation level
-            # generate_midi.generate_n_more_bars(4)
+            generate_midi.generate_n_more_bars(8)
             # generate_midi.set_improvisation_level(12)
             # generate_midi.generate_n_more_bars(4)
             # generate_midi.set_improvisation_level(0)
