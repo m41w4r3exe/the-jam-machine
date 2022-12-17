@@ -441,10 +441,6 @@ if __name__ == "__main__":
 
 
 """
-NOTES
-
-
-
 
 - TODO: add improvisation level in bar dictionnary
 - TODO: update hyperparameters dictionnary when adding new bars
