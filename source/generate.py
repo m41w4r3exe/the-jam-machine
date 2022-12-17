@@ -38,10 +38,7 @@ class GenerateMidiText:
         self.generate_until = "TRACK_END"
         self.set_force_sequence_lenth()
         self.set_nb_bars_generated()
-        self.set_intruments()
-        self.set_densities()
         self.set_improvisation_level(0)
-        self.set_temperatures()
 
     def initialize_dictionaries(self):
         self.piece_by_track = []
@@ -64,24 +61,8 @@ class GenerateMidiText:
         print(f"no_repeat_ngram_size set to {improvisation_value}")
         print("--------------------")
 
-    def set_intruments(self, instruments=["DRUMS", "4", "3"]):
-        self.instruments = instruments
-
-    def set_densities(self, densities=[3, 2, 2]):
-        self.densities = densities
-
-    def set_temperatures(self, temperature=0.75):
-        if type(temperature) is not list:
-            self.temperature = [temperature for _ in self.instruments]
-        else:
-            if len(temperature) == 1:
-                self.temperature = [temperature[0] for _ in self.instruments]
-            elif len(temperature) == len(self.instruments):
-                self.temperature = temperature
-            else:
-                ValueError(
-                    "temperature list must be of length 1 or the same length as the number of instruments"
-                )
+    def reset_temperatures(self, track_id, temperature):
+        self.piece_by_track[track_id]["temperature"] = temperature
 
     def set_nb_bars_generated(self, n_bars=8):  # default is a 8 bar model
         self.model_n_bar = n_bars
@@ -124,7 +105,6 @@ class GenerateMidiText:
         return text
 
     def delete_one_track(self, track):  # TO BE TESTED
-        self.piece_dict.pop(track)
         self.piece_by_track.pop(track)
 
     # def update_piece_dict__add_track(self, track_id, track):
@@ -208,7 +188,7 @@ class GenerateMidiText:
             print("Density cannot be defined without an input_prompt instrument #TOFIX")
 
         if temperature is None:
-            temperature = self.temperature[0]
+            ValueError("Temperature must be defined")
 
         if verbose:
             print("--------------------")
@@ -262,7 +242,7 @@ class GenerateMidiText:
 
     """ Piece generation - Basics """
 
-    def generate_piece(self):
+    def generate_piece(self, instrument_list, density_list, temperature_list):
         """generate a sequence with mutiple tracks
         - inst_list sets the list of instruments of the order of generation
         - density is paired with inst_list
@@ -275,7 +255,7 @@ class GenerateMidiText:
 
         generated_piece = "PIECE_START"
         for instrument, density, temperature in zip(
-            self.instruments, self.densities, self.temperature
+            instrument_list, density_list, temperature_list
         ):
             self.generate_one_new_track(
                 instrument,
@@ -333,6 +313,7 @@ class GenerateMidiText:
         processed_prompt = self.process_prompt_for_next_bar(self, i)
         prompt_plus_bar = self.generate_until_track_end(
             input_prompt=processed_prompt,
+            temperature=self.piece_by_track[i]["temperature"],
             expected_length=1,
             verbose=False,
         )
@@ -362,7 +343,7 @@ if __name__ == "__main__":
     N_FILES_TO_GENERATE = 1
     Temperatures_to_try = [0.5]
 
-    USE_FAMILIZED_MODEL = False
+    USE_FAMILIZED_MODEL = True
     force_sequence_length = True
 
     if USE_FAMILIZED_MODEL:
@@ -396,10 +377,8 @@ if __name__ == "__main__":
     # does the prompt make sense
     check_if_prompt_inst_in_tokenizer_vocab(tokenizer, instrument_promt_list)
 
-    for temperature_list in Temperatures_to_try:
-        print(
-            f"================= TEMPERATURE {temperature_list} ======================="
-        )
+    for temperature in Temperatures_to_try:
+        print(f"================= TEMPERATURE {temperature} =======================")
         for _ in range(N_FILES_TO_GENERATE):
             print(f"========================================")
             # 1 - instantiate
@@ -407,11 +386,12 @@ if __name__ == "__main__":
             # 0 - set the n_bar for this model
             generate_midi.set_nb_bars_generated(n_bars=n_bar_generated)
             # 1 - defines the instruments, densities and temperatures
-            generate_midi.set_intruments(instrument_promt_list)
-            generate_midi.set_densities(density_list)
-            generate_midi.set_temperatures(temperature_list)
             # 2- generate the first 8 bars for each instrument
-            generate_midi.generate_piece()
+            generate_midi.generate_piece(
+                instrument_promt_list,
+                density_list,
+                [temperature for _ in density_list],
+            )
             # 3 - force the model to improvise
             generate_midi.set_improvisation_level(16)
             # 4 - generate the next 4 bars for each instrument

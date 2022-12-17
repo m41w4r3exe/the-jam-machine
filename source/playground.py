@@ -49,36 +49,47 @@ def plot_piano_roll(p_midi_note_list):
     return piano_roll_fig
 
 
-def get_bars(track_text):
-    bars = track_text.split("BAR_START")
-    init_text = bars.pop(0)
-    bars = map(lambda x: "BAR_START" + x.strip("TRACK_END"), bars)
-    return [init_text] + list(bars)
+def delete_one_track(track_index):
+    state.pop(track_index)
+    genesis.delete_one_track(track_index)
+    generated_text = genesis.get_whole_piece_from_bar_dict()
+    return generated_text
 
 
-def generator(regenerate, temp, density, instrument, add_bar_count, state):
-    genesis.set_temperatures([temp])
+def define_prompt():
+    if len(state) == 0:
+        prompt = "PIECE_START"
+    else:
+        prompt = genesis.get_whole_piece_from_bar_dict()
+    return prompt
+
+
+def generator(regenerate, add_bars, temp, density, instrument, add_bar_count, state):
 
     inst = next(
         (inst for inst in INSTRUMENT_CLASSES if inst["name"] == instrument),
         {"family_number": "DRUMS"},
     )["family_number"]
-    prompt = ""
+
     inst_index = index_has_substring(state, "INST=" + str(inst))
 
     if inst_index != -1:  # if not last instrument generated
-        inst_bars = genesis.get_all_instr_bars(inst_index)
-        prompt = inst_bars[0] + "".join(inst_bars[-7:]) + "BAR_START "
+        # inst_bars = genesis.get_all_instr_bars(inst_index)
+        # prompt = inst_bars[0] + "".join(inst_bars[-7:]) + "BAR_START "
         if regenerate:
-            state.pop(inst_index)
+            generated_text = delete_one_track(inst_index)
 
-    if len(state) == 0:  # if firts intrument ever generated
-        prompt = "PIECE_START"
+    # Generate
+    if not add_bars:
+        # generate or regenerate new track
+        prompt = define_prompt()
+        generated_text = genesis.generate_one_new_track(
+            inst, density, temp, input_prompt=prompt
+        )
+    else:
+        pass  # generate new bars to existing track
 
-    generated_text = genesis.generate_one_new_track(
-        inst, density, temp, input_prompt=prompt
-    )
-
+    # generated_text = genesis.get_whole_piece_from_bar_dict()
     decoder.get_midi(generated_text, "tmp/mixed.mid")
     _, mixed_audio = get_music("tmp/mixed.mid")
 
@@ -115,11 +126,20 @@ def instrument_row(default_inst):
         with gr.Column(scale=1, min_width=100):
             inst_audio = gr.Audio(label="Audio")
             regenerate = gr.Checkbox(value=False, label="Regenerate")
+            add_bars = gr.Checkbox(value=False, label="Add Bars")
             add_bar_count = gr.Dropdown([1, 2, 4, 8], value=1, label="Add Bars")
             gen_btn = gr.Button("Generate")
             gen_btn.click(
                 fn=generator,
-                inputs=[regenerate, temp, density, inst, add_bar_count, state],
+                inputs=[
+                    regenerate,
+                    add_bars,
+                    temp,
+                    density,
+                    inst,
+                    add_bar_count,
+                    state,
+                ],
                 outputs=[output_txt, inst_audio, piano_roll, state, mixed_audio],
             )
 
