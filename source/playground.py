@@ -51,10 +51,10 @@ def plot_piano_roll(p_midi_note_list):
 
 def define_prompt(state, genesis):
     if len(state) == 0:
-        prompt = "PIECE_START"
+        input_prompt = "PIECE_START "
     else:
-        prompt = genesis.get_whole_piece_from_bar_dict()
-    return prompt
+        input_prompt = genesis.get_whole_piece_from_bar_dict()
+    return input_prompt
 
 
 def generator(regenerate, add_bars, temp, density, instrument, add_bar_count, state):
@@ -78,13 +78,12 @@ def generator(regenerate, add_bars, temp, density, instrument, add_bar_count, st
     # Generate
     if not add_bars:
         # NEW TRACK
-        prompt = define_prompt(state, genesis)
+        input_prompt = define_prompt(state, genesis)
         generated_text = genesis.generate_one_new_track(
-            inst, density, temp, input_prompt=prompt
+            inst, density, temp, input_prompt=input_prompt
         )
     else:
         # NEW BARS
-        # genesis.generate_n_more_bars(add_bar_count, inst_index) # for only one instrument
         genesis.generate_n_more_bars(add_bar_count)  # for all instruments
         generated_text = genesis.get_whole_piece_from_bar_dict()
 
@@ -109,8 +108,8 @@ def instrument_row(default_inst):
                 value=default_inst,
                 label="Instrument",
             )
-            temp = gr.Number(value=0.75, label="Temperature")
-            density = gr.Dropdown([0, 1, 2, 3], value=2, label="Density")
+            temp = gr.Number(value=0.7, label="Temperature")
+            density = gr.Dropdown([0, 1, 2, 3], value=3, label="Density")
         with gr.Column(scale=3, min_width=100):
             with gr.Tab("Piano Roll"):
                 piano_roll = gr.Plot(label="Piano Roll")
@@ -155,5 +154,7 @@ TODO: add a button to save the generated midi
 TODO: improve the piano roll - maybe using librosa to check if it works/looks good already by default
 TODO: adding a reset button to reload the model
 TODO: update all piano_rolls, audio and text when adding bars
-TODO: mapping instrument names to specific instrument and not random
+TODO: mapping instrument names to specific instrument and not
+TODO: reset state of tick boxes after used maybe (regenerate, add bars) ; 
+TODO: 
 """

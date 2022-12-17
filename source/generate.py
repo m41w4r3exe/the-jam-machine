@@ -96,7 +96,7 @@ class GenerateMidiText:
         return self.piece_by_track[track_id]["bars"]
 
     def get_last_generated_track(self, full_piece):
-        track = "TRACK_START" + full_piece.split("TRACK_START")[-1]
+        track = "TRACK_START " + full_piece.split("TRACK_START ")[-1]
         return track
 
     def get_selected_track_as_text(self, track_id):
@@ -170,7 +170,7 @@ class GenerateMidiText:
 
     def generate_until_track_end(
         self,
-        input_prompt="PIECE_START",
+        input_prompt="PIECE_START ",
         instrument=None,
         density=None,
         temperature=None,
@@ -184,7 +184,7 @@ class GenerateMidiText:
             expected_length = self.model_n_bar
 
         if instrument is not None:
-            input_prompt = f"{input_prompt} TRACK_START INST={str(instrument)} "
+            input_prompt = f"{input_prompt}TRACK_START INST={str(instrument)} "
             if density is not None:
                 input_prompt = f"{input_prompt}DENSITY={str(density)} "
 
@@ -200,7 +200,7 @@ class GenerateMidiText:
                 f"Generating {instrument} - Density {density} - temperature {temperature}"
             )
         bar_count_checks = False
-
+        failed = 0
         while not bar_count_checks:  # regenerate until right length
             input_prompt_ids = self.tokenize_input_prompt(input_prompt, verbose=verbose)
             generated_tokens = self.generate_sequence_of_token_ids(
@@ -222,6 +222,10 @@ class GenerateMidiText:
                     bar_count,
                     expected_length,
                 )
+            if not bar_count_checks:
+                failed += 1
+                if failed > 4:
+                    bar_count_checks = True  # TOFIX exit the while loop
 
         return full_piece
 
@@ -230,7 +234,7 @@ class GenerateMidiText:
         instrument,
         density,
         temperature,
-        input_prompt="PIECE_START",
+        input_prompt="PIECE_START ",
     ):
         self.initiate_track_dict(instrument, density, temperature)
         full_piece = self.generate_until_track_end(
@@ -313,10 +317,6 @@ class GenerateMidiText:
             # adding the "last" bars of the track
             processed_prompt += bar
         processed_prompt += "BAR_START "
-        print("PRE_PROMPT")
-        print(pre_promt)
-        print("PRocessed_PROMPT")
-        print(processed_prompt)
         return pre_promt + processed_prompt
 
     def generate_one_more_bar(self, i):
