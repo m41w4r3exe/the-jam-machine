@@ -290,17 +290,21 @@ class GenerateMidiText:
         pre_promt = "PIECE_START "
         for i, othertracks in enumerate(self.piece_by_track):
             if i != track_idx:
-                if len(othertracks["bars"]) > len(track["bars"]):
+                len_diff = len(othertracks["bars"]) - len(track["bars"])
+                if len_diff > 0:
+                    # if other bars are longer, it mean that this one should catch up
                     pre_promt += othertracks["bars"][0]
                     for bar in track["bars"][-self.model_n_bar :]:
                         pre_promt += bar
                     pre_promt += "TRACK_END "
-                else:  # adding an empty bar agt the end of the track
+                elif len_diff <= 0:
+                    # adding an empty bars at the end of the other tracks if they have not been processed yet
                     pre_promt += othertracks["bars"][0]
                     for bar in track["bars"][-(self.model_n_bar - 1) :]:
                         pre_promt += bar
-                    pre_promt += "BAR_START BAR_END TRACK_END "
-                    # if not, then it means that the other track will be processed after this one
+                    for _ in range(abs(len_diff) + 1):
+                        pre_promt += "BAR_START BAR_END "
+                    pre_promt += "TRACK_END "
 
         # for the bar to prolong
         # initialization e.g TRACK_START INST=DRUMS DENSITY=2
@@ -309,7 +313,10 @@ class GenerateMidiText:
             # adding the "last" bars of the track
             processed_prompt += bar
         processed_prompt += "BAR_START "
-
+        print("PRE_PROMPT")
+        print(pre_promt)
+        print("PRocessed_PROMPT")
+        print(processed_prompt)
         return pre_promt + processed_prompt
 
     def generate_one_more_bar(self, i):
@@ -327,15 +334,19 @@ class GenerateMidiText:
         ]
         self.update_track_dict__add_bars(added_bar, i)
 
-    def generate_n_more_bars(self, n_bars, verbose=True):
+    def generate_n_more_bars(self, n_bars, only_this_track=None, verbose=True):
         """Generate n more bars from the input_prompt"""
+        if only_this_track is None:
+            only_this_track
+
         print(f"================== ")
         print(f"Adding {n_bars} more bars to the piece ")
         for bar_id in range(n_bars):
             print(f"----- added bar #{bar_id+1} --")
             for i, track in enumerate(self.piece_by_track):
-                print(f"--------- {track['label']}")
-                self.generate_one_more_bar(i)
+                if only_this_track is None or i == only_this_track:
+                    print(f"--------- {track['label']}")
+                    self.generate_one_more_bar(i)
 
 
 if __name__ == "__main__":
@@ -425,18 +436,3 @@ if __name__ == "__main__":
                 generate_midi.generated_piece, filename=filename.split(".")[0] + ".mid"
             )
             print("Et voilà! Your MIDI file is ready! GO JAM!")
-
-
-"""
-
-- TODO: add improvisation level in bar dictionnary
-- TODO: update hyperparameters dictionnary when adding new bars
-- TODO: add errror if density is not in tokenizer vocab
-- TODO: add a function to delete a track -> TO TEST
-- TODO: add a function to reorder the tracks in a dictionary -> TO TEST
-
-- TODO: list of dictionnaries
-    - list
-        - function to get the logic oout of this
-
-"""

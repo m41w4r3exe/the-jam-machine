@@ -77,14 +77,15 @@ def generator(regenerate, add_bars, temp, density, instrument, add_bar_count, st
 
     # Generate
     if not add_bars:
-        # generate or regenerate new track
+        # NEW TRACK
         prompt = define_prompt(state, genesis)
         generated_text = genesis.generate_one_new_track(
             inst, density, temp, input_prompt=prompt
         )
     else:
-        # generated_text = genesis.get_whole_piece_from_bar_dict()
-        pass  # generate new bars to existing track
+        # NEW BARS
+        genesis.generate_n_more_bars(add_bar_count, inst_index)
+        generated_text = genesis.get_whole_piece_from_bar_dict()
 
     decoder.get_midi(generated_text, "tmp/mixed.mid")
     _, mixed_audio = get_music("tmp/mixed.mid")
@@ -144,3 +145,12 @@ with gr.Blocks() as demo:
     instrument_row("Piano")
 
 demo.launch(debug=True)
+
+""" 
+TODO: regenerate and add bars button should not be activatblae together
+TODO: make a global add bar button/tick box
+TODO: row fuckikng height to fix
+TODO: add a button to save the generated midi
+TODO: improve the piano roll - maybe using librosa to check if it works/looks good already by default
+TODO: adding a reset button to reload the model
+"""
