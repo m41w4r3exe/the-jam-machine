@@ -72,3 +72,42 @@ def forcing_bar_count(input_prompt, generated, bar_count, expected_length):
         print(f"--- Generated sequence is too short - Force Regeration ---")
 
     return full_piece, bar_count_checks
+
+    # def create_hyperparameter_dictionary(self):
+    #     self.hyperparameter_dictionary = {
+    #         "model_identification": self.model.transformer.base_model.name_or_path,
+    #         "max_seq_length": self.max_length,
+    #         "generate_until": self.generate_until,
+    #     }
+
+    # def update_hyperparameter_dictionnary_bar(self, track, bar_index):
+    #     # get the track instrument index to get the density and temperature TO FIX
+    #     self.create_track_entry_in_hyperparameter_dict(track)
+    #     # for (inst_idx, intrument) in enumerate(self.instruments):
+    #     #     if intrument == self.hyperparameter_dictionary[track]["instruments"]:
+    #     #         idx = inst_idx
+
+    #     # self.hyperparameter_dictionary[track][f"bar_{bar_index}"] = {
+    #     #     "density": self.densities[idx],
+    #     #     "temperature": self.temperature[idx],
+    #     #     "improv_level": self.no_repeat_ngram_size,
+    #     # }
+
+    # def update_hyperparameter_dictionnary__add_track(self, track, instrument):
+    #     self.create_track_entry_in_hyperparameter_dict(track)
+    #     self.hyperparameter_dictionary[track]["instruments"] = instrument
+
+    # def reorder_tracks(self, order=None):  # TO BE TESTED
+    #     if order is None:  # default order
+    #         order = range(len(self.piece_dict.keys()))
+
+    #     for count, track in enumerate(self.piece_dict.keys):
+    #         inst = track.split("_")[-1]
+    #         self.piece_dict[f"TRACK_{order[count]}_{inst}"] = self.piece_dict.pop(track)
+    #         self.generated_piece_bar_by_bar_dict[
+    #             f"TRACK_{order[count]}_{inst}"
+    #         ] = self.generated_piece_bar_by_bar_dict.pop(track)
+
+    # def create_track_entry_in_hyperparameter_dict(self, track):
+    # if track not in self.hyperparameter_dictionary.keys():
+    #     self.hyperparameter_dictionary[track] = {}
