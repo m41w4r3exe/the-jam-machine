@@ -294,15 +294,14 @@ class GenerateMidiText:
             if i != track_idx:
                 if len(othertracks["bars"]) > len(track["bars"]):
                     pre_promt += othertracks["bars"][0]
-                    # it the other track is longer than the track to be processed
-                    # it means that it had already been processed
-                    # then we take the 8 last bars (or self.model_n_bar)
-                    # and add them as a preprompt
                     for bar in track["bars"][-self.model_n_bar :]:
                         pre_promt += bar
                     pre_promt += "TRACK_END "
-                else:
-                    pass
+                else:  # adding an empty bar agt the end of the track
+                    pre_promt += othertracks["bars"][0]
+                    for bar in track["bars"][-(self.model_n_bar - 1) :]:
+                        pre_promt += bar
+                    pre_promt += "BAR_START BAR_END TRACK_END "
                     # if not, then it means that the other track will be processed after this one
 
         # for the bar to prolong
@@ -347,7 +346,7 @@ if __name__ == "__main__":
 
     # define generation parameters
     N_FILES_TO_GENERATE = 1
-    Temperatures_to_try = [0.9]
+    Temperatures_to_try = [0.5]
 
     USE_FAMILIZED_MODEL = True
     force_sequence_length = True
@@ -400,17 +399,13 @@ if __name__ == "__main__":
             # 2- generate the first 8 bars for each instrument
             generate_midi.generate_piece()
             # 3 - force the model to improvise
-            generate_midi.set_improvisation_level(10)
+            generate_midi.set_improvisation_level(16)
             # 4 - generate the next 4 bars for each instrument
             generate_midi.generate_n_more_bars(8)
             # 5 - lower the improvisation level
             generate_midi.set_improvisation_level(0)
             # 6 - generate 8 more bars the improvisation level
             generate_midi.generate_n_more_bars(8)
-            # generate_midi.set_improvisation_level(12)
-            # generate_midi.generate_n_more_bars(4)
-            # generate_midi.set_improvisation_level(0)
-            # generate_midi.generate_n_more_bars(4)
             generate_midi.generated_piece = (
                 generate_midi.get_whole_piece_from_bar_dict()
             )
