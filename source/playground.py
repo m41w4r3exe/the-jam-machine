@@ -147,6 +147,7 @@ with gr.Blocks() as demo:
 demo.launch(debug=True)
 
 """ 
+TODO: add improvise button
 TODO: regenerate and add bars button should not be activatblae together
 TODO: make a global add bar button/tick box
 TODO: row fuckikng height to fix
@@ -156,5 +157,5 @@ TODO: adding a reset button to reload the model
 TODO: update all piano_rolls, audio and text when adding bars
 TODO: mapping instrument names to specific instrument and not
 TODO: reset state of tick boxes after used maybe (regenerate, add bars) ; 
-TODO: 
+TODO: block regenerate if add bar on
 """
