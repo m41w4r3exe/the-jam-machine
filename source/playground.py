@@ -48,26 +48,36 @@ def plot_piano_roll(p_midi_note_list):
     return piano_roll_fig
 
 
-def generator(regenerate, temp, density, instrument, state):
+def get_bars(track_text):
+    bars = track_text.split("BAR_START")
+    init_text = bars.pop(0)
+    bars = map(lambda x: "BAR_START" + x.strip("TRACK_END"), bars)
+    return [init_text] + list(bars)
+
+
+def generator(regenerate, temp, density, instrument, add_bar_count, state):
     genesis.set_temperatures([temp])
 
     inst = next(
         (inst for inst in INSTRUMENT_CLASSES if inst["name"] == instrument),
         {"family_number": "DRUMS"},
     )["family_number"]
+    prompt = ""
+    inst_index = index_has_substring(state, "INST=" + str(inst))
 
-    if regenerate:
-        i = index_has_substring(state, "INST=" + str(inst))
-        state.pop(i)
-        genesis.delete_one_track()
+    if inst_index != -1:
+        inst_bars = get_bars(state[inst_index])
+        prompt = inst_bars[0] + "".join(inst_bars[-7:]) + "BAR_START "
+        if regenerate:
+            state.pop(inst_index)
 
-    state_text = "".join(state)
-    if state_text == "":
-        state_text = "PIECE_START"
+    if len(state) == 0:
+        prompt = "PIECE_START"
 
     generated_text = genesis.generate_one_track(
-        input_prompt=state_text, instrument=inst, density=density
+        input_prompt=prompt, instrument=inst, density=density
     )
+
     decoder.get_midi(generated_text, "tmp/mixed.mid")
     _, mixed_audio = get_music("tmp/mixed.mid")
 
@@ -78,6 +88,8 @@ def generator(regenerate, temp, density, instrument, state):
     decoder.get_midi(inst_text, inst_midi_name)
     inst_midi, inst_audio = get_music(inst_midi_name)
     piano_roll = plot_piano_roll(inst_midi.instruments[0].notes)
+
+    new_inst_bars = get_bars(inst_text)
 
     state.append(inst_text)
 
@@ -102,10 +114,11 @@ def instrument_row(default_inst):
         with gr.Column(scale=1, min_width=100):
             inst_audio = gr.Audio(label="Audio")
             regenerate = gr.Checkbox(value=False, label="Regenerate")
+            add_bar_count = gr.Dropdown([1, 2, 4, 8], value=1, label="Add Bars")
             gen_btn = gr.Button("Generate")
             gen_btn.click(
                 fn=generator,
-                inputs=[regenerate, temp, density, inst, state],
+                inputs=[regenerate, temp, density, inst, add_bar_count, state],
                 outputs=[output_txt, inst_audio, piano_roll, state, mixed_audio],
             )
 
