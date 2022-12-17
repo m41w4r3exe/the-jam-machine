@@ -317,6 +317,7 @@ class GenerateMidiText:
             # adding the "last" bars of the track
             processed_prompt += bar
         processed_prompt += "BAR_START "
+        print(f"--- prompt length = {len(pre_promt + processed_prompt)} ---")
         return pre_promt + processed_prompt
 
     def generate_one_more_bar(self, i):
