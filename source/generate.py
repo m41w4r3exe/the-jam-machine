@@ -76,8 +76,10 @@ class GenerateMidiText:
     """ Generation Tools - Dictionnaries """
 
     def initiate_track_dict(self, instr, density, temperature):
+        label = len(self.generated_piece_bar_by_bar_dict)
         self.generated_piece_bar_by_bar_dict.append(
             {
+                "label": f"track_{label}",
                 "instrument": instr,
                 "density": density,
                 "temperature": temperature,
@@ -85,22 +87,18 @@ class GenerateMidiText:
             }
         )
 
-    def update_track_dict__add_bars(self, bars):
+    def update_track_dict__add_bars(self, bars, track_id):
         """Add bars to the track dictionnary"""
-        for bar in bars.rstrip("TRACK_END").split("BAR_START"):
-            if "TRACK_START" in bar:
-                self.generated_piece_bar_by_bar_dict[-1]["bars"].append(bar)
+        for bar in bars.rstrip("TRACK_END").split("BAR_START "):
+            if bar == "":  # happens is there is one bar only
+                continue
             else:
-                self.generated_piece_bar_by_bar_dict[-1]["bars"].append(
-                    "BAR_START " + bar
-                )
-
-    @staticmethod
-    def update_bar_dict__add_one_bar(self, track_key, new_bar):
-        max_index = self.generated_piece_bar_by_bar_dict[track_key]["max_bar_index"]
-        self.generated_piece_bar_by_bar_dict[track_key][f"bar_{max_index+1}"] = new_bar
-        self.generated_piece_bar_by_bar_dict[track_key]["max_bar_index"] += 1
-        self.piece_dict[track_key] += new_bar
+                if "TRACK_START" in bar:
+                    self.generated_piece_bar_by_bar_dict[track_id]["bars"].append(bar)
+                else:
+                    self.generated_piece_bar_by_bar_dict[track_id]["bars"].append(
+                        "BAR_START " + bar
+                    )
 
     def get_whole_piece_from_bar_dict(self):
         text = "PIECE_START "
@@ -244,7 +242,7 @@ class GenerateMidiText:
             temperature=temperature,
         )
         track = self.get_last_generated_track(full_piece)
-        self.update_track_dict__add_bars(track)
+        self.update_track_dict__add_bars(track, -1)
 
         return full_piece
 
@@ -277,52 +275,49 @@ class GenerateMidiText:
     """ Piece generation - Extra Bars """
 
     @staticmethod
-    def process_prompt_for_next_bar(self, track_key):
+    def process_prompt_for_next_bar(self, track_idx):
         """Processing the prompt for the model to generate one more bar only.
         The prompt containts:
                 if not the first bar: the previous, already processed, bars of the track
                 the bar initialization (ex: "TRACK_START INST=DRUMS DENSITY=2 ")
                 the last (self.model_n_bar)-1 bars of the track
         Args:
-            track_key: the dictionnary of the track to be processed
+            track_idx (int): the index of the track to be processed
 
         Returns:
             the processed prompt for generating the next bar
         """
-        track_max_bar = self.generated_piece_bar_by_bar_dict[track_key]["max_bar_index"]
-
+        track = self.generated_piece_bar_by_bar_dict[track_idx]
+        # for bars which are not the bar to prolong
         pre_promt = ""
-        processed_prompt = self.generated_piece_bar_by_bar_dict[track_key]["track_init"]
-
-        for (
-            current_track_key,
-            current_track,
-        ) in self.generated_piece_bar_by_bar_dict.items():
-            if current_track_key != track_key:
-                # if another track is longer it means that one bar was already added there
-                # so it should be included in the prompt
-                # iter: keep only the last (self.model_n_bar) bars
-                if current_track["max_bar_index"] > track_max_bar:
-                    pre_promt += current_track["track_init"]
-                    iter = range(current_track["max_bar_index"] + 1)[
-                        -(self.model_n_bar) :
-                    ]
-                    for bar in iter:
-                        pre_promt += current_track[f"bar_{bar}"]
-
+        for i, othertracks in enumerate(self.generated_piece_bar_by_bar_dict):
+            if i != track_idx:
+                if len(othertracks["bars"]) > len(track["bars"]):
+                    pre_promt += othertracks["bars"][0]
+                    # it the other track is longer than the track to be processed
+                    # it means that it had already been processed
+                    # then we take the 8 last bars (or self.model_n_bar)
+                    # and add them as a preprompt
+                    for bar in track["bars"][-self.model_n_bar :]:
+                        pre_promt += bar
                     pre_promt += "TRACK_END "
+                else:
+                    pass
+                    # if not, then it means that the other track will be processed after this one
 
-            elif current_track_key == track_key:
-                # iterc: keep only the last (self.model_n_bar - 2) bars
-                iterc = range(track_max_bar + 1)[-(self.model_n_bar - 1) :]
-                for bar in iterc:
-                    processed_prompt += current_track[f"bar_{bar}"]
-                processed_prompt += "BAR_START "
+        # for the bar to prolong
+        # initialization e.g TRACK_START INST=DRUMS DENSITY=2
+        processed_prompt = track["bars"][0]
+        for bar in track["bars"][-(self.model_n_bar - 1) :]:
+            # adding the "last" bars of the track
+            processed_prompt += bar
+        processed_prompt += "BAR_START "
 
         return pre_promt + processed_prompt
 
-    def generate_one_more_bar(self, processed_prompt):
+    def generate_one_more_bar(self, i):
         """Generate one more bar from the input_prompt"""
+        processed_prompt = self.process_prompt_for_next_bar(self, i)
         prompt_plus_bar = self.generate_until_track_end(
             input_prompt=processed_prompt,
             expected_length=1,
@@ -332,23 +327,17 @@ class GenerateMidiText:
         added_bar = prompt_plus_bar[
             len(processed_prompt) - len("BAR_START ") : -len("TRACK_END")
         ]
-        return prompt_plus_bar, added_bar
+        self.update_track_dict__add_bars(added_bar, i)
 
     def generate_n_more_bars(self, n_bars, verbose=True):
         """Generate n more bars from the input_prompt"""
         print(f"================== ")
         print(f"Adding {n_bars} more bars to the piece ")
         for bar_id in range(n_bars):
-            print(f"----- Extra bar #{bar_id+1}")
-            for track_key in sorted(self.piece_dict.keys()):
-                print(f"---- ----- {track_key}")
-                # self.piece_dict[f"{track}_new_bars"] = ""
-                bar_count_matches = False
-                while bar_count_matches is False:
-                    input_prompt = self.process_prompt_for_next_bar(self, track_key)
-                    input_prompt, new_bar = self.generate_one_more_bar(input_prompt)
-                    bar_count_matches, _ = bar_count_check(new_bar, 1)
-                self.update_bar_dict__add_one_bar(self, track_key, new_bar)
+            print(f"----- added bar #{bar_id+1} --")
+            for i, track in enumerate(self.generated_piece_bar_by_bar_dict):
+                print(f"--------- {track['label']}")
+                self.generate_one_more_bar(i)
 
 
 if __name__ == "__main__":
@@ -413,7 +402,7 @@ if __name__ == "__main__":
             # 3 - force the model to improvise
             # generate_midi.set_improvisation_level(6)
             # 4 - generate the next 4 bars for each instrument
-            # generate_midi.generate_n_more_bars(4)
+            generate_midi.generate_n_more_bars(4)
             # 5 - lower the improvisation level
             # generate_midi.set_improvisation_level(0)
             # 6 - generate 8 more bars the improvisation level
@@ -454,7 +443,6 @@ if __name__ == "__main__":
 
 - TODO: list of dictionnaries
     - list
-        - {name: "track_name", density: 3, temperature: 0.75, instrument: 0, improv_level: 0, bars: ["", "bar_start ", bar2, bar3, bar4, bar5, bar6, bar7, bar8]}
         - function to get the logic oout of this
 
 """
