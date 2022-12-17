@@ -261,7 +261,7 @@ class GenerateMidiText:
         'generated_piece' is returned by self.generate_until_track_end
         # it is returned by self.generate_until_track_end"""
 
-        generated_piece = "PIECE_START"
+        generated_piece = "PIECE_START "
         for instrument, density, temperature in zip(
             instrument_list, density_list, temperature_list
         ):
@@ -292,12 +292,12 @@ class GenerateMidiText:
         track = self.piece_by_track[track_idx]
         # for bars which are not the bar to prolong
         pre_promt = "PIECE_START "
-        for i, othertracks in enumerate(self.piece_by_track):
+        for i, othertrack in enumerate(self.piece_by_track):
             if i != track_idx:
-                len_diff = len(othertracks["bars"]) - len(track["bars"])
+                len_diff = len(othertrack["bars"]) - len(track["bars"])
                 if len_diff > 0:
                     # if other bars are longer, it mean that this one should catch up
-                    pre_promt += othertracks["bars"][0]
+                    pre_promt += othertrack["bars"][0]
                     for bar in track["bars"][-self.model_n_bar :]:
                         pre_promt += bar
                     pre_promt += "TRACK_END "
