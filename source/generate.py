@@ -336,7 +336,7 @@ class GenerateMidiText:
         )
         # remove the processed_prompt - but keeping "BAR_START " - and the TRACK_END
         added_bar = prompt_plus_bar[
-            len(processed_prompt) - len("BAR_START ") : -len("TRACK_END")
+            len(processed_prompt) - len("BAR_START ") : -len("TRACK_END ")
         ]
         self.update_track_dict__add_bars(added_bar, i)
 
