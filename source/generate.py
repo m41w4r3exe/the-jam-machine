@@ -96,7 +96,11 @@ class GenerateMidiText:
         return self.piece_by_track[track_id]["bars"]
 
     def get_last_generated_track(self, full_piece):
-        track = "TRACK_START " + full_piece.split("TRACK_START ")[-1]
+        track = (
+            "TRACK_START "
+            + full_piece.split("TRACK_START ")[-1].rstrip("TRACK_END")
+            + "TRACK_END "
+        ) + "TRACK_END "  # forcing the space after track and
         return track
 
     def get_selected_track_as_text(self, track_id):
@@ -245,6 +249,7 @@ class GenerateMidiText:
         )
         track = self.get_last_generated_track(full_piece)
         self.update_track_dict__add_bars(track, -1)
+        full_piece = self.get_whole_piece_from_bar_dict()
 
         return full_piece
 
@@ -265,13 +270,13 @@ class GenerateMidiText:
         for instrument, density, temperature in zip(
             instrument_list, density_list, temperature_list
         ):
-            self.generate_one_new_track(
+            generated_piece = self.generate_one_new_track(
                 instrument,
                 density,
                 temperature,
                 input_prompt=generated_piece,
             )
-
+        self.check_the_piece_for_errors()
         return generated_piece
 
     """ Piece generation - Extra Bars """
@@ -348,6 +353,26 @@ class GenerateMidiText:
                 if only_this_track is None or i == only_this_track:
                     print(f"--------- {track['label']}")
                     self.generate_one_more_bar(i)
+        self.check_the_wpiece_for_errors()
+
+    def check_the_piece_for_errors(self, piece: str = None):
+
+        if piece is None:
+            piece = generate_midi.get_whole_piece_from_bar_dict()
+        errors = []
+        errors.append(
+            [
+                (token, id)
+                for id, token in enumerate(piece.split(" "))
+                if token not in self.tokenizer.vocab or token == "UNK"
+            ]
+        )
+        if len(errors) > 0:
+            # print(piece)
+            for er in errors:
+                er
+                print(f"Token not found in the piece at {er[0][1]}: {er[0][0]}")
+                print(piece.split(" ")[er[0][1] - 5 : er[0][1] + 5])
 
 
 if __name__ == "__main__":

@@ -61,7 +61,7 @@ def forcing_bar_count(input_prompt, generated, bar_count, expected_length):
             if count < expected_length:
                 full_piece += spl + "BAR_END "
 
-        full_piece += "TRACK_END"
+        full_piece += "TRACK_END "
         full_piece = input_prompt + full_piece
         print(f"Generated sequence trunkated at {expected_length} bars")
         bar_count_checks = True
