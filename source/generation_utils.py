@@ -141,8 +141,8 @@ def plot_piano_roll(inst_midi):
             visible=False,
         )
         plt.text(
-            0,
-            note_pitch.max() + 5,
+            0.2,
+            note_pitch.max() + 4,
             inst.name,
             fontsize=20,
             color="purple",

@@ -45,32 +45,38 @@ def define_prompt(state, genesis):
 
 
 def generator(
-    regenerate, temp, density, instrument, state, add_bars=False, add_bar_count=1
+    regenerate,
+    temp,
+    density,
+    instrument,
+    state,
+    add_bars=False,
+    add_bar_count=1,
 ):
 
     inst = next(
         (inst for inst in INSTRUMENT_CLASSES if inst["name"] == instrument),
         {"family_number": "DRUMS"},
     )["family_number"]
-
     inst_index = index_has_substring(state, "INST=" + str(inst))
-
-    # Regenerate
-    if regenerate:
-        state.pop(inst_index)
-        genesis.delete_one_track(inst_index)
-        generated_text = (
-            genesis.get_whole_piece_from_bar_dict()
-        )  # maybe not useful here
-        inst_index = -1  # reset to last generated
 
     # Generate
     if not add_bars:
+        # Regenerate
+        if regenerate:
+            state.pop(inst_index)
+            genesis.delete_one_track(inst_index)
+            generated_text = (
+                genesis.get_whole_piece_from_bar_dict()
+            )  # maybe not useful here
+            inst_index = -1  # reset to last generated
+
         # NEW TRACK
         input_prompt = define_prompt(state, genesis)
         generated_text = genesis.generate_one_new_track(
             inst, density, temp, input_prompt=input_prompt
         )
+        regenerate = True  # set generate to true
     else:
         # NEW BARS
         genesis.generate_n_more_bars(add_bar_count)  # for all instruments
@@ -92,11 +98,11 @@ def generator(
         piano_roll,
         state,
         (44100, mixed_audio),
+        regenerate,
     )
 
 
 def instrument_row(default_inst):
-
     with gr.Row():
         with gr.Column(scale=1, min_width=50):
             inst = gr.Dropdown(
@@ -111,7 +117,7 @@ def instrument_row(default_inst):
             output_txt = gr.Textbox(label="output", lines=10, max_lines=10)
         with gr.Column(scale=1, min_width=100):
             inst_audio = gr.Audio(label="Audio")
-            regenerate = gr.Checkbox(value=False, label="Regenerate")
+            regenerate = gr.Checkbox(value=False, label="Regenerate", visible=True)
             # add_bars = gr.Checkbox(value=False, label="Add Bars")
             # add_bar_count = gr.Dropdown([1, 2, 4, 8], value=1, label="Add Bars")
             gen_btn = gr.Button("Generate")
@@ -124,7 +130,14 @@ def instrument_row(default_inst):
                     inst,
                     state,
                 ],
-                outputs=[output_txt, inst_audio, piano_roll, state, mixed_audio],
+                outputs=[
+                    output_txt,
+                    inst_audio,
+                    piano_roll,
+                    state,
+                    mixed_audio,
+                    regenerate,
+                ],
             )
 
 
