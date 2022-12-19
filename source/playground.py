@@ -9,6 +9,7 @@ from playback import get_music
 from matplotlib import pylab
 import sys
 import matplotlib
+from generation_utils import plot_piano_roll
 import numpy as np
 
 matplotlib.use("Agg")
@@ -17,6 +18,10 @@ import matplotlib.pyplot as plt
 sys.modules["pylab"] = pylab
 
 model_repo = "JammyMachina/elec-gmusic-familized-model-13-12__17-35-53"
+n_bar_generated = 8
+# model_repo = "JammyMachina/improved_4bars-mdl"
+# n_bar_generated = 4
+
 model, tokenizer = LoadModel(
     model_repo, from_huggingface=True
 ).load_model_and_tokenizer()
@@ -24,29 +29,10 @@ genesis = GenerateMidiText(
     model,
     tokenizer,
 )
+genesis.set_nb_bars_generated(n_bars=n_bar_generated)
+
 miditok = get_miditok()
 decoder = TextDecoder(miditok)
-
-
-def plot_piano_roll(p_midi_note_list):
-    piano_roll_fig = plt.figure()
-    piano_roll_fig.tight_layout()
-    piano_roll_fig.patch.set_alpha(0)
-    note_time = []
-    note_pitch = []
-    for note in p_midi_note_list:
-        note_time.append([note.start, note.end])
-        note_pitch.append([note.pitch, note.pitch])
-
-    plt.plot(
-        np.array(note_time).T,
-        np.array(note_pitch).T,
-        color="orange",
-        linewidth=1,
-    )
-    plt.xlabel("ticks")
-    plt.axis("off")
-    return piano_roll_fig
 
 
 def define_prompt(state, genesis):
@@ -88,20 +74,20 @@ def generator(regenerate, add_bars, temp, density, instrument, add_bar_count, st
         generated_text = genesis.get_whole_piece_from_bar_dict()
 
     decoder.get_midi(generated_text, "tmp/mixed.mid")
-    _, mixed_audio = get_music("tmp/mixed.mid")
+    mixed_inst_midi, mixed_audio = get_music("tmp/mixed.mid")
 
     inst_text = genesis.get_selected_track_as_text(inst_index)
     inst_midi_name = f"tmp/{instrument}.mid"
     decoder.get_midi(inst_text, inst_midi_name)
     inst_midi, inst_audio = get_music(inst_midi_name)
-    piano_roll = plot_piano_roll(inst_midi.instruments[0].notes)
+    piano_roll = plot_piano_roll(inst_midi)
     state.append(inst_text)
 
     return inst_text, (44100, inst_audio), piano_roll, state, (44100, mixed_audio)
 
 
 def instrument_row(default_inst):
-    with gr.Row(variant="default", equal_height=True):
+    with gr.Row(equal_height=True):
         with gr.Column(scale=1, min_width=10):
             inst = gr.Dropdown(
                 [inst["name"] for inst in INSTRUMENT_CLASSES] + ["Drums"],
@@ -141,8 +127,8 @@ with gr.Blocks() as demo:
     mixed_audio = gr.Audio(label="Mixed Audio")
     instrument_row("Drums")
     instrument_row("Bass")
-    instrument_row("Guitar")
-    instrument_row("Piano")
+    instrument_row("Synth Lead")
+    # instrument_row("Piano")
 
 demo.launch(debug=True)
 
