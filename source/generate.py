@@ -5,6 +5,7 @@ from constants import INSTRUMENT_CLASSES
 
 ## import for execution
 from decoder import TextDecoder
+from playback import get_music, show_piano_roll
 
 
 class GenerateMidiText:
@@ -38,10 +39,7 @@ class GenerateMidiText:
         self.generate_until = "TRACK_END"
         self.set_force_sequence_lenth()
         self.set_nb_bars_generated()
-        self.set_intruments()
-        self.set_densities()
         self.set_improvisation_level(0)
-        self.set_temperatures()
 
     def initialize_dictionaries(self):
         self.piece_by_track = []
@@ -64,24 +62,8 @@ class GenerateMidiText:
         print(f"no_repeat_ngram_size set to {improvisation_value}")
         print("--------------------")
 
-    def set_intruments(self, instruments=["DRUMS", "4", "3"]):
-        self.instruments = instruments
-
-    def set_densities(self, densities=[3, 2, 2]):
-        self.densities = densities
-
-    def set_temperatures(self, temperature=0.75):
-        if type(temperature) is not list:
-            self.temperature = [temperature for _ in self.instruments]
-        else:
-            if len(temperature) == 1:
-                self.temperature = [temperature[0] for _ in self.instruments]
-            elif len(temperature) == len(self.instruments):
-                self.temperature = temperature
-            else:
-                ValueError(
-                    "temperature list must be of length 1 or the same length as the number of instruments"
-                )
+    def reset_temperatures(self, track_id, temperature):
+        self.piece_by_track[track_id]["temperature"] = temperature
 
     def set_nb_bars_generated(self, n_bars=8):  # default is a 8 bar model
         self.model_n_bar = n_bars
@@ -102,7 +84,7 @@ class GenerateMidiText:
 
     def update_track_dict__add_bars(self, bars, track_id):
         """Add bars to the track dictionnary"""
-        for bar in bars.rstrip("TRACK_END").split("BAR_START "):
+        for bar in self.striping_track_ends(bars).split("BAR_START "):
             if bar == "":  # happens is there is one bar only
                 continue
             else:
@@ -111,17 +93,42 @@ class GenerateMidiText:
                 else:
                     self.piece_by_track[track_id]["bars"].append("BAR_START " + bar)
 
+    def get_all_instr_bars(self, track_id):
+        return self.piece_by_track[track_id]["bars"]
+
+    def striping_track_ends(self, text):
+        if "TRACK_END" in text:
+            # first get rid of extra space if any
+            # then gets rid of "TRACK_END"
+            text = text.rstrip(" ").rstrip("TRACK_END")
+        return text
+
+    def get_last_generated_track(self, full_piece):
+        track = (
+            "TRACK_START "
+            + self.striping_track_ends(full_piece.split("TRACK_START ")[-1])
+            + "TRACK_END "
+        )  # forcing the space after track and
+        return track
+
+    def get_selected_track_as_text(self, track_id):
+        text = ""
+        for bar in self.piece_by_track[track_id]["bars"]:
+            text += bar
+        text += "TRACK_END "
+        return text
+
+    @staticmethod
+    def get_newly_generated_text(input_prompt, full_piece):
+        return full_piece[len(input_prompt) :]
+
     def get_whole_piece_from_bar_dict(self):
         text = "PIECE_START "
-        for track in self.piece_by_track:
-            text += "TRACK_START "
-            for bar in track["bars"]:
-                text += bar
-            text += "TRACK_END "
+        for track_id, _ in enumerate(self.piece_by_track):
+            text += self.get_selected_track_as_text(track_id)
         return text
 
     def delete_one_track(self, track):  # TO BE TESTED
-        self.piece_dict.pop(track)
         self.piece_by_track.pop(track)
 
     # def update_piece_dict__add_track(self, track_id, track):
@@ -177,13 +184,9 @@ class GenerateMidiText:
             print("Converting token sequence to MidiText...")
         return generated_text
 
-    def get_last_generated_track(self, full_piece):
-        track = "TRACK_START" + full_piece.split("TRACK_START")[-1]
-        return track
-
     def generate_until_track_end(
         self,
-        input_prompt="PIECE_START",
+        input_prompt="PIECE_START ",
         instrument=None,
         density=None,
         temperature=None,
@@ -197,7 +200,7 @@ class GenerateMidiText:
             expected_length = self.model_n_bar
 
         if instrument is not None:
-            input_prompt = f"{input_prompt} TRACK_START INST={str(instrument)} "
+            input_prompt = f"{input_prompt}TRACK_START INST={str(instrument)} "
             if density is not None:
                 input_prompt = f"{input_prompt}DENSITY={str(density)} "
 
@@ -205,7 +208,7 @@ class GenerateMidiText:
             print("Density cannot be defined without an input_prompt instrument #TOFIX")
 
         if temperature is None:
-            temperature = self.temperature[0]
+            ValueError("Temperature must be defined")
 
         if verbose:
             print("--------------------")
@@ -213,28 +216,36 @@ class GenerateMidiText:
                 f"Generating {instrument} - Density {density} - temperature {temperature}"
             )
         bar_count_checks = False
-
+        failed = 0
         while not bar_count_checks:  # regenerate until right length
             input_prompt_ids = self.tokenize_input_prompt(input_prompt, verbose=verbose)
             generated_tokens = self.generate_sequence_of_token_ids(
                 input_prompt_ids, temperature, verbose=verbose
             )
             full_piece = self.convert_ids_to_text(generated_tokens, verbose=verbose)
-            generated = full_piece[len(input_prompt) :]
+            generated = self.get_newly_generated_text(input_prompt, full_piece)
             # bar_count_checks
             bar_count_checks, bar_count = bar_count_check(generated, expected_length)
+
             if not self.force_sequence_length:
                 # set bar_count_checks to true to exist the while loop
                 bar_count_checks = True
 
             if not bar_count_checks and self.force_sequence_length:
                 # if the generated sequence is not the expected length
-                full_piece, bar_count_checks = forcing_bar_count(
-                    input_prompt,
-                    generated,
-                    bar_count,
-                    expected_length,
-                )
+                if failed > 1:
+                    full_piece, bar_count_checks = forcing_bar_count(
+                        input_prompt,
+                        generated,
+                        bar_count,
+                        expected_length,
+                    )
+                else:
+                    print('"--- Wrong length - Regenerating ---')
+            if not bar_count_checks:
+                failed += 1
+                if failed > 2:
+                    bar_count_checks = True  # TOFIX exit the while loop
 
         return full_piece
 
@@ -243,7 +254,7 @@ class GenerateMidiText:
         instrument,
         density,
         temperature,
-        input_prompt="PIECE_START",
+        input_prompt="PIECE_START ",
     ):
         self.initiate_track_dict(instrument, density, temperature)
         full_piece = self.generate_until_track_end(
@@ -252,14 +263,15 @@ class GenerateMidiText:
             density=density,
             temperature=temperature,
         )
+
         track = self.get_last_generated_track(full_piece)
         self.update_track_dict__add_bars(track, -1)
-
+        full_piece = self.get_whole_piece_from_bar_dict()
         return full_piece
 
     """ Piece generation - Basics """
 
-    def generate_piece(self):
+    def generate_piece(self, instrument_list, density_list, temperature_list):
         """generate a sequence with mutiple tracks
         - inst_list sets the list of instruments of the order of generation
         - density is paired with inst_list
@@ -270,17 +282,19 @@ class GenerateMidiText:
         'generated_piece' is returned by self.generate_until_track_end
         # it is returned by self.generate_until_track_end"""
 
-        generated_piece = "PIECE_START"
+        generated_piece = "PIECE_START "
         for instrument, density, temperature in zip(
-            self.instruments, self.densities, self.temperature
+            instrument_list, density_list, temperature_list
         ):
-            self.generate_one_new_track(
+            generated_piece = self.generate_one_new_track(
                 instrument,
                 density,
                 temperature,
                 input_prompt=generated_piece,
             )
 
+        # generated_piece = self.get_whole_piece_from_bar_dict()
+        self.check_the_piece_for_errors()
         return generated_piece
 
     """ Piece generation - Extra Bars """
@@ -301,19 +315,23 @@ class GenerateMidiText:
         track = self.piece_by_track[track_idx]
         # for bars which are not the bar to prolong
         pre_promt = "PIECE_START "
-        for i, othertracks in enumerate(self.piece_by_track):
+        for i, othertrack in enumerate(self.piece_by_track):
             if i != track_idx:
-                if len(othertracks["bars"]) > len(track["bars"]):
-                    pre_promt += othertracks["bars"][0]
+                len_diff = len(othertrack["bars"]) - len(track["bars"])
+                if len_diff > 0:
+                    # if other bars are longer, it mean that this one should catch up
+                    pre_promt += othertrack["bars"][0]
                     for bar in track["bars"][-self.model_n_bar :]:
                         pre_promt += bar
                     pre_promt += "TRACK_END "
-                else:  # adding an empty bar agt the end of the track
+                elif False:  # len_diff <= 0: # THIS GENERATES EMPTINESS
+                    # adding an empty bars at the end of the other tracks if they have not been processed yet
                     pre_promt += othertracks["bars"][0]
                     for bar in track["bars"][-(self.model_n_bar - 1) :]:
                         pre_promt += bar
-                    pre_promt += "BAR_START BAR_END TRACK_END "
-                    # if not, then it means that the other track will be processed after this one
+                    for _ in range(abs(len_diff) + 1):
+                        pre_promt += "BAR_START BAR_END "
+                    pre_promt += "TRACK_END "
 
         # for the bar to prolong
         # initialization e.g TRACK_START INST=DRUMS DENSITY=2
@@ -321,8 +339,11 @@ class GenerateMidiText:
         for bar in track["bars"][-(self.model_n_bar - 1) :]:
             # adding the "last" bars of the track
             processed_prompt += bar
-        processed_prompt += "BAR_START "
 
+        processed_prompt += "BAR_START "
+        print(
+            f"--- prompt length = {len((pre_promt + processed_prompt).split(' '))} ---"
+        )
         return pre_promt + processed_prompt
 
     def generate_one_more_bar(self, i):
@@ -330,24 +351,51 @@ class GenerateMidiText:
         processed_prompt = self.process_prompt_for_next_bar(self, i)
         prompt_plus_bar = self.generate_until_track_end(
             input_prompt=processed_prompt,
+            temperature=self.piece_by_track[i]["temperature"],
             expected_length=1,
             verbose=False,
         )
-        # remove the processed_prompt - but keeping "BAR_START " - and the TRACK_END
-        added_bar = prompt_plus_bar[
-            len(processed_prompt) - len("BAR_START ") : -len("TRACK_END")
-        ]
+        added_bar = self.get_newly_generated_bar(prompt_plus_bar)
         self.update_track_dict__add_bars(added_bar, i)
 
-    def generate_n_more_bars(self, n_bars, verbose=True):
+    def get_newly_generated_bar(self, prompt_plus_bar):
+        return "BAR_START " + self.striping_track_ends(
+            prompt_plus_bar.split("BAR_START ")[-1]
+        )
+
+    def generate_n_more_bars(self, n_bars, only_this_track=None, verbose=True):
         """Generate n more bars from the input_prompt"""
+        if only_this_track is None:
+            only_this_track
+
         print(f"================== ")
         print(f"Adding {n_bars} more bars to the piece ")
         for bar_id in range(n_bars):
             print(f"----- added bar #{bar_id+1} --")
             for i, track in enumerate(self.piece_by_track):
-                print(f"--------- {track['label']}")
-                self.generate_one_more_bar(i)
+                if only_this_track is None or i == only_this_track:
+                    print(f"--------- {track['label']}")
+                    self.generate_one_more_bar(i)
+        self.check_the_piece_for_errors()
+
+    def check_the_piece_for_errors(self, piece: str = None):
+
+        if piece is None:
+            piece = generate_midi.get_whole_piece_from_bar_dict()
+        errors = []
+        errors.append(
+            [
+                (token, id)
+                for id, token in enumerate(piece.split(" "))
+                if token not in self.tokenizer.vocab or token == "UNK"
+            ]
+        )
+        if len(errors) > 0:
+            # print(piece)
+            for er in errors:
+                er
+                print(f"Token not found in the piece at {er[0][1]}: {er[0][0]}")
+                print(piece.split(" ")[er[0][1] - 5 : er[0][1] + 5])
 
 
 if __name__ == "__main__":
@@ -356,8 +404,8 @@ if __name__ == "__main__":
     DEVICE = "cpu"
 
     # define generation parameters
-    N_FILES_TO_GENERATE = 1
-    Temperatures_to_try = [0.5]
+    N_FILES_TO_GENERATE = 2
+    Temperatures_to_try = [0.7]
 
     USE_FAMILIZED_MODEL = True
     force_sequence_length = True
@@ -366,14 +414,14 @@ if __name__ == "__main__":
         # model_repo = "misnaej/the-jam-machine-elec-famil"
         # model_repo = "misnaej/the-jam-machine-elec-famil-ft32"
 
-        model_repo = "JammyMachina/elec-gmusic-familized-model-13-12__17-35-53"
-        n_bar_generated = 8
+        # model_repo = "JammyMachina/elec-gmusic-familized-model-13-12__17-35-53"
+        # n_bar_generated = 8
 
-        # model_repo = "JammyMachina/improved_4bars-mdl"
-        # n_bar_generated = 4
+        model_repo = "JammyMachina/improved_4bars-mdl"
+        n_bar_generated = 4
         instrument_promt_list = ["4", "DRUMS", "3"]
         # DRUMS = drums, 0 = piano, 1 = chromatic percussion, 2 = organ, 3 = guitar, 4 = bass, 5 = strings, 6 = ensemble, 7 = brass, 8 = reed, 9 = pipe, 10 = synth lead, 11 = synth pad, 12 = synth effects, 13 = ethnic, 14 = percussive, 15 = sound effects
-        density_list = [3, 3, 1]
+        density_list = [3, 2, 2]
         # temperature_list = [0.7, 0.7, 0.75]
     else:
         model_repo = "misnaej/the-jam-machine"
@@ -393,10 +441,8 @@ if __name__ == "__main__":
     # does the prompt make sense
     check_if_prompt_inst_in_tokenizer_vocab(tokenizer, instrument_promt_list)
 
-    for temperature_list in Temperatures_to_try:
-        print(
-            f"================= TEMPERATURE {temperature_list} ======================="
-        )
+    for temperature in Temperatures_to_try:
+        print(f"================= TEMPERATURE {temperature} =======================")
         for _ in range(N_FILES_TO_GENERATE):
             print(f"========================================")
             # 1 - instantiate
@@ -404,19 +450,18 @@ if __name__ == "__main__":
             # 0 - set the n_bar for this model
             generate_midi.set_nb_bars_generated(n_bars=n_bar_generated)
             # 1 - defines the instruments, densities and temperatures
-            generate_midi.set_intruments(instrument_promt_list)
-            generate_midi.set_densities(density_list)
-            generate_midi.set_temperatures(temperature_list)
             # 2- generate the first 8 bars for each instrument
-            generate_midi.generate_piece()
+            generate_midi.set_improvisation_level(30)
+            generate_midi.generate_piece(
+                instrument_promt_list,
+                density_list,
+                [temperature for _ in density_list],
+            )
             # 3 - force the model to improvise
-            generate_midi.set_improvisation_level(16)
+            # generate_midi.set_improvisation_level(20)
             # 4 - generate the next 4 bars for each instrument
-            generate_midi.generate_n_more_bars(8)
+            # generate_midi.generate_n_more_bars(n_bar_generated)
             # 5 - lower the improvisation level
-            generate_midi.set_improvisation_level(0)
-            # 6 - generate 8 more bars the improvisation level
-            generate_midi.generate_n_more_bars(8)
             generate_midi.generated_piece = (
                 generate_midi.get_whole_piece_from_bar_dict()
             )
@@ -437,23 +482,8 @@ if __name__ == "__main__":
             TextDecoder(decode_tokenizer, USE_FAMILIZED_MODEL).get_midi(
                 generate_midi.generated_piece, filename=filename.split(".")[0] + ".mid"
             )
+            inst_midi, mixed_audio = get_music(filename.split(".")[0] + ".mid")
+            max_time = get_max_time(inst_midi)
+            plot_piano_roll(inst_midi)
+
             print("Et voilà! Your MIDI file is ready! GO JAM!")
-
-
-"""
-NOTES
-
-
-
-
-- TODO: add improvisation level in bar dictionnary
-- TODO: update hyperparameters dictionnary when adding new bars
-- TODO: add errror if density is not in tokenizer vocab
-- TODO: add a function to delete a track -> TO TEST
-- TODO: add a function to reorder the tracks in a dictionary -> TO TEST
-
-- TODO: list of dictionnaries
-    - list
-        - function to get the logic oout of this
-
-"""

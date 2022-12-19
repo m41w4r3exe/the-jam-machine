@@ -237,3 +237,10 @@ def copy_file(input_file, output_dir):
     """Copy an input file to the output_dir"""
     output_file = output_dir / input_file.name
     shutil.copy(input_file, output_file)
+
+
+def index_has_substring(list, substring):
+    for i, s in enumerate(list):
+        if substring in s:
+            return i
+    return -1
