@@ -104,6 +104,14 @@ def plot_piano_roll(inst_midi):
         int
     )
     for inst in inst_midi.instruments:
+        # hardcoded for now
+        if inst.name == "Drums":
+            color = "purple"
+        elif inst.name == "Synth Bass 1":
+            color = "orange"
+        else:
+            color = "green"
+
         inst_count += 1
         plt.subplot(len(inst_midi.instruments), 1, inst_count)
 
@@ -126,7 +134,7 @@ def plot_piano_roll(inst_midi):
         plt.plot(
             note_time.T,
             note_pitch.T,
-            color="purple",
+            color=color,
             linewidth=4,
             solid_capstyle="butt",
         )
@@ -145,7 +153,7 @@ def plot_piano_roll(inst_midi):
             note_pitch.max() + 4,
             inst.name,
             fontsize=20,
-            color="purple",
+            color=color,
             horizontalalignment="left",
             verticalalignment="top",
         )
