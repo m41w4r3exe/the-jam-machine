@@ -86,7 +86,13 @@ def generator(
     piano_roll = plot_piano_roll(mixed_inst_midi)
     state.append(inst_text)
 
-    return inst_text, (44100, inst_audio), piano_roll, state, (44100, mixed_audio)
+    return (
+        inst_text,
+        (44100, inst_audio),
+        piano_roll,
+        state,
+        (44100, mixed_audio),
+    )
 
 
 def instrument_row(default_inst):
