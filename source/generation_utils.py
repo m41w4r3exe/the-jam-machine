@@ -1,6 +1,17 @@
 import os
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib
+
 from constants import INSTRUMENT_CLASSES
+from playback import get_music, show_piano_roll
+
+# matplotlib settings
+matplotlib.use("Agg")  # for server
+matplotlib.rcParams["xtick.major.size"] = 0
+matplotlib.rcParams["ytick.major.size"] = 0
+matplotlib.rcParams["axes.facecolor"] = "none"
+matplotlib.rcParams["axes.edgecolor"] = "none"
 
 
 def define_generation_dir(model_repo_path):
@@ -61,7 +72,7 @@ def forcing_bar_count(input_prompt, generated, bar_count, expected_length):
             if count < expected_length:
                 full_piece += spl + "BAR_END "
 
-        full_piece += "TRACK_END"
+        full_piece += "TRACK_END "
         full_piece = input_prompt + full_piece
         print(f"Generated sequence trunkated at {expected_length} bars")
         bar_count_checks = True
@@ -72,3 +83,62 @@ def forcing_bar_count(input_prompt, generated, bar_count, expected_length):
         print(f"--- Generated sequence is too short - Force Regeration ---")
 
     return full_piece, bar_count_checks
+
+
+def get_max_time(inst_midi):
+    max_time = 0
+    for inst in inst_midi.instruments:
+        max_time = max(max_time, inst.get_end_time())
+    return max_time
+
+
+def plot_piano_roll(inst_midi):
+    piano_roll_fig = plt.figure(figsize=(20, 3 * len(inst_midi.instruments)))
+    piano_roll_fig.tight_layout()
+    piano_roll_fig.patch.set_alpha(0)
+    inst_count = 0
+    beats_per_bar = 4
+    sec_per_beat = 0.5
+    next_beat = max(inst_midi.get_beats()) + np.diff(inst_midi.get_beats())[0]
+    bars_time = np.append(inst_midi.get_beats(), (next_beat))[::beats_per_bar].astype(
+        int
+    )
+    for inst in inst_midi.instruments:
+        inst_count += 1
+        plt.subplot(len(inst_midi.instruments), 1, inst_count)
+
+        for bar in bars_time:
+            plt.axvline(bar, color="grey", linewidth=0.5)
+        octaves = np.arange(0, 128, 12)
+        for octave in octaves:
+            plt.axhline(octave, color="grey", linewidth=0.5)
+        plt.yticks(octaves, visible=False)
+
+        p_midi_note_list = inst.notes
+        note_time = []
+        note_pitch = []
+        for note in p_midi_note_list:
+            note_time.append([note.start, note.end])
+            note_pitch.append([note.pitch, note.pitch])
+
+        plt.plot(
+            np.array(note_time).T,
+            np.array(note_pitch).T,
+            color="white",
+            linewidth=3,
+            solid_capstyle="butt",
+        )
+        plt.ylim(0, 128)
+        xticks = np.array(bars_time)[:-1]
+        plt.tight_layout()
+        # plt.xlim(min(bars_time), max(bars_time))
+        # plt.xlabel("bars")
+        plt.xticks(
+            xticks + 0.5 * beats_per_bar * sec_per_beat,
+            labels=xticks.argsort() + 1,
+            visible=False,
+        )
+        plt
+        plt.title(inst.name, fontsize=10, color="white")
+
+    return piano_roll_fig

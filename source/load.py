@@ -21,7 +21,7 @@ class LoadModel:
 
     """
 
-    def __init__(self, path, from_huggingface=True, device="cpu"):
+    def __init__(self, path, from_huggingface=True, device="cpu", revision=None):
         # path is either a relative path on a local/remote machine or a model repo on HuggingFace
         if not from_huggingface:
             if not os.path.exists(path):
@@ -30,6 +30,7 @@ class LoadModel:
         self.from_huggingface = from_huggingface
         self.path = path
         self.device = device
+        self.revision = revision
 
     def load_model_and_tokenizer(self):
         model = self.load_model()
@@ -38,7 +39,12 @@ class LoadModel:
         return model, tokenizer
 
     def load_model(self):
-        model = GPT2LMHeadModel.from_pretrained(self.path).to(self.device)
+        if self.revision is None:
+            model = GPT2LMHeadModel.from_pretrained(self.path).to(self.device)
+        else:
+            model = GPT2LMHeadModel.from_pretrained(
+                self.path, revision=self.revision
+            ).to(self.device)
 
         return model
 
