@@ -140,6 +140,6 @@ def plot_piano_roll(inst_midi):
             labels=xticks.argsort() + 1,
             visible=False,
         )
-        plt.title(inst.name, fontsize=10, color="white", verticalalignment="Top")
+        plt.title(inst.name, fontsize=10, color="white")
 
     return piano_roll_fig
