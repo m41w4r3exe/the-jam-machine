@@ -10,7 +10,7 @@ from playback import get_music, show_piano_roll
 matplotlib.use("Agg")  # for server
 matplotlib.rcParams["xtick.major.size"] = 0
 matplotlib.rcParams["ytick.major.size"] = 0
-matplotlib.rcParams["axes.facecolor"] = "none"
+matplotlib.rcParams["axes.facecolor"] = "grey"
 matplotlib.rcParams["axes.edgecolor"] = "none"
 
 
@@ -93,9 +93,9 @@ def get_max_time(inst_midi):
 
 
 def plot_piano_roll(inst_midi):
-    piano_roll_fig = plt.figure(figsize=(20, 3 * len(inst_midi.instruments)))
+    piano_roll_fig = plt.figure(figsize=(25, 3 * len(inst_midi.instruments)))
     piano_roll_fig.tight_layout()
-    piano_roll_fig.patch.set_alpha(0)
+    piano_roll_fig.patch.set_alpha(0.1)
     inst_count = 0
     beats_per_bar = 4
     sec_per_beat = 0.5
@@ -124,21 +124,20 @@ def plot_piano_roll(inst_midi):
         plt.plot(
             np.array(note_time).T,
             np.array(note_pitch).T,
-            color="white",
+            color="purple",
             linewidth=3,
             solid_capstyle="butt",
         )
         plt.ylim(0, 128)
         xticks = np.array(bars_time)[:-1]
         plt.tight_layout()
-        # plt.xlim(min(bars_time), max(bars_time))
+        plt.xlim(min(bars_time), max(bars_time))
         # plt.xlabel("bars")
         plt.xticks(
             xticks + 0.5 * beats_per_bar * sec_per_beat,
             labels=xticks.argsort() + 1,
             visible=False,
         )
-        plt
         plt.title(inst.name, fontsize=10, color="white")
 
     return piano_roll_fig
