@@ -10,8 +10,8 @@ from playback import get_music, show_piano_roll
 matplotlib.use("Agg")  # for server
 matplotlib.rcParams["xtick.major.size"] = 0
 matplotlib.rcParams["ytick.major.size"] = 0
-matplotlib.rcParams["axes.facecolor"] = "grey"
-matplotlib.rcParams["axes.edgecolor"] = "none"
+matplotlib.rcParams["axes.facecolor"] = "none"
+matplotlib.rcParams["axes.edgecolor"] = "grey"
 
 
 def define_generation_dir(model_repo_path):
@@ -95,7 +95,7 @@ def get_max_time(inst_midi):
 def plot_piano_roll(inst_midi):
     piano_roll_fig = plt.figure(figsize=(25, 3 * len(inst_midi.instruments)))
     piano_roll_fig.tight_layout()
-    piano_roll_fig.patch.set_alpha(0.1)
+    piano_roll_fig.patch.set_alpha(0)
     inst_count = 0
     beats_per_bar = 4
     sec_per_beat = 0.5
@@ -104,6 +104,14 @@ def plot_piano_roll(inst_midi):
         int
     )
     for inst in inst_midi.instruments:
+        # hardcoded for now
+        if inst.name == "Drums":
+            color = "purple"
+        elif inst.name == "Synth Bass 1":
+            color = "orange"
+        else:
+            color = "green"
+
         inst_count += 1
         plt.subplot(len(inst_midi.instruments), 1, inst_count)
 
@@ -120,24 +128,34 @@ def plot_piano_roll(inst_midi):
         for note in p_midi_note_list:
             note_time.append([note.start, note.end])
             note_pitch.append([note.pitch, note.pitch])
+        note_pitch = np.array(note_pitch)
+        note_time = np.array(note_time)
 
         plt.plot(
-            np.array(note_time).T,
-            np.array(note_pitch).T,
-            color="purple",
-            linewidth=3,
+            note_time.T,
+            note_pitch.T,
+            color=color,
+            linewidth=4,
             solid_capstyle="butt",
         )
         plt.ylim(0, 128)
         xticks = np.array(bars_time)[:-1]
         plt.tight_layout()
         plt.xlim(min(bars_time), max(bars_time))
-        # plt.xlabel("bars")
+        plt.ylim(max([note_pitch.min() - 5, 0]), note_pitch.max() + 5)
         plt.xticks(
             xticks + 0.5 * beats_per_bar * sec_per_beat,
             labels=xticks.argsort() + 1,
             visible=False,
         )
-        plt.title(inst.name, fontsize=10, color="white")
+        plt.text(
+            0.2,
+            note_pitch.max() + 4,
+            inst.name,
+            fontsize=20,
+            color=color,
+            horizontalalignment="left",
+            verticalalignment="top",
+        )
 
     return piano_roll_fig

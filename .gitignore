@@ -148,8 +148,8 @@ models
 notebooks/collab_notebook_model/old
 
 # generated files
+midi/generated
 midi/worked
-midi/generated/*
 midi/generated/misnaej/the-jam-machine-elec-famil/ignore
 midi/generated/misnaej/the-jam-machine/varying_temperature
 midi/generated/misnaej/the-jam-machine/varying_temperature.zip
