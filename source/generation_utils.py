@@ -93,7 +93,7 @@ def get_max_time(inst_midi):
 
 
 def plot_piano_roll(inst_midi):
-    piano_roll_fig = plt.figure(figsize=(15, 3))
+    piano_roll_fig = plt.figure(figsize=(20, 3 * len(inst_midi.instruments)))
     piano_roll_fig.tight_layout()
     piano_roll_fig.patch.set_alpha(0)
     inst_count = 0
@@ -130,7 +130,8 @@ def plot_piano_roll(inst_midi):
         )
         plt.ylim(0, 128)
         xticks = np.array(bars_time)[:-1]
-        plt.xlim(min(bars_time), max(bars_time))
+        plt.tight_layout()
+        # plt.xlim(min(bars_time), max(bars_time))
         # plt.xlabel("bars")
         plt.xticks(
             xticks + 0.5 * beats_per_bar * sec_per_beat,
@@ -138,6 +139,6 @@ def plot_piano_roll(inst_midi):
             visible=False,
         )
         plt
-        plt.title(inst.name, fontsize=10)
+        plt.title(inst.name, fontsize=10, color="white")
 
     return piano_roll_fig

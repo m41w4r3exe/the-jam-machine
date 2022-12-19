@@ -44,7 +44,9 @@ def define_prompt(state, genesis):
     return input_prompt
 
 
-def generator(regenerate, add_bars, temp, density, instrument, add_bar_count, state):
+def generator(
+    regenerate, temp, density, instrument, state, add_bars=False, add_bar_count=1
+):
 
     inst = next(
         (inst for inst in INSTRUMENT_CLASSES if inst["name"] == instrument),
@@ -96,27 +98,24 @@ def instrument_row(default_inst):
                 value=default_inst,
                 label="Instrument",
             )
-            temp = gr.Number(value=0.7, label="Temperature")
+            temp = gr.Number(value=0.7, label="Creativity")
             density = gr.Dropdown([0, 1, 2, 3], value=3, label="Density")
 
         with gr.Column(scale=3):
             output_txt = gr.Textbox(label="output", lines=10, max_lines=10)
         with gr.Column(scale=1, min_width=100):
             inst_audio = gr.Audio(label="Audio")
-        with gr.Column(scale=1, min_width=50):
             regenerate = gr.Checkbox(value=False, label="Regenerate")
-            add_bars = gr.Checkbox(value=False, label="Add Bars")
-            add_bar_count = gr.Dropdown([1, 2, 4, 8], value=1, label="Add Bars")
+            # add_bars = gr.Checkbox(value=False, label="Add Bars")
+            # add_bar_count = gr.Dropdown([1, 2, 4, 8], value=1, label="Add Bars")
             gen_btn = gr.Button("Generate")
             gen_btn.click(
                 fn=generator,
                 inputs=[
                     regenerate,
-                    add_bars,
                     temp,
                     density,
                     inst,
-                    add_bar_count,
                     state,
                 ],
                 outputs=[output_txt, inst_audio, piano_roll, state, mixed_audio],
