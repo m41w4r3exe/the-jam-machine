@@ -80,7 +80,7 @@ def generator(regenerate, add_bars, temp, density, instrument, add_bar_count, st
     inst_text = genesis.get_selected_track_as_text(inst_index)
     inst_midi_name = f"tmp/{instrument}.mid"
     decoder.get_midi(inst_text, inst_midi_name)
-    inst_midi, inst_audio = get_music(inst_midi_name)
+    _, inst_audio = get_music(inst_midi_name)
     piano_roll = plot_piano_roll(mixed_inst_midi)
     state.append(inst_text)
 
@@ -123,7 +123,7 @@ def instrument_row(default_inst):
             )
 
 
-with gr.Blocks() as demo:
+with gr.Blocks(cache_examples=False) as demo:
     state = gr.State([])
     mixed_audio = gr.Audio(label="Mixed Audio")
     piano_roll = gr.Plot(label="Piano Roll")
