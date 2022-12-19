@@ -18,12 +18,13 @@ import matplotlib.pyplot as plt
 sys.modules["pylab"] = pylab
 
 model_repo = "JammyMachina/elec-gmusic-familized-model-13-12__17-35-53"
+revision = "ddf00f90d6d27e4cc0cb99c04a22a8f0a16c933e"
 n_bar_generated = 8
 # model_repo = "JammyMachina/improved_4bars-mdl"
 # n_bar_generated = 4
 
 model, tokenizer = LoadModel(
-    model_repo, from_huggingface=True
+    model_repo, from_huggingface=True, revision=revision
 ).load_model_and_tokenizer()
 genesis = GenerateMidiText(
     model,
@@ -80,15 +81,16 @@ def generator(regenerate, add_bars, temp, density, instrument, add_bar_count, st
     inst_midi_name = f"tmp/{instrument}.mid"
     decoder.get_midi(inst_text, inst_midi_name)
     inst_midi, inst_audio = get_music(inst_midi_name)
-    piano_roll = plot_piano_roll(inst_midi)
+    piano_roll = plot_piano_roll(mixed_inst_midi)
     state.append(inst_text)
 
     return inst_text, (44100, inst_audio), piano_roll, state, (44100, mixed_audio)
 
 
 def instrument_row(default_inst):
-    with gr.Row(equal_height=True):
-        with gr.Column(scale=1, min_width=10):
+
+    with gr.Row():
+        with gr.Column(scale=1, min_width=50):
             inst = gr.Dropdown(
                 [inst["name"] for inst in INSTRUMENT_CLASSES] + ["Drums"],
                 value=default_inst,
@@ -96,13 +98,12 @@ def instrument_row(default_inst):
             )
             temp = gr.Number(value=0.7, label="Temperature")
             density = gr.Dropdown([0, 1, 2, 3], value=3, label="Density")
-        with gr.Column(scale=3, min_width=100):
-            with gr.Tab("Piano Roll"):
-                piano_roll = gr.Plot(label="Piano Roll")
-            with gr.Tab("Music text tokens"):
-                output_txt = gr.Textbox(label="output", lines=6, max_lines=6)
+
+        with gr.Column(scale=3):
+            output_txt = gr.Textbox(label="output", lines=10, max_lines=10)
         with gr.Column(scale=1, min_width=100):
             inst_audio = gr.Audio(label="Audio")
+        with gr.Column(scale=1, min_width=50):
             regenerate = gr.Checkbox(value=False, label="Regenerate")
             add_bars = gr.Checkbox(value=False, label="Add Bars")
             add_bar_count = gr.Dropdown([1, 2, 4, 8], value=1, label="Add Bars")
@@ -125,6 +126,7 @@ def instrument_row(default_inst):
 with gr.Blocks() as demo:
     state = gr.State([])
     mixed_audio = gr.Audio(label="Mixed Audio")
+    piano_roll = gr.Plot(label="Piano Roll")
     instrument_row("Drums")
     instrument_row("Bass")
     instrument_row("Synth Lead")

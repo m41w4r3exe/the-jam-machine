@@ -93,7 +93,7 @@ def get_max_time(inst_midi):
 
 
 def plot_piano_roll(inst_midi):
-    piano_roll_fig = plt.figure(figsize=(12, 3))
+    piano_roll_fig = plt.figure(figsize=(15, 3))
     piano_roll_fig.tight_layout()
     piano_roll_fig.patch.set_alpha(0)
     inst_count = 0
@@ -138,6 +138,6 @@ def plot_piano_roll(inst_midi):
             visible=False,
         )
         plt
-        # plt.ylabel("pitch")
+        plt.title(inst.name, fontsize=10)
 
     return piano_roll_fig
