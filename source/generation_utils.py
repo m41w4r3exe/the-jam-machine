@@ -1,6 +1,17 @@
 import os
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib
+
 from constants import INSTRUMENT_CLASSES
+from playback import get_music, show_piano_roll
+
+# matplotlib settings
+matplotlib.use("Agg")  # for server
+matplotlib.rcParams["xtick.major.size"] = 0
+matplotlib.rcParams["ytick.major.size"] = 0
+matplotlib.rcParams["axes.facecolor"] = "none"
+matplotlib.rcParams["axes.edgecolor"] = "none"
 
 
 def define_generation_dir(model_repo_path):
@@ -73,41 +84,60 @@ def forcing_bar_count(input_prompt, generated, bar_count, expected_length):
 
     return full_piece, bar_count_checks
 
-    # def create_hyperparameter_dictionary(self):
-    #     self.hyperparameter_dictionary = {
-    #         "model_identification": self.model.transformer.base_model.name_or_path,
-    #         "max_seq_length": self.max_length,
-    #         "generate_until": self.generate_until,
-    #     }
 
-    # def update_hyperparameter_dictionnary_bar(self, track, bar_index):
-    #     # get the track instrument index to get the density and temperature TO FIX
-    #     self.create_track_entry_in_hyperparameter_dict(track)
-    #     # for (inst_idx, intrument) in enumerate(self.instruments):
-    #     #     if intrument == self.hyperparameter_dictionary[track]["instruments"]:
-    #     #         idx = inst_idx
+def get_max_time(inst_midi):
+    max_time = 0
+    for inst in inst_midi.instruments:
+        max_time = max(max_time, inst.get_end_time())
+    return max_time
 
-    #     # self.hyperparameter_dictionary[track][f"bar_{bar_index}"] = {
-    #     #     "density": self.densities[idx],
-    #     #     "temperature": self.temperature[idx],
-    #     #     "improv_level": self.no_repeat_ngram_size,
-    #     # }
 
-    # def update_hyperparameter_dictionnary__add_track(self, track, instrument):
-    #     self.create_track_entry_in_hyperparameter_dict(track)
-    #     self.hyperparameter_dictionary[track]["instruments"] = instrument
+def plot_piano_roll(inst_midi):
+    piano_roll_fig = plt.figure(figsize=(12, 3))
+    piano_roll_fig.tight_layout()
+    piano_roll_fig.patch.set_alpha(0)
+    inst_count = 0
+    beats_per_bar = 4
+    sec_per_beat = 0.5
+    next_beat = max(inst_midi.get_beats()) + np.diff(inst_midi.get_beats())[0]
+    bars_time = np.append(inst_midi.get_beats(), (next_beat))[::beats_per_bar].astype(
+        int
+    )
+    for inst in inst_midi.instruments:
+        inst_count += 1
+        plt.subplot(len(inst_midi.instruments), 1, inst_count)
 
-    # def reorder_tracks(self, order=None):  # TO BE TESTED
-    #     if order is None:  # default order
-    #         order = range(len(self.piece_dict.keys()))
+        for bar in bars_time:
+            plt.axvline(bar, color="grey", linewidth=0.5)
+        octaves = np.arange(0, 128, 12)
+        for octave in octaves:
+            plt.axhline(octave, color="grey", linewidth=0.5)
+        plt.yticks(octaves, visible=False)
 
-    #     for count, track in enumerate(self.piece_dict.keys):
-    #         inst = track.split("_")[-1]
-    #         self.piece_dict[f"TRACK_{order[count]}_{inst}"] = self.piece_dict.pop(track)
-    #         self.generated_piece_bar_by_bar_dict[
-    #             f"TRACK_{order[count]}_{inst}"
-    #         ] = self.generated_piece_bar_by_bar_dict.pop(track)
+        p_midi_note_list = inst.notes
+        note_time = []
+        note_pitch = []
+        for note in p_midi_note_list:
+            note_time.append([note.start, note.end])
+            note_pitch.append([note.pitch, note.pitch])
 
-    # def create_track_entry_in_hyperparameter_dict(self, track):
-    # if track not in self.hyperparameter_dictionary.keys():
-    #     self.hyperparameter_dictionary[track] = {}
+        plt.plot(
+            np.array(note_time).T,
+            np.array(note_pitch).T,
+            color="white",
+            linewidth=3,
+            solid_capstyle="butt",
+        )
+        plt.ylim(0, 128)
+        xticks = np.array(bars_time)[:-1]
+        plt.xlim(min(bars_time), max(bars_time))
+        # plt.xlabel("bars")
+        plt.xticks(
+            xticks + 0.5 * beats_per_bar * sec_per_beat,
+            labels=xticks.argsort() + 1,
+            visible=False,
+        )
+        plt
+        # plt.ylabel("pitch")
+
+    return piano_roll_fig
