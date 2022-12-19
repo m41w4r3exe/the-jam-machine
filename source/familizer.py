@@ -1,14 +1,14 @@
 import random
 from joblib import Parallel, delayed
 from pathlib import Path
-from constants import INSTRUMENT_CLASSES
+from constants import INSTRUMENT_CLASSES, INSTRUMENT_TRANSFER_CLASSES
 from utils import get_files, timeit, FileCompressor
 
 
 class Familizer:
-    def __init__(self, n_jobs=-1):
+    def __init__(self, n_jobs=-1, arbitrary=False):
         self.n_jobs = n_jobs
-        self.reverse_family()
+        self.reverse_family(arbitrary)
 
     def get_family_number(self, program_number):
         """
@@ -18,13 +18,19 @@ class Familizer:
             if program_number in instrument_class["program_range"]:
                 return instrument_class["family_number"]
 
-    def reverse_family(self):
+    def reverse_family(self, arbitrary):
         """
         Create a dictionary of family numbers to randomly assigned program numbers.
         This is used to reverse the family number tokens back to program number tokens.
         """
+
+        if arbitrary is True:
+            int_class = INSTRUMENT_TRANSFER_CLASSES
+        else:
+            int_class = INSTRUMENT_CLASSES
+
         self.reference_programs = {}
-        for family in INSTRUMENT_CLASSES:
+        for family in int_class:
             self.reference_programs[family["family_number"]] = random.choice(
                 family["program_range"]
             )

@@ -133,16 +133,22 @@ with gr.Blocks(cache_examples=False) as demo:
 
 demo.launch(debug=True)
 
-""" 
-TODO: add improvise button
-TODO: regenerate and add bars button should not be activatblae together
-TODO: make a global add bar button/tick box
-TODO: row fuckikng height to fix
+"""
+TODO: DEPLOY
+TODO: temp file situation
+TODO: clear cache situation
+TODO: reset button
+TODO: instrument mapping business
+TODO: Y lim axis of piano roll
 TODO: add a button to save the generated midi
-TODO: improve the piano roll - maybe using librosa to check if it works/looks good already by default
-TODO: adding a reset button to reload the model
-TODO: update all piano_rolls, audio and text of OTHER INSTRUMENTS when adding bars with one instrument. Or changing the way to add bars
-TODO: mapping instrument names to specific instrument and not
+TODO: add improvise button
+TODO: making the piano roll fit on the horizontal scale
+TODO: set values for temperature as it is done for density
+TODO: set the color situation to be dark background
+TODO: make regeration default when an intrument has already been track has already been generated
+TODO: Add bar should be now set for the whole piece - regenerrate should regenerate the added bars only on all instruments
+TODO: row height to fix
+
 TODO: reset state of tick boxes after used maybe (regenerate, add bars) ; 
 TODO: block regenerate if add bar on
 """
