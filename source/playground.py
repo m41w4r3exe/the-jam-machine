@@ -45,6 +45,7 @@ def define_prompt(state, genesis):
 
 
 def generator(
+    label,
     regenerate,
     temp,
     density,
@@ -53,12 +54,17 @@ def generator(
     add_bars=False,
     add_bar_count=1,
 ):
-
+    track = {"label": label}
     inst = next(
         (inst for inst in INSTRUMENT_CLASSES if inst["name"] == instrument),
         {"family_number": "DRUMS"},
     )["family_number"]
-    inst_index = index_has_substring(state, "INST=" + str(inst))
+
+    inst_index = -1  # default to last generated
+    if state != []:
+        for index, instrum in enumerate(state):
+            if instrum["label"] == track["label"]:
+                inst_index = index  # changing if exists
 
     # Generate
     if not add_bars:
@@ -66,6 +72,7 @@ def generator(
         if regenerate:
             state.pop(inst_index)
             genesis.delete_one_track(inst_index)
+
             generated_text = (
                 genesis.get_whole_piece_from_bar_dict()
             )  # maybe not useful here
@@ -76,6 +83,7 @@ def generator(
         generated_text = genesis.generate_one_new_track(
             inst, density, temp, input_prompt=input_prompt
         )
+
         regenerate = True  # set generate to true
     else:
         # NEW BARS
@@ -90,7 +98,8 @@ def generator(
     decoder.get_midi(inst_text, inst_midi_name)
     _, inst_audio = get_music(inst_midi_name)
     piano_roll = plot_piano_roll(mixed_inst_midi)
-    state.append(inst_text)
+    track["text"] = inst_text
+    state.append(track)
 
     return (
         inst_text,
@@ -102,8 +111,9 @@ def generator(
     )
 
 
-def instrument_row(default_inst):
+def instrument_row(default_inst, row_id):
     with gr.Row():
+        row = gr.Variable(row_id)
         with gr.Column(scale=1, min_width=50):
             inst = gr.Dropdown(
                 [inst["name"] for inst in INSTRUMENT_CLASSES] + ["Drums"],
@@ -117,13 +127,14 @@ def instrument_row(default_inst):
             output_txt = gr.Textbox(label="output", lines=10, max_lines=10)
         with gr.Column(scale=1, min_width=100):
             inst_audio = gr.Audio(label="Audio")
-            regenerate = gr.Checkbox(value=False, label="Regenerate", visible=True)
+            regenerate = gr.Checkbox(value=False, label="Regenerate", visible=False)
             # add_bars = gr.Checkbox(value=False, label="Add Bars")
             # add_bar_count = gr.Dropdown([1, 2, 4, 8], value=1, label="Add Bars")
             gen_btn = gr.Button("Generate")
             gen_btn.click(
                 fn=generator,
                 inputs=[
+                    row,
                     regenerate,
                     temp,
                     density,
@@ -141,13 +152,13 @@ def instrument_row(default_inst):
             )
 
 
-with gr.Blocks(cache_examples=False) as demo:
+with gr.Blocks() as demo:
     state = gr.State([])
     mixed_audio = gr.Audio(label="Mixed Audio")
     piano_roll = gr.Plot(label="Piano Roll")
-    instrument_row("Drums")
-    instrument_row("Bass")
-    instrument_row("Synth Lead")
+    instrument_row("Drums", 0)
+    instrument_row("Bass", 1)
+    instrument_row("Synth Lead", 2)
     # instrument_row("Piano")
 
 demo.launch(debug=True)
@@ -157,14 +168,9 @@ TODO: DEPLOY
 TODO: temp file situation
 TODO: clear cache situation
 TODO: reset button
-TODO: instrument mapping business
-TODO: Y lim axis of piano roll
 TODO: add a button to save the generated midi
 TODO: add improvise button
-TODO: making the piano roll fit on the horizontal scale
 TODO: set values for temperature as it is done for density
-TODO: set the color situation to be dark background
-TODO: make regeration default when an intrument has already been track has already been generated
 TODO: Add bar should be now set for the whole piece - regenerrate should regenerate the added bars only on all instruments
 TODO: row height to fix
 
