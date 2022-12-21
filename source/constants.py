@@ -24,54 +24,98 @@ INSTRUMENT_CLASSES = [
 INSTRUMENT_TRANSFER_CLASSES = [
     {
         "name": "Piano",
-        "program_range": [4],  # Electric Piano 1
+        "program_range": [4],
         "family_number": 0,
+        "transfer_to": "Electric Piano 1",
     },
     {
         "name": "Chromatic Percussion",
-        "program_range": [11],  # Vibraphone
+        "program_range": [11],
         "family_number": 1,
+        "transfer_to": "Vibraphone",
     },
-    {"name": "Organ", "program_range": [17], "family_number": 2},  # Percussive Organ
+    {
+        "name": "Organ",
+        "program_range": [17],
+        "family_number": 2,
+        "transfer_to": "Percussive Organ",
+    },
     {
         "name": "Guitar",
-        "program_range": [80],  # Synth Lead Square
+        "program_range": [80],
         "family_number": 3,
+        "transfer_to": "Synth Lead Square",
     },
     {
         "name": "Bass",
-        "program_range": [38],  # Synth bass 1,
+        "program_range": [38],
         "family_number": 4,
+        "transfer_to": "Synth Bass 1",
     },
     {
         "name": "Strings",
-        "program_range": [50],  # Synth Strings 1
+        "program_range": [50],
         "family_number": 5,
+        "transfer_to": "Synth Strings 1",
     },
     {
         "name": "Ensemble",
-        "program_range": [51],  # Synth Strings 2
+        "program_range": [51],
         "family_number": 6,
+        "transfer_to": "Synth Strings 2",
     },
     {
         "name": "Brass",
-        "program_range": [63],  # 63 Synth Brass 1,
+        "program_range": [63],
         "family_number": 7,
+        "transfer_to": "Synth Brass 1",
     },
-    {"name": "Reed", "program_range": [64], "family_number": 8},  # Synth Brass 2
-    {"name": "Pipe", "program_range": [82], "family_number": 9},  #  Lead 3
+    {
+        "name": "Reed",
+        "program_range": [64],
+        "family_number": 8,
+        "transfer_to": "Synth Brass 2",
+    },
+    {
+        "name": "Pipe",
+        "program_range": [82],
+        "family_number": 9,
+        "transfer_to": "Synth Lead Calliope",
+    },
     {
         "name": "Synth Lead",
         "program_range": [81],  # Synth Lead Sawtooth
         "family_number": 10,
+        "transfer_to": "Synth Lead Sawtooth",
     },
-    {"name": "Synth Pad", "program_range": range(88, 96), "family_number": 11},
-    {"name": "Synth Effects", "program_range": range(96, 104), "family_number": 12},
-    {"name": "Ethnic", "program_range": range(104, 112), "family_number": 13},
-    {"name": "Percussive", "program_range": range(112, 120), "family_number": 14},
+    {
+        "name": "Synth Pad",
+        "program_range": range(88, 96),
+        "family_number": 11,
+        "transfer_to": "Synth Pad",
+    },
+    {
+        "name": "Synth Effects",
+        "program_range": range(96, 104),
+        "family_number": 12,
+        "transfer_to": "Synth Effects",
+    },
+    {
+        "name": "Ethnic",
+        "program_range": range(104, 112),
+        "family_number": 13,
+        "transfer_to": "Ethnic",
+    },
+    {
+        "name": "Percussive",
+        "program_range": range(112, 120),
+        "family_number": 14,
+        "transfer_to": "Percussive",
+    },
     {
         "name": "Sound Effects",
         "program_range": range(120, 128),
         "family_number": 15,
+        "transfer_to": "Sound Effects",
     },
 ]

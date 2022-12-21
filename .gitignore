@@ -161,6 +161,9 @@ midi/generated/misnaej/the-jam-machine-elec-famil/varying_temperature_ckpt20000.
 # Encoded midi data
 midi_encoded
 
+# Passwords
+passwords.py
+
 # Wandb file
 wandb
 # Mac

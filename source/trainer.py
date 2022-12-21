@@ -17,6 +17,7 @@ import wandb
 from datasets import load_dataset
 from trainer_utils import *
 from huggingface_hub import create_repo, HfApi
+from passwords import HF_READ_TOKEN, HF_WRITE_TOKEN
 
 # CONFIG:
 DATASET_NAME = "improved_4bars"
@@ -28,8 +29,7 @@ EVAL_STEPS = 1024
 TRAIN_EPOCHS = 5
 PER_DEVICE_TRAIN_BATCH_SIZE = 7
 GRADIENT_ACCUMULATION_STEPS = 1
-HF_READ_TOKEN = "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"  # Tokens from malwarexe, very bad thing to do, don't tell anyone
-HF_WRITE_TOKEN = "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"
+
 
 if not os.path.exists(MODEL_PATH):
     print(f"Creating model path: {MODEL_PATH}")

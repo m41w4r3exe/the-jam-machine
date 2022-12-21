@@ -1,6 +1,7 @@
 from transformers import GPT2LMHeadModel
 from transformers import PreTrainedTokenizerFast
 import os
+import torch
 
 
 class LoadModel:
@@ -31,6 +32,8 @@ class LoadModel:
         self.path = path
         self.device = device
         self.revision = revision
+        if torch.cuda.is_available():
+            self.device = "cuda"
 
     def load_model_and_tokenizer(self):
         model = self.load_model()
@@ -40,11 +43,11 @@ class LoadModel:
 
     def load_model(self):
         if self.revision is None:
-            model = GPT2LMHeadModel.from_pretrained(self.path).to(self.device)
+            model = GPT2LMHeadModel.from_pretrained(self.path)  # .to(self.device)
         else:
             model = GPT2LMHeadModel.from_pretrained(
                 self.path, revision=self.revision
-            ).to(self.device)
+            )  # .to(self.device)
 
         return model
 
