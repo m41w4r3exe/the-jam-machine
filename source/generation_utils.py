@@ -15,10 +15,6 @@ matplotlib.rcParams["axes.edgecolor"] = "grey"
 
 
 def define_generation_dir(model_repo_path):
-    #### to remove later ####
-    if model_repo_path == "models/model_2048_fake_wholedataset":
-        model_repo_path = "misnaej/the-jam-machine"
-    #### to remove later ####
     generated_sequence_files_path = f"midi/generated/{model_repo_path}"
     if not os.path.exists(generated_sequence_files_path):
         os.makedirs(generated_sequence_files_path)
@@ -59,6 +55,11 @@ def check_if_prompt_inst_in_tokenizer_vocab(tokenizer, inst_prompt_list):
                 f"""The instrument {inst} is not in the tokenizer vocabulary. 
                 Available Instruments: {instruments_in_dataset}"""
             )
+
+
+# TODO
+def check_if_prompt_density_in_tokenizer_vocab(tokenizer, density_prompt_list):
+    pass
 
 
 def forcing_bar_count(input_prompt, generated, bar_count, expected_length):

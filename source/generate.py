@@ -1,11 +1,8 @@
 from generation_utils import *
 from utils import WriteTextMidiToFile, get_miditok
 from load import LoadModel
-from constants import INSTRUMENT_CLASSES
-
-## import for execution
 from decoder import TextDecoder
-from playback import get_music, show_piano_roll
+from playback import get_music
 
 
 class GenerateMidiText:
@@ -24,12 +21,12 @@ class GenerateMidiText:
         - self.process_prompt_for_next_bar()
         - self.generate_until_track_end()"""
 
-    def __init__(self, model, tokenizer):
+    def __init__(self, model, tokenizer, piece_by_track=[]):
         self.model = model
         self.tokenizer = tokenizer
         # default initialization
         self.initialize_default_parameters()
-        self.initialize_dictionaries()
+        self.initialize_dictionaries(piece_by_track)
 
     """Setters"""
 
@@ -41,8 +38,8 @@ class GenerateMidiText:
         self.set_nb_bars_generated()
         self.set_improvisation_level(0)
 
-    def initialize_dictionaries(self):
-        self.piece_by_track = []
+    def initialize_dictionaries(self, piece_by_track):
+        self.piece_by_track = piece_by_track
 
     def set_device(self, device="cpu"):
         self.device = ("cpu",)
@@ -193,7 +190,6 @@ class GenerateMidiText:
         verbose=True,
         expected_length=None,
     ):
-
         """generate until the TRACK_END token is reached
         full_piece = input_prompt + generated"""
         if expected_length is None:
@@ -233,7 +229,7 @@ class GenerateMidiText:
 
             if not bar_count_checks and self.force_sequence_length:
                 # if the generated sequence is not the expected length
-                if failed > 1:
+                if failed > -1:  # deactivated for speed
                     full_piece, bar_count_checks = forcing_bar_count(
                         input_prompt,
                         generated,
@@ -273,14 +269,17 @@ class GenerateMidiText:
 
     def generate_piece(self, instrument_list, density_list, temperature_list):
         """generate a sequence with mutiple tracks
-        - inst_list sets the list of instruments of the order of generation
-        - density is paired with inst_list
-        Each track/intrument is generated on a prompt which contains the previously generated track/instrument
-        This means that the first instrument is generated with less bias than the next one, and so on.
 
-        'generated_piece' keeps track of the entire piece
-        'generated_piece' is returned by self.generate_until_track_end
-        # it is returned by self.generate_until_track_end"""
+        Args:
+            - inst_list sets the list of instruments and the the order of generation
+            - density and
+            - temperature are paired with inst_list
+
+        Each track/intrument is generated based on a prompt which contains the previously generated track/instrument
+
+        Returns:
+        'generated_piece' which keeps track of the entire piece
+        """
 
         generated_piece = "PIECE_START "
         for instrument, density, temperature in zip(
@@ -324,7 +323,9 @@ class GenerateMidiText:
                     for bar in track["bars"][-self.model_n_bar :]:
                         pre_promt += bar
                     pre_promt += "TRACK_END "
-                elif False:  # len_diff <= 0: # THIS GENERATES EMPTINESS
+                elif (
+                    False
+                ):  # len_diff <= 0: # THIS DOES NOT WORK - It just fills things with empty bars
                     # adding an empty bars at the end of the other tracks if they have not been processed yet
                     pre_promt += othertracks["bars"][0]
                     for bar in track["bars"][-(self.model_n_bar - 1) :]:
@@ -381,7 +382,7 @@ class GenerateMidiText:
     def check_the_piece_for_errors(self, piece: str = None):
 
         if piece is None:
-            piece = generate_midi.get_whole_piece_from_bar_dict()
+            piece = self.get_whole_piece_from_bar_dict()
         errors = []
         errors.append(
             [
