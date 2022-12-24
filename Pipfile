@@ -30,6 +30,7 @@ gradio = "*"
 transformers = "*"
 torch = "*"
 torchvision = "*"
+bertviz = "*"
 
 [dev-packages]
 black = "*"
