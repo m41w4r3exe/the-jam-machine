@@ -16,6 +16,7 @@ matplotlib.use("Agg")
 
 sys.modules["pylab"] = pylab
 
+# Load Model
 model_repo = "JammyMachina/elec-gmusic-familized-model-13-12__17-35-53"
 n_bar_generated = 8
 # model_repo = "JammyMachina/improved_4bars-mdl"
@@ -26,11 +27,14 @@ model, tokenizer = LoadModel(
     from_huggingface=True,
 ).load_model_and_tokenizer()
 
+# Initialize MIDI decoder
 miditok = get_miditok()
 decoder = TextDecoder(miditok)
 
 
 def define_prompt(state, genesis):
+    """If somethikng has already been generated, use this as a prompt,
+    else use PIECE_START"""
     if len(state) == 0:
         input_prompt = "PIECE_START "
     else:
@@ -172,14 +176,12 @@ with gr.Blocks() as demo:
         If you don't like the track, hit the generate button to regenerate it! Generate more tracks and listen to the **mixed audio**!
         """
     )
-    track1_md = gr.Markdown(""" ## TRACK 1 """)
-    instrument_row("Drums", 0)
-    track1_md = gr.Markdown(""" ## TRACK 2 """)
-    instrument_row("Synth Bass 1", 1)
-    track1_md = gr.Markdown(""" ## TRACK 3 """)
-    instrument_row("Synth Lead Square", 2)
-    # instrument_row("Piano")
-
+    # Generate each track with prefilled default instruments
+    default_instruments = ['Drums', 'Synth Bass 1', 'Synth Lead Square']
+    for instrument, i in zip(default_instruments, range(3)):
+        track1_md = gr.Markdown(f""" ## TRACK {i+1} """)
+        instrument_row(instrument, i)
+    
 demo.launch(debug=True)
 
 
