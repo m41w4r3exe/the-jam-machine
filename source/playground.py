@@ -182,8 +182,8 @@ with gr.Blocks() as demo:
 
 demo.launch(debug=True)
 
-"""
-TODO: add a button to save the generated midi
-TODO: add improvise button
-TODO: set values for temperature as it is done for density
-"""
+
+#TODO: add a button to save the generated midi
+#TODO: add improvise button
+#TODO: set values for temperature as it is done for density
+#TODO: provide possibility to export the generated midi track
