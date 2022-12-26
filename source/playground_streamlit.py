@@ -18,10 +18,10 @@ from familizer import Familizer
 # TODO: Fix generate correct instrument
 # TODO: simplify state and piece_by_track to just one variable
 # TODO: remove track_index and work with track names instead
-# TODO: remove regenerate state
 # TODO: add a button to export the generated midi
 # TODO: add a button to clear the state
 
+# Force matplotlib to not use any Xwindows backend.
 matplotlib.use("Agg")
 sys.modules["pylab"] = pylab
 
@@ -50,7 +50,6 @@ def get_prompt(state, composer):
 
 def generator(
     label,
-    regenerate,
     temp,
     density,
     instrument,
@@ -64,10 +63,12 @@ def generator(
 
     # Check if instrument already exists
     track_index = -1  # default to last generated
+    regenerate = False
     if state != []:
         for i, current_track in enumerate(state):
             if current_track["label"] == new_track["label"]:
                 track_index = i  # changing if exists
+                regenerate = True
 
     # If instrument track already exists, delete it
     if regenerate:
@@ -81,8 +82,6 @@ def generator(
     generated_text = composer.generate_one_new_track(
         instrument_family, density, temp, input_prompt=input_prompt
     )
-
-    regenerate = True  # set regenerate to true
 
     # convert generated text to midi and audio and save files locally
     decoder.get_midi(generated_text, "mixed.mid")
@@ -107,7 +106,6 @@ def generator(
         piano_roll,
         state,
         mixed_audio,
-        regenerate,
         composer.piece_by_track,
     )
 
@@ -150,11 +148,9 @@ def instrument_row(default_inst, row_id, col):
             piano_roll,
             state,
             mixed_audio,
-            regenerate,
             piece_by_track,
         ) = generator(
             row_id,
-            st.session_state["regenerate"],
             temp,
             density,
             instrument,
@@ -181,15 +177,9 @@ def main():
         st.session_state.piece_by_track = []
     if "state" not in st.session_state:
         st.session_state.state = []
-    if "regenerate" not in st.session_state:
-        st.session_state.regenerate = False
 
     # setup page layout
     st.set_page_config(layout="wide")
-
-    # display mixed audio and piano roll
-    # st.audio(mixed_audio)
-    # st.pyplot(piano_roll)
 
     # Generate each track config column
     default_instruments = [3, 0, 6]  # index of drums, bass, guitar
