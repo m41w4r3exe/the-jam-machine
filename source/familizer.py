@@ -8,36 +8,42 @@ from utils import get_files, timeit, FileCompressor
 class Familizer:
     def __init__(self, n_jobs=-1, arbitrary=False):
         self.n_jobs = n_jobs
-        self.reverse_family(arbitrary)
+        if arbitrary == True:
+            self.instrument_classes = INSTRUMENT_TRANSFER_CLASSES
+        else:
+            self.instrument_classes = INSTRUMENT_CLASSES
+        self.reverse_family()
 
-    def get_family_number(self, program_number):
+    def get_family_number(self, program, program_type="number"):
         """
         Given a MIDI instrument number, return its associated instrument family number.
         """
-        for instrument_class in INSTRUMENT_CLASSES:
-            if program_number in instrument_class["program_range"]:
-                return instrument_class["family_number"]
+        for instrument_class in self.instrument_classes:
+            if program_type == "number":
+                if program in instrument_class["program_range"]:
+                    return instrument_class["family_number"]
+            elif program_type == "name":
+                if program == instrument_class["name"]:
+                    return instrument_class["family_number"]
+            elif program_type == "transfer_name":
+                if program == instrument_class["transfer_to"]:
+                    return instrument_class["family_number"]
 
-    def reverse_family(self, arbitrary):
+
+    def reverse_family(self):
         """
         Create a dictionary of family numbers to randomly assigned program numbers.
         This is used to reverse the family number tokens back to program number tokens.
         """
-
-        if arbitrary is True:
-            int_class = INSTRUMENT_TRANSFER_CLASSES
-        else:
-            int_class = INSTRUMENT_CLASSES
-
         self.reference_programs = {}
-        for family in int_class:
-            self.reference_programs[family["family_number"]] = random.choice(
-                family["program_range"]
+        for instrument_class in self.instrument_classes:
+            self.reference_programs[instrument_class["family_number"]] = random.choice(
+                instrument_class["program_range"]
             )
 
     def get_program_number(self, family_number):
         """
-        Given given a family number return a random program number in the respective program_range.
+        Given a family number return a random program number in the respective program_range.
         This is the reverse operation of get_family_number.
         """
         assert family_number in self.reference_programs
