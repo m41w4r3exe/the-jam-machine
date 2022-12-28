@@ -163,13 +163,16 @@ def instrument_row(default_inst, row_id, col):
             st.session_state["piece_by_track"],
         )
 
-        # display generated track audio
-        col.subheader(f"Track {int(str(row_id)[0]) + 1} Audio")
-        col.audio(inst_audio, sample_rate=44100)
-
         # store state variables
         st.session_state.mixed_audio = mixed_audio
         st.session_state.piano_roll = piano_roll
+        st.session_state[f"inst_audio_{row_id}"] = inst_audio
+
+    inst_audio = st.session_state[f"inst_audio_{row_id}"]
+    if inst_audio is not None:
+        # display generated track audio
+        col.subheader(f"Track {int(str(row_id)[0]) + 1} Audio")
+        col.audio(inst_audio, sample_rate=44100)
 
 
 def display_global_output():
@@ -204,7 +207,9 @@ def main():
         st.session_state.state = []
     if "piece_by_track" not in st.session_state:
         st.session_state.piece_by_track = []
-
+    for i in range(3):
+        if f"inst_audio_{i*10}" not in st.session_state:
+            st.session_state[f"inst_audio_{i*10}"] = None
 
     # setup page layout
     st.set_page_config(layout="wide")
