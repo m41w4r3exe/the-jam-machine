@@ -93,7 +93,7 @@ def generator(
     # get last generated track and save it locally
     new_track_text = composer.get_selected_track_as_text(track_index)
     inst_midi_name = f"{instrument_name}.mid"
-    st.session_state.midi_track = decoder.get_midi(new_track_text, inst_midi_name)
+    decoder.get_midi(new_track_text, inst_midi_name)
     _, inst_audio = get_music(inst_midi_name)
 
     # get piano roll figure
@@ -167,32 +167,44 @@ def instrument_row(default_inst, row_id, col):
         col.subheader(f"Track {int(str(row_id)[0]) + 1} Audio")
         col.audio(inst_audio, sample_rate=44100)
 
-        # display mixed audio
-        st.subheader("Mixed Audio")
-        st.audio(mixed_audio, sample_rate=44100)
+        # store state variables
+        st.session_state.mixed_audio = mixed_audio
+        st.session_state.piano_roll = piano_roll
 
-        # download generated track midi
-        hash = str(uuid.uuid4())[:8]
-        binary_midi = open("mixed.mid", "rb")  # .read()
 
-        col.download_button(
-            label="Download MIDI",
-            data=binary_midi,
-            file_name=f"jam_gen_{hash}.mid",
-            mime="audio/midi",
-        )
+def display_global_output():
 
-        # display generated piano roll
-        st.subheader("Piano Roll")
-        st.pyplot(piano_roll)
+    # display mixed audio and download button on the same row
+    st.subheader("Mixed Audio")
+    col1, col2 = st.columns([9, 1])
+    col1.audio(st.session_state.mixed_audio, sample_rate=44100)
+
+    # download generated track midi
+    hash = str(uuid.uuid4())[:8]
+    binary_midi = open("mixed.mid", "rb")  # .read()
+    col2.download_button(
+        label="Download MIDI",
+        data=binary_midi,
+        file_name=f"jam_gen_{hash}.mid",
+        mime="audio/midi",
+    )
+
+    # display generated piano roll
+    st.subheader("Piano Roll")
+    st.pyplot(st.session_state.piano_roll)
 
 
 def main():
     # initialize state variables
-    if "piece_by_track" not in st.session_state:
-        st.session_state.piece_by_track = []
+    if "mixed_audio" not in st.session_state:
+        st.session_state.mixed_audio = None
+    if "piano_roll" not in st.session_state:
+        st.session_state.piano_roll = None
     if "state" not in st.session_state:
         st.session_state.state = []
+    if "piece_by_track" not in st.session_state:
+        st.session_state.piece_by_track = []
+
 
     # setup page layout
     st.set_page_config(layout="wide")
@@ -204,6 +216,10 @@ def main():
         col.subheader(f"Track {i+1}")
         # each track has its own row, with id in increments of 10
         instrument_row(default_inst=instrument, row_id=i * 10, col=col)
+
+    # Display generated tracks
+    if st.session_state.mixed_audio is not None:
+        display_global_output()
 
 
 if __name__ == "__main__":
