@@ -1,20 +1,17 @@
-import matplotlib.pyplot as plt
-import gradio as gr
+import uuid
 from load import LoadModel
 from generate import GenerateMidiText
 from constants import INSTRUMENT_TRANSFER_CLASSES
 from decoder import TextDecoder
-from utils import get_miditok, index_has_substring
+from utils import get_miditok
 from playback import get_music
 from matplotlib import pylab
 import sys
 import matplotlib
 from generation_utils import plot_piano_roll
-import numpy as np
 import streamlit as st
 from familizer import Familizer
 
-# TODO: Fix generate correct instrument
 # TODO: simplify state and piece_by_track to just one variable
 # TODO: remove track_index and work with track names instead
 # TODO: add a button to export the generated midi
@@ -96,7 +93,7 @@ def generator(
     # get last generated track and save it locally
     new_track_text = composer.get_selected_track_as_text(track_index)
     inst_midi_name = f"{instrument_name}.mid"
-    decoder.get_midi(new_track_text, inst_midi_name)
+    st.session_state.midi_track = decoder.get_midi(new_track_text, inst_midi_name)
     _, inst_audio = get_music(inst_midi_name)
 
     # get piano roll figure
@@ -173,6 +170,17 @@ def instrument_row(default_inst, row_id, col):
         # display mixed audio
         st.subheader("Mixed Audio")
         st.audio(mixed_audio, sample_rate=44100)
+
+        # download generated track midi
+        hash = str(uuid.uuid4())[:8]
+        binary_midi = open("mixed.mid", "rb")  # .read()
+
+        col.download_button(
+            label="Download MIDI",
+            data=binary_midi,
+            file_name=f"jam_gen_{hash}.mid",
+            mime="audio/midi",
+        )
 
         # display generated piano roll
         st.subheader("Piano Roll")
