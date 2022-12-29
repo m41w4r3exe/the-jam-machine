@@ -1,16 +1,18 @@
+import sys
 import uuid
-from load import LoadModel
-from generate import GenerateMidiText
+
+import matplotlib
+from matplotlib import pylab
+import streamlit as st
+
 from constants import INSTRUMENT_TRANSFER_CLASSES
 from decoder import TextDecoder
-from utils import get_miditok
-from playback import get_music
-from matplotlib import pylab
-import sys
-import matplotlib
-from generation_utils import plot_piano_roll
-import streamlit as st
 from familizer import Familizer
+from generate import GenerateMidiText
+from generation_utils import plot_piano_roll
+from load import LoadModel
+from playback import get_music
+from utils import get_miditok
 
 # TODO: simplify state and piece_by_track to just one variable
 # TODO: remove track_index and work with track names instead
@@ -213,6 +215,20 @@ def main():
 
     # setup page layout
     st.set_page_config(layout="wide")
+
+    # Display title and description
+    st.title("The Jam Machine")
+    st.markdown(
+        """
+        For each **TRACK**, choose your **instrument** along with **creativity** 
+        (temperature) and **note density**. Then, hit the **Generate** Button!
+        You can have a look at the generated text; but most importantly, check the 
+        **piano roll** and listen to the TRACK audio!
+        If you don't like the track, hit the generate button to regenerate it!
+        Generate more tracks and listen to the **mixed audio**! If you like it, you
+        can download the **MIDI** file and use it in your own DAW!
+        """
+    )
 
     # Generate each track config column
     default_instruments = [0, 6, 1]  # index of drums, synth bass, electric piano
