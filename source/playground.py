@@ -1,8 +1,7 @@
-import matplotlib.pyplot as plt
 import gradio as gr
 from load import LoadModel
 from generate import GenerateMidiText
-from constants import INSTRUMENT_CLASSES, INSTRUMENT_TRANSFER_CLASSES
+from constants import INSTRUMENT_TRANSFER_CLASSES
 from decoder import TextDecoder
 from utils import get_miditok, index_has_substring
 from playback import get_music
@@ -11,7 +10,6 @@ import sys
 import os
 import matplotlib
 from generation_utils import plot_piano_roll
-import numpy as np
 
 matplotlib.use("Agg")
 
@@ -231,7 +229,7 @@ with gr.Blocks() as demo:
 demo.launch(debug=True)
 
 """
-TODO: add a button to save the generated midi
 TODO: add improvise button
-TODO: set values for temperature as it is done for density
+TODO: cleanup input output of generator
+TODO: add a way to add bars
 """
