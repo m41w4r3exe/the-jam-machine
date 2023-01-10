@@ -211,19 +211,19 @@ with gr.Blocks() as demo:
     instrument_row("Synth Lead Square", 2)
     # instrument_row("Piano")
     #
-    track1_md = gr.Markdown(""" ## SAVE your awesome MIDI """)
+    track1_md = gr.Markdown(""" ## SAVE AS MIDI file - enter a valid path """)
     with gr.Row():
-        with gr.Column(scale=1, min_width=100):
-            saving_path = gr.Textbox(
-                value="/Users/ChatGPT/Downloads/TheJamMachine/",
-                show_label=True,
-                label="Saving Path",
-                interactive=True,
-            )
-        with gr.Column(scale=1, min_width=100):
-            gen_btn = gr.Button("Save MIDI")
-        with gr.Column(scale=1, min_width=100):
-            status = gr.Textbox(show_label=False)
+        # with gr.Column(scale=1, min_width=100):
+        saving_path = gr.Textbox(
+            value="/Users/ChatGPT/Downloads/TheJamMachine/",
+            show_label=False,
+            label="Saving Path",
+            interactive=True,
+        )
+        # with gr.Column(scale=1, min_width=100):
+        gen_btn = gr.Button("Save MIDI")
+        # with gr.Column(scale=1, min_width=100):
+        status = gr.Textbox(show_label=False)
 
     gen_btn.click(fn=save_midi_to_folder, inputs=[state, saving_path], outputs=status)
 
