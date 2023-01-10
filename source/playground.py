@@ -8,6 +8,7 @@ from utils import get_miditok, index_has_substring
 from playback import get_music
 from matplotlib import pylab
 import sys
+import os
 import matplotlib
 from generation_utils import plot_piano_roll
 import numpy as np
@@ -48,7 +49,6 @@ def generator(
     piece_by_track,
     add_bars=False,
     add_bar_count=1,
-    saving_path="/Users/jean/Downloads/",
 ):
 
     genesis = GenerateMidiText(model, tokenizer, piece_by_track)
@@ -93,13 +93,13 @@ def generator(
         generated_text = genesis.get_whole_piece_from_bar_dict()
 
     # save the mix midi and get the mix audio
-    decoder.get_midi(generated_text, f"{saving_path}mixed.mid")
-    mixed_inst_midi, mixed_audio = get_music(f"{saving_path}mixed.mid")
+    decoder.get_midi(generated_text, "mixed.mid")
+    mixed_inst_midi, mixed_audio = get_music("mixed.mid")
     # get the instrument text MIDI
     inst_text = genesis.get_selected_track_as_text(inst_index)
     # save the instrument midi and get the instrument audio
-    decoder.get_midi(inst_text, f"{saving_path}{instrument}.mid")
-    _, inst_audio = get_music(f"{saving_path}{instrument}.mid")
+    decoder.get_midi(inst_text, f"{instrument}.mid")
+    _, inst_audio = get_music(f"{instrument}.mid")
     # generate the piano roll
     piano_roll = plot_piano_roll(mixed_inst_midi)
     track["text"] = inst_text
@@ -114,6 +114,32 @@ def generator(
         regenerate,
         genesis.piece_by_track,
     )
+
+
+def generated_text_from_state(state):
+    generated_text_from_state = "PIECE_START "
+    for track in state:
+        generated_text_from_state += track["text"]
+    return generated_text_from_state
+
+
+def save_midi_to_folder(state, midi_path):
+    # check if midi_path exists using os
+    if os.path.exists(midi_path):
+        print(f"The path {midi_path} already exists")
+    else:
+        os.mkdir(midi_path)
+        print(f"Path '{midi_path}' created")
+
+    # making sure that the path ends with a slash
+    if midi_path[-1] != "/":
+        midi_path += "/"
+
+    generated_text = generated_text_from_state(state)
+    decoder.get_midi(generated_text, f"{midi_path}your_awesome_midi.mid")
+    status = f"MIDI file saved to: {midi_path}your_awesome_midi.mid"
+
+    return status
 
 
 def instrument_row(default_inst, row_id):
@@ -143,19 +169,20 @@ def instrument_row(default_inst, row_id):
             # add_bars = gr.Checkbox(value=False, label="Add Bars")
             # add_bar_count = gr.Dropdown([1, 2, 4, 8], value=1, label="Add Bars")
             gen_btn = gr.Button("Generate")
-            gen_btn.click(
-                fn=generator,
-                inputs=[row, regenerate, temp, density, inst, state, piece_by_track],
-                outputs=[
-                    output_txt,
-                    inst_audio,
-                    piano_roll,
-                    state,
-                    mixed_audio,
-                    regenerate,
-                    piece_by_track,
-                ],
-            )
+
+    gen_btn.click(
+        fn=generator,
+        inputs=[row, regenerate, temp, density, inst, state, piece_by_track],
+        outputs=[
+            output_txt,
+            inst_audio,
+            piano_roll,
+            state,
+            mixed_audio,
+            regenerate,
+            piece_by_track,
+        ],
+    )
 
 
 with gr.Blocks() as demo:
@@ -164,12 +191,6 @@ with gr.Blocks() as demo:
     title = gr.Markdown(
         """ # Demo-App of The-Jam-Machine
     A Generative AI trained on text transcription of MIDI music """
-    )
-    saving_path = gr.Textbox(
-        value="FIRST/THING/TO/DO/IS/TO/SET/SAVING/PATH",
-        show_label=False,
-        label="Enter the path of the folder where you wish to save your generated MIDI music",
-        interactive=True,
     )
 
     track1_md = gr.Markdown(""" ## Mixed Audio and Piano Roll """)
@@ -189,6 +210,23 @@ with gr.Blocks() as demo:
     track1_md = gr.Markdown(""" ## TRACK 3 """)
     instrument_row("Synth Lead Square", 2)
     # instrument_row("Piano")
+    #
+    track1_md = gr.Markdown(""" ## SAVE your awesome MIDI """)
+    with gr.Row():
+        with gr.Column(scale=1, min_width=100):
+            saving_path = gr.Textbox(
+                value="/Users/ChatGPT/Downloads/TheJamMachine/",
+                show_label=True,
+                label="Saving Path",
+                interactive=True,
+            )
+        with gr.Column(scale=1, min_width=100):
+            gen_btn = gr.Button("Save MIDI")
+        with gr.Column(scale=1, min_width=100):
+            status = gr.Textbox(show_label=False)
+
+    gen_btn.click(fn=save_midi_to_folder, inputs=[state, saving_path], outputs=status)
+
 
 demo.launch(debug=True)
 
