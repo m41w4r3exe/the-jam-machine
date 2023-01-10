@@ -48,6 +48,7 @@ def generator(
     piece_by_track,
     add_bars=False,
     add_bar_count=1,
+    saving_path="/Users/jean/Downloads/",
 ):
 
     genesis = GenerateMidiText(model, tokenizer, piece_by_track)
@@ -91,13 +92,15 @@ def generator(
         genesis.generate_n_more_bars(add_bar_count)  # for all instruments
         generated_text = genesis.get_whole_piece_from_bar_dict()
 
-    decoder.get_midi(generated_text, "mixed.mid")
-    mixed_inst_midi, mixed_audio = get_music("mixed.mid")
-
+    # save the mix midi and get the mix audio
+    decoder.get_midi(generated_text, f"{saving_path}mixed.mid")
+    mixed_inst_midi, mixed_audio = get_music(f"{saving_path}mixed.mid")
+    # get the instrument text MIDI
     inst_text = genesis.get_selected_track_as_text(inst_index)
-    inst_midi_name = f"{instrument}.mid"
-    decoder.get_midi(inst_text, inst_midi_name)
-    _, inst_audio = get_music(inst_midi_name)
+    # save the instrument midi and get the instrument audio
+    decoder.get_midi(inst_text, f"{saving_path}{instrument}.mid")
+    _, inst_audio = get_music(f"{saving_path}{instrument}.mid")
+    # generate the piano roll
     piano_roll = plot_piano_roll(mixed_inst_midi)
     track["text"] = inst_text
     state.append(track)
@@ -162,6 +165,13 @@ with gr.Blocks() as demo:
         """ # Demo-App of The-Jam-Machine
     A Generative AI trained on text transcription of MIDI music """
     )
+    saving_path = gr.Textbox(
+        value="FIRST/THING/TO/DO/IS/TO/SET/SAVING/PATH",
+        show_label=False,
+        label="Enter the path of the folder where you wish to save your generated MIDI music",
+        interactive=True,
+    )
+
     track1_md = gr.Markdown(""" ## Mixed Audio and Piano Roll """)
     mixed_audio = gr.Audio(label="Mixed Audio")
     piano_roll = gr.Plot(label="Piano Roll", show_label=False)
