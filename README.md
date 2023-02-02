@@ -8,7 +8,7 @@ Just import the raw inspiration into your favorite DAW using the generated MIDI 
 
 ## There is a demo app on [HuggingFace](https://huggingface.co/spaces/JammyMachina/the-jam-machine-app) 
 The app hosted on HuggingFace is just a simple demo of what the model can do. \
-It is and will most likely always be limited to 3 instruments and 8 bars of music. \
+It is and will most likely always be limited to 3 instruments and 8 bars of music.
 
 ## [Project Presentation](https://pitch.com/public/417162a8-88b0-4472-a651-c66bb89428be)
 ## Contributors:
