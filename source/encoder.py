@@ -152,13 +152,49 @@ class MIDIEncoder:
 
         return piece_text
 
+    def get_piece_text_by_section(self, midi):
+        midi_events = self.get_midi_events(midi)
+
+        sectioned_instruments = chain(
+            midi_events,
+            [
+                self.remove_velocity,
+                self.divide_timeshifts_by_bar,
+                self.add_bars,
+                self.make_sections,
+            ],
+            midi.instruments,
+        )
+
+        # sectioned_intruments_as_text = [
+        #     list(map(self.events_to_text, sections))
+        #     for sections in sectioned_instruments
+        # ]
+
+        max_sections = max(list(map(len, sectioned_instruments)))
+        sections_as_text = ["" for _ in range(max_sections)]
+
+        for sections in sectioned_instruments:
+            for idx in range(max_sections):
+                try:
+                    sections_as_text[idx] += self.events_to_text(sections[idx])
+                except:
+                    pass
+
+        return sections_as_text
+
+
+def from_MIDI_to_sectionned_text(midi_filename):
+    """convert a MIDI file to a MidiText input prompt"""
+    midi = MidiFile(f"{midi_filename}.mid")
+    midi_like = get_miditok()
+    piece_text = MIDIEncoder(midi_like).get_piece_text(midi)
+    piece_text_split_by_section = MIDIEncoder(midi_like).get_piece_text_by_section(midi)
+    return piece_text
+
 
 if __name__ == "__main__":
     # Encode Strokes for debugging purposes:
     midi_filename = "the_strokes-reptilia"
-    midi = MidiFile(f"midi/{midi_filename}.mid")
-
-    tokenizer = get_miditok()
-
-    piece_text = MIDIEncoder(tokenizer).get_piece_text(midi)
+    piece_text = from_MIDI_to_sectionned_text(f"midi/{midi_filename}")
     writeToFile(f"midi/encoded_txts/{midi_filename}.txt", piece_text)
