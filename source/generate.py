@@ -1,5 +1,6 @@
 from generation_utils import *
 
+
 class GenerateMidiText:
     """Generating music with Class
 
@@ -233,10 +234,12 @@ class GenerateMidiText:
                     )
                 else:
                     print('"--- Wrong length - Regenerating ---')
+
             if not bar_count_checks:
                 failed += 1
-                if failed > 2:
-                    bar_count_checks = True  # TOFIX exit the while loop
+
+            if failed > 2:
+                bar_count_checks = True  # exit the while loop if failed too much
 
         return full_piece
 
@@ -396,4 +399,3 @@ class GenerateMidiText:
 
 if __name__ == "__main__":
     pass
-   
