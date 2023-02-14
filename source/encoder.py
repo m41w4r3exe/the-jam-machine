@@ -1,6 +1,8 @@
 from miditoolkit import MidiFile
 from miditok import Event
 from utils import *
+import numpy as np
+from scipy import stats
 
 # TODO: Move remainder_ts logic to divide_timeshift method
 # TODO: Add method comments
@@ -57,6 +59,7 @@ class MIDIEncoder:
 
                 if bar_end:
                     bar_end = False
+
                     new_inst_events.append(Event("Bar-End", bar_count))
                     if i != len(inst_events) - 1:
                         bar_count += 1
@@ -85,32 +88,46 @@ class MIDIEncoder:
         return new_midi_events
 
     @staticmethod
-    def add_note_count_in_bar(midi_events):
-
+    def add_note_density_in_bar(midi_events):
+        """
+        For each bar:
+        - calculate the note density as the number of note onset divided by the number of beats per bar
+        - add the note density as a new event type "Bar-Density"
+        """
+        beats_per_bar = 4
         new_midi_events = []
         for inst_events in midi_events:
             new_inst_events = []
             for event in inst_events:
+
                 if event.type == "Bar-Start":
                     note_onset_count_in_bar = 0  # initialize not count
                     new_inst_events.append(event)  # append Bar-Start event
                     temp_event_list = []  # initialize the temporary event list
+                else:
+                    temp_event_list.append(event)
+
                 if event.type == "Note-On":
                     note_onset_count_in_bar += 1
+
                 if event.type == "Bar-End":
-                    new_inst_events.append(Event("Note-Count", note_onset_count_in_bar))
+                    new_inst_events.append(
+                        Event(
+                            "Bar-Density",
+                            round(note_onset_count_in_bar / beats_per_bar),
+                        )
+                    )
                     [
                         new_inst_events.append(temp_event)
                         for temp_event in temp_event_list
                     ]
-                if event.type != "Bar-Start":
-                    temp_event_list.append(event)
 
             new_midi_events.append(new_inst_events)
         return new_midi_events
 
     @staticmethod
     def make_sections(midi_events, instruments, n_bar=8):
+        """For each instrument, make sections of n_bar bars each"""
         midi_sections = []
         for i, inst_events in enumerate(midi_events):
             inst_sections = []
@@ -133,6 +150,32 @@ class MIDIEncoder:
             midi_sections.append(inst_sections)
 
         return midi_sections
+
+    @staticmethod
+    def add_density_to_sections(midi_sections):
+        """
+        Add density to each section as the mode of bar density within that section
+        """
+        new_midi_sections = []
+        note_count_distribution = []
+        for inst_sections in midi_sections:
+            new_inst_sections = []
+            for section in inst_sections:
+                for i, event in enumerate(section):
+                    if event.type == "Bar-Density":
+                        note_count_distribution.append(event.value)
+                # add section density -> set to mode of bar density within that section
+                density = stats.mode(
+                    np.array(note_count_distribution).astype(np.int16)
+                )[0][0]
+
+                for i, event in enumerate(section):
+                    if event.type == "Instrument":
+                        section.insert(i + 1, Event("Density", density))
+                        break
+                new_inst_sections.append(section)
+            new_midi_sections.append(new_inst_sections)
+        return new_midi_sections
 
     @staticmethod
     def sections_to_piece(midi_events):
@@ -184,8 +227,9 @@ class MIDIEncoder:
                 self.remove_velocity,
                 self.divide_timeshifts_by_bar,
                 self.add_bars,
-                self.add_note_count_in_bar,
+                self.add_note_density_in_bar,
                 self.make_sections,
+                self.add_density_to_sections,
                 self.sections_to_piece,
                 self.events_to_text,
             ],
