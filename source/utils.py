@@ -78,12 +78,14 @@ def get_text(event):
             return "TRACK_END "
         case "Instrument":
             return f"INST={event.value} "
+        case "Density":
+            return f"DENSITY={event.value} "
         case "Bar-Start":
             return "BAR_START "
         case "Bar-End":
             return "BAR_END "
         case "Time-Shift":
-            return f"TIME_SHIFT={event.value} "
+            return f"TIME_DELTA={event.value} "
         case "Note-On":
             return f"NOTE_ON={event.value} "
         case "Note-Off":
