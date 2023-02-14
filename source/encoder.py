@@ -80,6 +80,32 @@ class MIDIEncoder:
                         remainder_ts = Event("Time-Shift", to_beat_str(beat_count))
 
                 new_inst_events.append(event)
+
+            new_midi_events.append(new_inst_events)
+        return new_midi_events
+
+    @staticmethod
+    def add_note_count_in_bar(midi_events):
+
+        new_midi_events = []
+        for inst_events in midi_events:
+            new_inst_events = []
+            for event in inst_events:
+                if event.type == "Bar-Start":
+                    note_onset_count_in_bar = 0  # initialize not count
+                    new_inst_events.append(event)  # append Bar-Start event
+                    temp_event_list = []  # initialize the temporary event list
+                if event.type == "Note-On":
+                    note_onset_count_in_bar += 1
+                if event.type == "Bar-End":
+                    new_inst_events.append(Event("Note-Count", note_onset_count_in_bar))
+                    [
+                        new_inst_events.append(temp_event)
+                        for temp_event in temp_event_list
+                    ]
+                if event.type != "Bar-Start":
+                    temp_event_list.append(event)
+
             new_midi_events.append(new_inst_events)
         return new_midi_events
 
@@ -128,6 +154,21 @@ class MIDIEncoder:
             piece_text += get_text(event)
         return piece_text
 
+    @staticmethod
+    def get_bar_density(bar):
+        bar_density = []
+        return bar_density
+
+    @staticmethod
+    def aggregate_density(piece_events):
+        instrument_density = []
+        return instrument_density
+
+    @staticmethod
+    def add_density_event(piece_events):
+
+        return piece_events
+
     def get_midi_events(self, midi):
         return [
             self.tokenizer.tokens_to_events(inst_tokens)
@@ -143,6 +184,7 @@ class MIDIEncoder:
                 self.remove_velocity,
                 self.divide_timeshifts_by_bar,
                 self.add_bars,
+                self.add_note_count_in_bar,
                 self.make_sections,
                 self.sections_to_piece,
                 self.events_to_text,
