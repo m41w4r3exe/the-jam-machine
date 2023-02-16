@@ -8,10 +8,10 @@ from scipy import stats
 # TODO: Add method comments
 # TODO: Fix beat resolution and its string representation
 # TODO: Make instruments family while encoding
-# TODO: Density Bins - Taken as
+# TODO: Density Bins - (Done)
 # Question: How to determine difference between 8 very long notes in 8 bar and 6 empty bar + 8 very short notes in last 2 bar?
-# TODO: Data augmentation: hopping 1 bar and re-encode almost same notes
-# TODO: Data augmentation: octave or pitch shift?
+# TODO: Data augmentation: hopping 4 bars and re-encode almost same notes
+# TODO: Data augmentation: octave or pitch shift? both?
 # TODO: Solve the one-instrument tracks problem
 
 

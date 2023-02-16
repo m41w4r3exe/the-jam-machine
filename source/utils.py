@@ -85,13 +85,23 @@ def get_text(event):
         case "Bar-End":
             return "BAR_END "
         case "Time-Shift":
-            return f"TIME_DELTA={event.value} "
+            return f"TIME_DELTA={time_shift_to_delta(event.value)} "
         case "Note-On":
             return f"NOTE_ON={event.value} "
         case "Note-Off":
             return f"NOTE_OFF={event.value} "
         case _:
             return ""
+
+
+def time_shift_to_delta(time_shift, beat_res=8):
+    """converts the time shift to a delta in 8th of beats"""
+    time_delta = (
+        split_dots(time_shift)[0]
+        + split_dots(time_shift)[1] / split_dots(time_shift)[2]
+    ) * beat_res
+
+    return time_delta.__int__()
 
 
 def get_event(text, value=None):
