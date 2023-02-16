@@ -8,7 +8,7 @@ from scipy import stats
 # TODO: Add method comments
 # TODO: Fix beat resolution and its string representation
 # TODO: Make instruments family while encoding
-# TODO: Add density bins:
+# TODO: Density Bins - Taken as
 # Question: How to determine difference between 8 very long notes in 8 bar and 6 empty bar + 8 very short notes in last 2 bar?
 # TODO: Data augmentation: hopping 1 bar and re-encode almost same notes
 # TODO: Data augmentation: octave or pitch shift?
@@ -88,7 +88,7 @@ class MIDIEncoder:
         return new_midi_events
 
     @staticmethod
-    def add_note_density_in_bar(midi_events):
+    def add_density_to_bar(midi_events):
         """
         For each bar:
         - calculate the note density as the number of note onset divided by the number of beats per bar
@@ -179,6 +179,7 @@ class MIDIEncoder:
 
     @staticmethod
     def sections_to_piece(midi_events):
+        """Combine all sections into one piece"""
         piece = [Event("Piece-Start", 1)]
         max_total_sections = max(map(len, midi_events))
         for i in range(max_total_sections):
@@ -189,28 +190,15 @@ class MIDIEncoder:
 
     @staticmethod
     def events_to_text(piece_events):
+        """Convert miditok events to text"""
         piece_text = ""
         for event in piece_events:
             if event.type == "Time-Shift" and event.value == "4.0.8":
+                # if event.value == "4.0.8": then it means that it is just an empty bar
                 continue
 
             piece_text += get_text(event)
         return piece_text
-
-    @staticmethod
-    def get_bar_density(bar):
-        bar_density = []
-        return bar_density
-
-    @staticmethod
-    def aggregate_density(piece_events):
-        instrument_density = []
-        return instrument_density
-
-    @staticmethod
-    def add_density_event(piece_events):
-
-        return piece_events
 
     def get_midi_events(self, midi):
         return [
@@ -218,18 +206,43 @@ class MIDIEncoder:
             for inst_tokens in self.tokenizer.midi_to_tokens(midi)
         ]
 
-    def get_piece_text(self, midi):
+    def get_piece_sections(self, midi):
+        """Modifies the miditok events to our needs:
+        Removes velocity, add bars, density and make sections for training and generation
+        Args:
+            - midi: miditok object
+        Returns:
+            - piece_sections: list (instruments) of lists (sections) of miditok events"""
+
         midi_events = self.get_midi_events(midi)
 
-        piece_text = chain(
+        piece_sections = chain(
             midi_events,
             [
                 self.remove_velocity,
                 self.divide_timeshifts_by_bar,
                 self.add_bars,
-                self.add_note_density_in_bar,
+                self.add_density_to_bar,
                 self.make_sections,
                 self.add_density_to_sections,
+            ],
+            midi.instruments,
+        )
+
+        return piece_sections
+
+    def get_piece_text(self, midi):
+        """Converts the miditok events to text,
+        The text is organized in sections of 8 bars of instrument
+        Args:
+            - midi: miditok object
+        Returns:
+            - piece_text: string"""
+
+        piece_text = chain(
+            midi,
+            [
+                self.get_piece_sections,
                 self.sections_to_piece,
                 self.events_to_text,
             ],
@@ -238,25 +251,14 @@ class MIDIEncoder:
 
         return piece_text
 
-    def get_piece_text_by_section(self, midi):
-        midi_events = self.get_midi_events(midi)
-
-        sectioned_instruments = chain(
-            midi_events,
-            [
-                self.remove_velocity,
-                self.divide_timeshifts_by_bar,
-                self.add_bars,
-                self.make_sections,
-            ],
-            midi.instruments,
-        )
-
-        # sectioned_intruments_as_text = [
-        #     list(map(self.events_to_text, sections))
-        #     for sections in sectioned_instruments
-        # ]
-
+    def get_text_by_section(self, midi):
+        """Returns a list of sections of text
+        Args:
+            midi: miditok object
+        Returns:
+            sections_as_text: list of sections of text
+        """
+        sectioned_instruments = self.get_piece_sections(midi)
         max_sections = max(list(map(len, sectioned_instruments)))
         sections_as_text = ["" for _ in range(max_sections)]
 
@@ -275,7 +277,7 @@ def from_MIDI_to_sectionned_text(midi_filename):
     midi = MidiFile(f"{midi_filename}.mid")
     midi_like = get_miditok()
     piece_text = MIDIEncoder(midi_like).get_piece_text(midi)
-    piece_text_split_by_section = MIDIEncoder(midi_like).get_piece_text_by_section(midi)
+    piece_text_split_by_section = MIDIEncoder(midi_like).get_text_by_section(midi)
     return piece_text
 
 
