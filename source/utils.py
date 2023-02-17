@@ -79,21 +79,21 @@ def int_dec_base_to_beat(beat_str):
     return integer + decimal / base
 
 
-def int_dec_base_to_delta(beat_str, instrument="Drums"):
+def int_dec_base_to_delta(beat_str, instrument="drums"):
     """converts the time shift to time_delta according to Tristan's encoding scheme
     Drums TIME_DELTA are quantized according to DRUMS_BEAT_QUANTIZATION
     Other Instrument TIME_DELTA are quantized according to NONE_DRUMS_BEAT_QUANTIZATION"""
 
     beat_res = (
         DRUMS_BEAT_QUANTIZATION
-        if instrument == "Drums"
+        if instrument.lower() == "drums"
         else NONE_DRUMS_BEAT_QUANTIZATION
     )
     time_delta = int_dec_base_to_beat(beat_str) * beat_res
     return time_delta.__int__()
 
 
-def get_text(event, instrument="Drums"):
+def get_text(event, instrument="drums"):
     """Converts an event into a string for the midi-text format"""
     match event.type:
         case "Piece-Start":
@@ -123,7 +123,7 @@ def get_text(event, instrument="Drums"):
 """ Decoding functions """
 
 
-def time_delta_to_beat(time_delta, instrument="Drums"):
+def time_delta_to_beat(time_delta, instrument="drums"):
     """
     Converts TIME_DELTA (from midi-text) to beats according to Tristan's encoding scheme
     Args:
@@ -134,7 +134,7 @@ def time_delta_to_beat(time_delta, instrument="Drums"):
     """
     beat_res = (
         DRUMS_BEAT_QUANTIZATION
-        if instrument == "Drums"
+        if instrument.lower() == "drums"
         else NONE_DRUMS_BEAT_QUANTIZATION
     )
     beats = float(time_delta) / beat_res
@@ -157,7 +157,7 @@ def beat_to_int_dec_base(beat, beat_res=8):
     return ".".join(map(str, int_dec_base))
 
 
-def time_delta_to_int_dec_base(time_delta, instrument="Drums"):
+def time_delta_to_int_dec_base(time_delta, instrument="drums"):
     return chain(
         time_delta,
         [
@@ -168,7 +168,7 @@ def time_delta_to_int_dec_base(time_delta, instrument="Drums"):
     )
 
 
-def get_event(text, value=None, instrument="Drums"):
+def get_event(text, value=None, instrument="drums"):
     """Converts a midi-text like event into a miditok like event"""
     match text:
         case "PIECE_START":

@@ -33,6 +33,7 @@ class TextDecoder:
         piece_events = self.text_to_events(text)
         inst_events = self.piece_to_inst_events(piece_events)
         events = self.add_timeshifts_for_empty_bars(inst_events)
+
         events = self.aggregate_timeshifts(events)
         events = self.add_velocity(events)
         return events
@@ -72,6 +73,7 @@ class TextDecoder:
     @staticmethod
     def text_to_events(text):
         events = []
+        intrument = "Drums"
         track_idx = 0
         bar_idx = 0
         for word in text.split(" "):
@@ -83,12 +85,23 @@ class TextDecoder:
                 value = track_idx
                 track_idx += 1
             if _event[0] == "BAR_START":
+                cumul_time_delta = 0
                 value = bar_idx
                 bar_idx += 1
 
-            event = get_event(_event[0], value)
+            if _event[0] == "INST":
+                intrument = get_event(_event[0], value).value
+
+            event = get_event(_event[0], value, intrument)
+
+            if _event[0] == "TIME_DELTA":  # TO REMOVE LATER
+                cumul_time_delta += int(_event[1])
+            if event and event.type == "Bar-End":  # TO REMOVE LATER
+                print(cumul_time_delta)
+
             if event:
                 events.append(event)
+
         return events
 
     @staticmethod
