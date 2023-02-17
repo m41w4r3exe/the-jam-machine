@@ -3,6 +3,7 @@ from miditok import Event, MIDILike
 import os
 import json
 from time import perf_counter
+from constants import DRUMS_BEAT_QUANTIZATION, NONE_DRUMS_BEAT_QUANTIZATION
 from joblib import Parallel, delayed
 from zipfile import ZipFile, ZIP_DEFLATED
 from scipy.io.wavfile import write
@@ -42,18 +43,53 @@ def chain(input, funcs, *params):
     return res
 
 
-def to_beat_str(value, beat_res=8):
-    values = [
-        int(int(value * beat_res) / beat_res),
-        int(int(value * beat_res) % beat_res),
+# def to_beat_str(value, beat_res=8):
+#     values = [
+#         int(int(value * beat_res) / beat_res),
+#         int(int(value * beat_res) % beat_res),
+#         beat_res,
+#     ]
+#     return ".".join(map(str, values))
+
+
+def time_delta_to_beats(time_delta, instrument):
+    beat_res = (
+        DRUMS_BEAT_QUANTIZATION
+        if instrument == "Drums"
+        else NONE_DRUMS_BEAT_QUANTIZATION
+    )
+    beats = time_delta / beat_res
+    return beats
+
+
+def beat_to_int_dec_base_str(beat, beat_res=8):
+    int_dec_base = [
+        int((beat * beat_res) // beat_res),
+        int((beat * beat_res) % beat_res),
         beat_res,
     ]
-    return ".".join(map(str, values))
+    return ".".join(map(str, int_dec_base))
 
 
 def to_base10(beat_str):
     integer, decimal, base = split_dots(beat_str)
     return integer + decimal / base
+
+
+def time_shift_to_delta(time_shift, instrument="Drums"):
+    """converts the time shift to time_delta according to Tristan's encoding scheme
+    Drums TIME_DELTA are quantized according to DRUMS_BEAT_QUANTIZATION
+    Other Instrument TIME_DELTA are quantized according to NONE_DRUMS_BEAT_QUANTIZATION"""
+
+    beat_res = (
+        DRUMS_BEAT_QUANTIZATION
+        if instrument == "Drums"
+        else NONE_DRUMS_BEAT_QUANTIZATION
+    )
+    integer, decimal, base = split_dots(time_shift)
+    time_delta = (integer + decimal / base) * beat_res
+
+    return time_delta.__int__()
 
 
 def split_dots(value):
@@ -68,7 +104,7 @@ def get_datetime():
     return datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
-def get_text(event):
+def get_text(event, instrument="Drums"):
     match event.type:
         case "Piece-Start":
             return "PIECE_START "
@@ -85,23 +121,13 @@ def get_text(event):
         case "Bar-End":
             return "BAR_END "
         case "Time-Shift":
-            return f"TIME_DELTA={time_shift_to_delta(event.value)} "
+            return f"TIME_DELTA={time_shift_to_delta(event.value, instrument)} "
         case "Note-On":
             return f"NOTE_ON={event.value} "
         case "Note-Off":
             return f"NOTE_OFF={event.value} "
         case _:
             return ""
-
-
-def time_shift_to_delta(time_shift, beat_res=8):
-    """converts the time shift to a delta in 8th of beats"""
-    time_delta = (
-        split_dots(time_shift)[0]
-        + split_dots(time_shift)[1] / split_dots(time_shift)[2]
-    ) * beat_res
-
-    return time_delta.__int__()
 
 
 def get_event(text, value=None):
@@ -121,7 +147,8 @@ def get_event(text, value=None):
         case "TIME_SHIFT":
             return Event("Time-Shift", value)
         case "TIME_DELTA":
-            return Event("Time-Shift", to_beat_str(int(value) / 4))
+            return Event("Time-Shift", to_beat_str(int(value)))
+            # return Event("Time-Shift", to_beat_str(int(value) / 4))
         case "NOTE_ON":
             return Event("Note-On", value)
         case "NOTE_OFF":

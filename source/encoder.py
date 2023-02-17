@@ -6,7 +6,6 @@ from scipy import stats
 
 # TODO: Move remainder_ts logic to divide_timeshift method
 # TODO: Add method comments
-# TODO: Fix beat resolution and its string representation
 # TODO: Make instruments family while encoding
 # TODO: Density Bins - (Done)
 # Question: How to determine difference between 8 very long notes in 8 bar and 6 empty bar + 8 very short notes in last 2 bar?
@@ -59,12 +58,12 @@ class MIDIEncoder:
 
                 if bar_end:
                     bar_end = False
-
                     new_inst_events.append(Event("Bar-End", bar_count))
-                    if i != len(inst_events) - 1:
+                    if i != len(inst_events) - 1:  ## Why this condition here?
                         bar_count += 1
                         new_inst_events.append(Event("Bar-Start", bar_count))
                         if remainder_ts is not None:
+                            # adding the previous bar remainder at the beginning of the new bar
                             new_inst_events.append(remainder_ts)
                             remainder_ts = None
 
@@ -78,9 +77,14 @@ class MIDIEncoder:
 
                     if beat_count > 4:
                         beat_count -= 4
-                        event.value = to_beat_str(timeshift_in_beats - beat_count)
+                        event.value = beat_to_int_dec_base_str(
+                            timeshift_in_beats - beat_count
+                        )
                         bar_end = True
-                        remainder_ts = Event("Time-Shift", to_beat_str(beat_count))
+                        # saving the remainder as an event for the next bar
+                        remainder_ts = Event(
+                            "Time-Shift", beat_to_int_dec_base_str(beat_count)
+                        )
 
                 new_inst_events.append(event)
 
@@ -189,16 +193,21 @@ class MIDIEncoder:
         return piece
 
     @staticmethod
-    def events_to_text(piece_events):
+    def events_to_text(events):
         """Convert miditok events to text"""
-        piece_text = ""
-        for event in piece_events:
+        text = ""
+        current_instrument = "undefined"
+        for event in events:
             if event.type == "Time-Shift" and event.value == "4.0.8":
                 # if event.value == "4.0.8": then it means that it is just an empty bar
                 continue
 
-            piece_text += get_text(event)
-        return piece_text
+            # keeping track of the instrument to set the quantization in get_text()
+            if event.type == "Instrument":
+                current_instrument = str(event.value)
+
+            text += get_text(event, current_instrument)
+        return text
 
     def get_midi_events(self, midi):
         return [
