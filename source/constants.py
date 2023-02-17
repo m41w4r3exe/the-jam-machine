@@ -119,3 +119,9 @@ INSTRUMENT_TRANSFER_CLASSES = [
         "transfer_to": "Sound Effects",
     },
 ]
+
+
+"Encoding and decoding constants"
+
+DRUMS_BEAT_QUANTIZATION = 8  # 8th notes per beat
+NONE_DRUMS_BEAT_QUANTIZATION = 4  # 4th notes per beat
