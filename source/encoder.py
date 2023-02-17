@@ -11,7 +11,8 @@ from scipy import stats
 # Question: How to determine difference between 8 very long notes in 8 bar and 6 empty bar + 8 very short notes in last 2 bar?
 # TODO: Data augmentation: hopping 4 bars and re-encode almost same notes
 # TODO: Data augmentation: octave or pitch shift? both?
-# TODO: Solve the one-instrument tracks problem
+# TODO: Solve the one-instrument tracks problem - > needs a external function that converts the one track midi to multi-track midi based on the "channel information"
+# TODO: Solve the one instrument spread to many channels problem -> it creates several intruments instead of one
 
 
 class MIDIEncoder:
@@ -68,7 +69,7 @@ class MIDIEncoder:
                             remainder_ts = None
 
                 if event.type == "Time-Shift":
-                    timeshift_in_beats = to_base10(event.value)
+                    timeshift_in_beats = int_dec_base_to_beat(event.value)
                     beat_count += timeshift_in_beats
 
                     if beat_count == 4:
@@ -77,13 +78,13 @@ class MIDIEncoder:
 
                     if beat_count > 4:
                         beat_count -= 4
-                        event.value = beat_to_int_dec_base_str(
+                        event.value = beat_to_int_dec_base(
                             timeshift_in_beats - beat_count
                         )
                         bar_end = True
                         # saving the remainder as an event for the next bar
                         remainder_ts = Event(
-                            "Time-Shift", beat_to_int_dec_base_str(beat_count)
+                            "Time-Shift", beat_to_int_dec_base(beat_count)
                         )
 
                 new_inst_events.append(event)
