@@ -297,7 +297,7 @@ class GenerateMidiText:
     """ Piece generation - Extra Bars """
 
     @staticmethod
-    def process_prompt_for_next_bar(self, track_idx):
+    def process_prompt_for_next_bar(self, track_idx, verbose=True):
         """Processing the prompt for the model to generate one more bar only.
         The prompt containts:
                 if not the first bar: the previous, already processed, bars of the track
@@ -316,6 +316,10 @@ class GenerateMidiText:
             if i != track_idx:
                 len_diff = len(othertrack["bars"]) - len(track["bars"])
                 if len_diff > 0:
+                    if verbose:
+                        print(
+                            f"Adding bars - {len(track['bars'][-self.model_n_bar :])} selected from SIDE track: {i} for prompt"
+                        )
                     # if other bars are longer, it mean that this one should catch up
                     pre_promt += othertrack["bars"][0]
                     for bar in track["bars"][-self.model_n_bar :]:
@@ -335,6 +339,10 @@ class GenerateMidiText:
         # for the bar to prolong
         # initialization e.g TRACK_START INST=DRUMS DENSITY=2
         processed_prompt = track["bars"][0]
+        if verbose:
+            print(
+                f"Adding bars - {len(track['bars'][-(self.model_n_bar - 1) :])} selected from MAIN track: {track_idx} for prompt"
+            )
         for bar in track["bars"][-(self.model_n_bar - 1) :]:
             # adding the "last" bars of the track
             processed_prompt += bar
