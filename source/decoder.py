@@ -84,7 +84,33 @@ class TextDecoder:
             if _event[0] == "INST":
                 intrument = get_event(_event[0], value).value
 
+            # ---------------------------
+            # hack to prevent over quantization -> NOT IDEAL - the model should not output these events
+            max_cumul_time_delta = (
+                DRUMS_BEAT_QUANTIZATION * 4
+                if intrument == "Drums"
+                else NONE_DRUMS_BEAT_QUANTIZATION * 4
+            )
+            if cumul_time_delta >= max_cumul_time_delta:
+                if _event[0] == "NOTE_ON" or _event[0] == "TIME_DELTA":
+                    print(f"skipping {_event[0]} because of over quantization")
+                    continue
+            # ---------------------------
+
             event = get_event(_event[0], value, intrument)
+
+            #### ----- TO REMOVE LATER ----------------
+            if _event[0] == "BAR_START":
+                cumul_time_delta = 0
+            if _event[0] == "TIME_DELTA":
+                cumul_time_delta += int(_event[1])
+
+            if event and event.type == "Bar-End":
+                print(f"{_event[0]} - Cumulated TIME_DELTA = {cumul_time_delta}")
+                if cumul_time_delta > 16:
+                    pass
+                cumul_time_delta = 0
+            #### ----- TO REMOVE LATER ----------------
 
             if event:
                 events.append(event)
