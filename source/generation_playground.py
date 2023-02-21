@@ -23,9 +23,9 @@ if USE_FAMILIZED_MODEL:
 
     # model_repo = "JammyMachina/improved_4bars-mdl"
     # n_bar_generated = 4
-    instrument_promt_list = ["4", "DRUMS", "3"]
+    instrument_promt_list = ["4", "DRUMS", "3", "10"]
     # DRUMS = drums, 0 = piano, 1 = chromatic percussion, 2 = organ, 3 = guitar, 4 = bass, 5 = strings, 6 = ensemble, 7 = brass, 8 = reed, 9 = pipe, 10 = synth lead, 11 = synth pad, 12 = synth effects, 13 = ethnic, 14 = percussive, 15 = sound effects
-    density_list = [3, 2, 2]
+    density_list = [3, 3, 2, 2]
     # temperature_list = [0.7, 0.7, 0.75]
 else:
     model_repo = "misnaej/the-jam-machine"
@@ -63,14 +63,14 @@ for temperature in Temperatures_to_try:
             [temperature for _ in density_list],
         )
         # 3 - force the model to improvise
-        generate_midi.set_improvisation_level(8)
+        generate_midi.set_improvisation_level(10)
         # 4 - generate the next 4 bars for each instrument
-        generate_midi.generate_n_more_bars(4)
-        generate_midi.set_improvisation_level(20)
-        generate_midi.generate_n_more_bars(4)
-        generate_midi.set_improvisation_level(4)
         generate_midi.generate_n_more_bars(2)
-        generate_midi.set_improvisation_level(40)
+        generate_midi.set_improvisation_level(35)
+        generate_midi.generate_n_more_bars(8)
+        generate_midi.set_improvisation_level(10)
+        generate_midi.generate_n_more_bars(2)
+        generate_midi.set_improvisation_level(35)
         generate_midi.generate_n_more_bars(8)
 
         generate_midi.generated_piece = generate_midi.get_whole_piece_from_bar_dict()
