@@ -13,6 +13,10 @@ from scipy import stats
 # TODO: Data augmentation: octave or pitch shift? both?
 # TODO: Solve the one-instrument tracks problem - > needs a external function that converts the one track midi to multi-track midi based on the "channel information"
 # TODO: Solve the one instrument spread to many channels problem -> it creates several intruments instead of one
+# TODO: keep track of bar count and track count when encoding (at least in initial steps)
+# TODO: Add seperate encoding methods:
+#               - track by track, so each instrument is one after the other,
+#               - section by section for training
 
 
 class MIDIEncoder:
