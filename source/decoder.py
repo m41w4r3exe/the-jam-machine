@@ -31,9 +31,11 @@ class TextDecoder:
             Dict{inst_id: List[Events]}: List of events of Notes with velocities, aggregated Timeshifts, for each instrument
         """
         piece_events = self.text_to_events(text)
+        piece_events = self.get_track_ids(piece_events)
         inst_events = self.piece_to_inst_events(piece_events)
-        events = self.add_timeshifts_for_empty_bars(inst_events)
-
+        inst_events = self.get_bar_ids(inst_events)
+        events = self.add_missing_timeshifts_in_a_bar(inst_events)
+        events = self.remove_unwanted_tokens(events)
         events = self.aggregate_timeshifts(events)
         events = self.add_velocity(events)
         return events
@@ -47,8 +49,8 @@ class TextDecoder:
             List[List[Events]]: List of tokens for each instrument
         """
         tokens = []
-        for inst in events.keys():
-            tokens.append(self.tokenizer.events_to_tokens(events[inst]))
+        for inst in events:
+            tokens.append(self.tokenizer.events_to_tokens(inst["events"]))
         return tokens
 
     def get_midi(self, text, filename=None):
@@ -74,34 +76,41 @@ class TextDecoder:
     def text_to_events(text):
         events = []
         intrument = "Drums"
-        track_idx = 0
-        bar_idx = 0
+        cumul_time_delta = 0
         for word in text.split(" "):
             _event = word.split("=")
             value = _event[1] if len(_event) > 1 else None
-
-            # TODO: bar and track indices -> to improve, this is not correct
-            if _event[0] == "TRACK_START":
-                value = track_idx
-                track_idx += 1
-            if _event[0] == "BAR_START":
-                cumul_time_delta = 0
-                value = bar_idx
-                bar_idx += 1
 
             if _event[0] == "INST":
                 intrument = get_event(_event[0], value).value
 
             event = get_event(_event[0], value, intrument)
 
-            if _event[0] == "TIME_DELTA":  # TO REMOVE LATER
+            #### ----- TO REMOVE LATER ----------------
+            if event == "BAR_START":
+                cumul_time_delta = 0
+            if _event[0] == "TIME_DELTA":
                 cumul_time_delta += int(_event[1])
-            if event and event.type == "Bar-End":  # TO REMOVE LATER
+            if event and event.type == "Bar-End":
                 print(cumul_time_delta)
+                cumul_time_delta = 0
+            #### ----- TO REMOVE LATER ----------------
 
             if event:
                 events.append(event)
 
+        return events
+
+    @staticmethod
+    def get_track_ids(events):
+        """Adding tracking the track id for each track start and end event"""
+        track_id = 0
+        for i, event in enumerate(events):
+            if event.type == "Track-Start":
+                events[i].value = track_id
+            if event.type == "Track-End":
+                events[i].value = track_id
+                track_id += 1
         return events
 
     @staticmethod
@@ -115,30 +124,89 @@ class TextDecoder:
             Dict{inst_id: List[Events]}: List of events for each instrument
 
         """
-        inst_events = {}
-        current_instrument = -1
+        inst_events = []
+        current_track = -1  # so does not start before Track-Start is encountered
         for event in piece_events:
+            # creates a new entry in the dictionnary when "Track-Start" event is encountered
+            if event.type == "Track-Start":
+                current_track = event.value
+                if len(inst_events) <= event.value:
+                    inst_events.append({})
+                    inst_events[current_track]["channel"] = current_track
+                    inst_events[current_track]["events"] = []
+            # append event to the track
+            if current_track != -1:
+                inst_events[current_track]["events"].append(event)
+
             if event.type == "Instrument":
-                current_instrument = event.value
-                if current_instrument not in inst_events:
-                    inst_events[current_instrument] = []
-            elif current_instrument != -1:
-                inst_events[current_instrument].append(event)
+                inst_events[current_track]["Instrument"] = event.value
+        # TODO: needs cleaning Track-start and track end
         return inst_events
 
     @staticmethod
-    def add_timeshifts_for_empty_bars(inst_events):
-        """Adds time shift events instead of consecutive [BAR_START BAR_END] events"""
-        new_inst_events = {}
-        for inst, events in inst_events.items():
-            new_inst_events[inst] = []
-            for index, event in enumerate(events):
-                if event.type == "Bar-End" or event.type == "Bar-Start":
-                    if events[index - 1].type == "Bar-Start":
-                        new_inst_events[inst].append(Event("Time-Shift", "4.0.8"))
-                else:
-                    new_inst_events[inst].append(event)
+    def get_bar_ids(inst_events):
+        """tracking bar index for each intrument and saving them in the miditok Events"""
+        for inst_index, inst_event in enumerate(inst_events):
+            bar_idx = 0
+            for event_index, event in enumerate(inst_event["events"]):
+                if event.type == "Bar-Start" or event.type == "Bar-End":
+                    inst_events[inst_index]["events"][event_index].value = bar_idx
+                if event.type == "Bar-End":
+                    bar_idx += 1
+        return inst_events
+
+    @staticmethod
+    def add_missing_timeshifts_in_a_bar(inst_events, beat_per_bar=4, verbose=True):
+        """Add missing time shifts in bar to make sure that each bar has 4 beats
+        takes care of the problem of a missing time shift if notes do not last until the end of the bar
+        takes care of the problem of empty bars that are only defined by "BAR_START BAR END"""
+        new_inst_events = []
+        for index, inst_event in enumerate(inst_events):
+            new_inst_events.append({})
+            new_inst_events[index]["Instrument"] = inst_event["Instrument"]
+            new_inst_events[index]["channel"] = index
+            new_inst_events[index]["events"] = []
+
+            for event in inst_event["events"]:
+                if event.type == "Bar-Start":
+                    beat_count = 0
+
+                if event.type == "Time-Shift":
+                    beat_count += int_dec_base_to_beat(event.value)
+
+                if event.type == "Bar-End" and beat_count < beat_per_bar:
+                    time_shift_to_add = beat_to_int_dec_base(beat_per_bar - beat_count)
+                    new_inst_events[index]["events"].append(
+                        Event("Time-Shift", time_shift_to_add)
+                    )
+                    beat_count += int_dec_base_to_beat(time_shift_to_add)
+
+                if event.type == "Bar-End" and verbose == True:
+                    print(
+                        f"Instrument {index} - {inst_event['Instrument']} - Bar {event.value} - beat_count = {beat_count}"
+                    )
+
+                new_inst_events[index]["events"].append(event)
+
         return new_inst_events
+
+    @staticmethod
+    def remove_unwanted_tokens(events):
+        for inst_index, inst_event in enumerate(events):
+            new_inst_event = []
+            for event in inst_event["events"]:
+                if not (
+                    event.type == "Bar-Start"
+                    or event.type == "Bar-End"
+                    or event.type == "Track-Start"
+                    or event.type == "Track-End"
+                    or event.type == "Piece-Start"
+                    or event.type == "Instrument"
+                ):
+                    new_inst_event.append(event)
+            # replace the events list with the new one
+            events[inst_index]["events"] = new_inst_event
+        return events
 
     @staticmethod
     def add_timeshifts(beat_values1, beat_values2):
@@ -165,47 +233,48 @@ class TextDecoder:
         Returns:
             _type_: _description_
         """
-        new_events = {}
-        for inst, events in events.items():
-            inst_events = []
-            for i, event in enumerate(events):
+        for inst_index, inst_event in enumerate(events):
+            new_inst_event = []
+            for event in inst_event["events"]:
                 if (
                     event.type == "Time-Shift"
-                    and len(inst_events) > 0
-                    and inst_events[-1].type == "Time-Shift"
+                    and len(new_inst_event) > 0
+                    and new_inst_event[-1].type == "Time-Shift"
                 ):
-                    inst_events[-1].value = self.add_timeshifts(
-                        inst_events[-1].value, event.value
+                    new_inst_event[-1].value = self.add_timeshifts(
+                        new_inst_event[-1].value, event.value
                     )
                 else:
-                    inst_events.append(event)
-            new_events[inst] = inst_events
-        return new_events
+                    new_inst_event.append(event)
+
+            events[inst_index]["events"] = new_inst_event
+        return events
 
     @staticmethod
     def add_velocity(events):
         """Adds default velocity 99 to note events since they are removed from text, needed to generate midi"""
-        new_events = {}
-        for inst, events in events.items():
-            inst_events = []
-            for event in events:
-                inst_events.append(event)
-                if event.type == "Note-On":
-                    inst_events.append(Event("Velocity", 99))
-            new_events[inst] = inst_events
-        return new_events
+        for inst_index, inst_event in enumerate(events):
+            new_inst_event = []
+            for inst_event in inst_event["events"]:
+                new_inst_event.append(inst_event)
+                if inst_event.type == "Note-On":
+                    new_inst_event.append(Event("Velocity", 99))
+            events[inst_index]["events"] = new_inst_event
+        return events
 
     def get_instruments_tuple(self, events):
         """Returns instruments tuple for midi generation"""
         instruments = []
-        for inst in events.keys():
+        for track in events:
             is_drum = 0
-            if inst == "DRUMS":
-                inst = 0
+            if track["Instrument"] == "DRUMS":
+                track["Instrument"] = 0
                 is_drum = 1
             if self.familized:
-                inst = Familizer(arbitrary=True).get_program_number(int(inst))
-            instruments.append((int(inst), is_drum))
+                track["Instrument"] = Familizer(arbitrary=True).get_program_number(
+                    int(track["Instrument"])
+                )
+            instruments.append((int(track["Instrument"]), is_drum))
         return tuple(instruments)
 
 
