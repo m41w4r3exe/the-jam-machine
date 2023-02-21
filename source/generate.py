@@ -1,4 +1,5 @@
 from generation_utils import *
+import random
 
 
 class GenerateMidiText:
@@ -96,15 +97,26 @@ class GenerateMidiText:
             text = text.rstrip(" ").rstrip("TRACK_END")
         return text
 
-    def get_last_generated_track(self, full_piece):
-        track = (
-            "TRACK_START "
-            + self.striping_track_ends(full_piece.split("TRACK_START ")[-1])
-            + "TRACK_END "
-        )  # forcing the space after track and
+    def get_last_generated_track(self, piece):
+        """Get the last track from a piece written as a single long string"""
+        track = self.get_tracks_from_a_piece(piece)[-1]
         return track
 
-    def get_selected_track_as_text(self, track_id):
+    def get_tracks_from_a_piece(self, piece):
+        """Get all the tracks from a piece written as a single long string"""
+        all_tracks = [
+            "TRACK_START " + the_track + "TRACK_END "
+            for the_track in self.striping_track_ends(piece.split("TRACK_START ")[1::])
+        ]
+        return all_tracks
+
+    def get_piece_from_track_list(self, track_list):
+        piece = "PIECE_START "
+        for track in track_list:
+            piece += track
+        return piece
+
+    def get_whole_track_from_bar_dict(self, track_id):
         text = ""
         for bar in self.piece_by_track[track_id]["bars"]:
             text += bar
@@ -118,17 +130,11 @@ class GenerateMidiText:
     def get_whole_piece_from_bar_dict(self):
         text = "PIECE_START "
         for track_id, _ in enumerate(self.piece_by_track):
-            text += self.get_selected_track_as_text(track_id)
+            text += self.get_whole_track_from_bar_dict(track_id)
         return text
 
     def delete_one_track(self, track):
         self.piece_by_track.pop(track)
-
-    # def update_piece_dict__add_track(self, track_id, track):
-    #     self.piece_dict[track_id] = track
-
-    # def update_all_dictionnaries__add_track(self, track):
-    # self.update_piece_dict__add_track(track_id, track)
 
     """Basic generation tools"""
 
@@ -296,7 +302,6 @@ class GenerateMidiText:
 
     """ Piece generation - Extra Bars """
 
-    @staticmethod
     def process_prompt_for_next_bar(self, track_idx, verbose=True):
         """Processing the prompt for the model to generate one more bar only.
         The prompt containts:
@@ -327,7 +332,7 @@ class GenerateMidiText:
                     pre_promt += "TRACK_END "
                 elif (
                     False
-                ):  # len_diff <= 0: # THIS DOES NOT WORK - It just fills things with empty bars
+                ):  # len_diff <= 0: # THIS DOES NOT WORK - It just adds empty bars
                     # adding an empty bars at the end of the other tracks if they have not been processed yet
                     pre_promt += othertracks["bars"][0]
                     for bar in track["bars"][-(self.model_n_bar - 1) :]:
@@ -348,22 +353,45 @@ class GenerateMidiText:
             processed_prompt += bar
 
         processed_prompt += "BAR_START "
+
+        # making the preprompt short enought to avoid bug due to length of the prompt (model limitation)
+        pre_promt = self.force_prompt_length(pre_promt, 1500)
+
         print(
             f"--- prompt length = {len((pre_promt + processed_prompt).split(' '))} ---"
         )
+
         return pre_promt + processed_prompt
 
-    def generate_one_more_bar(self, i):
+    def force_prompt_length(self, prompt, expected_length):
+        """remove one instrument/track from the prompt it too long
+        Args:
+            prompt (str): the prompt to be processed
+            expected_length (int): the expected length of the prompt
+        Returns:
+            the truncated prompt"""
+        if len(prompt.split(" ")) < expected_length:
+            truncated_prompt = prompt
+        else:
+            tracks = self.get_tracks_from_a_piece(prompt)
+            selected_tracks = random.sample(tracks, len(tracks) - 1)
+            truncated_prompt = self.get_piece_from_track_list(selected_tracks)
+            print(f"Prompt too long - deleting one track")
+
+        return truncated_prompt
+
+    def generate_one_more_bar(self, track_index):
         """Generate one more bar from the input_prompt"""
-        processed_prompt = self.process_prompt_for_next_bar(self, i)
+        processed_prompt = self.process_prompt_for_next_bar(track_index)
+
         prompt_plus_bar = self.generate_until_track_end(
             input_prompt=processed_prompt,
-            temperature=self.piece_by_track[i]["temperature"],
+            temperature=self.piece_by_track[track_index]["temperature"],
             expected_length=1,
             verbose=False,
         )
         added_bar = self.get_newly_generated_bar(prompt_plus_bar)
-        self.update_track_dict__add_bars(added_bar, i)
+        self.update_track_dict__add_bars(added_bar, track_index)
 
     def get_newly_generated_bar(self, prompt_plus_bar):
         return "BAR_START " + self.striping_track_ends(
