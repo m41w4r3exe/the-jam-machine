@@ -174,9 +174,9 @@ def get_event(text, value=None, instrument="drums"):
         case "PIECE_START":
             return Event("Piece-Start", value)
         case "TRACK_START":
-            return None
+            return Event("Track-Start", value)
         case "TRACK_END":
-            return None
+            return Event("Track-End", value)
         case "INST":
             return Event("Instrument", value)
         case "BAR_START":
