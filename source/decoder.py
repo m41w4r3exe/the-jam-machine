@@ -86,16 +86,6 @@ class TextDecoder:
 
             event = get_event(_event[0], value, intrument)
 
-            #### ----- TO REMOVE LATER ----------------
-            if event == "BAR_START":
-                cumul_time_delta = 0
-            if _event[0] == "TIME_DELTA":
-                cumul_time_delta += int(_event[1])
-            if event and event.type == "Bar-End":
-                print(cumul_time_delta)
-                cumul_time_delta = 0
-            #### ----- TO REMOVE LATER ----------------
-
             if event:
                 events.append(event)
 
