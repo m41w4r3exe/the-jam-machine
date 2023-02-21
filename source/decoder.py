@@ -185,7 +185,10 @@ class TextDecoder:
                     print(
                         f"Instrument {index} - {inst_event['Instrument']} - Bar {event.value} - beat_count = {beat_count}"
                     )
-
+                if event.type == "Bar-End" and beat_count > beat_per_bar:
+                    print(
+                        f"Instrument {index} - {inst_event['Instrument']} - Bar {event.value} - Beat count exceeded "
+                    )
                 new_inst_events[index]["events"].append(event)
 
         return new_inst_events
