@@ -123,5 +123,5 @@ INSTRUMENT_TRANSFER_CLASSES = [
 
 "Encoding and decoding constants"
 
-DRUMS_BEAT_QUANTIZATION = 8  # 8th notes per beat
+DRUMS_BEAT_QUANTIZATION = 4  # 8th notes per beat
 NONE_DRUMS_BEAT_QUANTIZATION = 4  # 4th notes per beat
