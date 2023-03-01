@@ -17,6 +17,7 @@ from scipy import stats
 # TODO: Add seperate encoding methods:
 #               - track by track, so each instrument is one after the other,
 #               - section by section for training
+# TODO: empty sections should be filled with bar start and bar end events
 
 
 class MIDIEncoder:
@@ -52,25 +53,30 @@ class MIDIEncoder:
     def add_bars(midi_events):
         new_midi_events = []
         for inst_events in midi_events:
-            new_inst_events = [Event("Bar-Start", 1)]
+            new_inst_events = [Event("Bar-Start", 0)]
             bar_count, beat_count = 1, 0
             bar_end, remainder_ts = False, None
             for i, event in enumerate(inst_events):
 
-                if bar_end and event.type == "Note-Off" and remainder_ts is None:
-                    new_inst_events.append(event)
-                    continue
-
                 if bar_end:
-                    bar_end = False
-                    new_inst_events.append(Event("Bar-End", bar_count))
-                    if i != len(inst_events) - 1:  ## Why this condition here?
-                        bar_count += 1
-                        new_inst_events.append(Event("Bar-Start", bar_count))
-                        if remainder_ts is not None:
-                            # adding the previous bar remainder at the beginning of the new bar
-                            new_inst_events.append(remainder_ts)
-                            remainder_ts = None
+                    if event.type == "Note-Off" and remainder_ts is None:
+                        new_inst_events.append(event)
+                        if (
+                            i == len(inst_events) - 1
+                        ):  # if is the last event, bar end needs to be added here
+                            new_inst_events.append(Event("Bar-End", bar_count - 1))
+                        continue
+
+                    else:
+                        bar_end = False
+                        new_inst_events.append(Event("Bar-End", bar_count - 1))
+                        if i != len(inst_events) - 1:  ## Why this condition here?
+                            bar_count += 1
+                            new_inst_events.append(Event("Bar-Start", bar_count - 1))
+                            if remainder_ts is not None:
+                                # adding the previous bar remainder at the beginning of the new bar
+                                new_inst_events.append(remainder_ts)
+                                remainder_ts = None
 
                 if event.type == "Time-Shift":
                     timeshift_in_beats = int_dec_base_to_beat(event.value)
@@ -94,6 +100,7 @@ class MIDIEncoder:
                 new_inst_events.append(event)
 
             new_midi_events.append(new_inst_events)
+
         return new_midi_events
 
     @staticmethod
@@ -136,27 +143,33 @@ class MIDIEncoder:
 
     @staticmethod
     def make_sections(midi_events, instruments, n_bar=8):
-        """For each instrument, make sections of n_bar bars each"""
+        """For each instrument, make sections of n_bar bars each
+        --> midi_sections[inst_sections][sections]
+        because files can be encoded in many sections of n_bar"""
+
         midi_sections = []
         for i, inst_events in enumerate(midi_events):
-            inst_sections = []
+            inst_section = []
             track_count = 1
             section = [
-                Event("Track-Start", track_count),
+                Event("Track-Start", track_count - 1),
                 Event("Instrument", instruments[i].program),
             ]
             for event in inst_events:
                 section.append(event)
-                if event.type == "Bar-End" and int(event.value) % n_bar == 0:
-                    section.append(Event("Track-End", track_count))
-                    inst_sections.append(section)
+                if event.type == "Bar-End" and int(event.value + 1) % n_bar == 0:
+                    # finish the section with track-end event
+                    section.append(Event("Track-End", track_count - 1))
+                    # append the section to the section list
+                    inst_section.append(section)
                     track_count += 1
+                    # start new section
                     section = [
                         Event("Track-Start", track_count),
                         Event("Instrument", instruments[i].program),
                     ]
 
-            midi_sections.append(inst_sections)
+            midi_sections.append(inst_section)
 
         return midi_sections
 
@@ -166,11 +179,13 @@ class MIDIEncoder:
         Add density to each section as the mode of bar density within that section
         """
         new_midi_sections = []
-        note_count_distribution = []
         for inst_sections in midi_sections:
             new_inst_sections = []
             for section in inst_sections:
+                note_count_distribution = []
                 for i, event in enumerate(section):
+                    if event.type == "Instrument":
+                        instrument_token_location = i
                     if event.type == "Bar-Density":
                         note_count_distribution.append(event.value)
                 # add section density -> set to mode of bar density within that section
@@ -178,22 +193,32 @@ class MIDIEncoder:
                     np.array(note_count_distribution).astype(np.int16)
                 )[0][0]
 
-                for i, event in enumerate(section):
-                    if event.type == "Instrument":
-                        section.insert(i + 1, Event("Density", density))
-                        break
+                section.insert(instrument_token_location + 1, Event("Density", density))
                 new_inst_sections.append(section)
+
             new_midi_sections.append(new_inst_sections)
+
         return new_midi_sections
 
     @staticmethod
     def sections_to_piece(midi_events):
-        """Combine all sections into one piece"""
-        piece = [Event("Piece-Start", 1)]
+        """Combine all sections into one piece
+        Section are combined in a string as follows:
+        'Piece_Start -
+        Section 1 Instrument 1
+        Section 1 Instrument 2
+        Section 1 Instrument 3
+        Section 2 Instrument 1
+        ...'
+        """
+        piece = []
         max_total_sections = max(map(len, midi_events))
         for i in range(max_total_sections):
+            # adding piece start event at the beggining of each section
+            piece += [Event("Piece-Start", 1)]
             for inst_events in midi_events:
-                if i < len(inst_events):
+                nb_inst_section = len(inst_events)
+                if i < nb_inst_section:
                     piece += inst_events[i]
         return piece
 
