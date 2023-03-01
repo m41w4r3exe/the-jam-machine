@@ -150,22 +150,22 @@ class MIDIEncoder:
         midi_sections = []
         for i, inst_events in enumerate(midi_events):
             inst_section = []
-            track_count = 1
+            track_index = 0
             section = [
-                Event("Track-Start", track_count - 1),
+                Event("Track-Start", track_index),
                 Event("Instrument", instruments[i].program),
             ]
             for event in inst_events:
                 section.append(event)
                 if event.type == "Bar-End" and int(event.value + 1) % n_bar == 0:
                     # finish the section with track-end event
-                    section.append(Event("Track-End", track_count - 1))
+                    section.append(Event("Track-End", track_index))
                     # append the section to the section list
                     inst_section.append(section)
-                    track_count += 1
+                    track_index += 1
                     # start new section
                     section = [
-                        Event("Track-Start", track_count),
+                        Event("Track-Start", track_index),
                         Event("Instrument", instruments[i].program),
                     ]
 
@@ -188,11 +188,11 @@ class MIDIEncoder:
                         instrument_token_location = i
                     if event.type == "Bar-Density":
                         note_count_distribution.append(event.value)
+
                 # add section density -> set to mode of bar density within that section
                 density = stats.mode(
                     np.array(note_count_distribution).astype(np.int16)
                 )[0][0]
-
                 section.insert(instrument_token_location + 1, Event("Density", density))
                 new_inst_sections.append(section)
 
