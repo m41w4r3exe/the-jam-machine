@@ -1,5 +1,5 @@
 from generate import *
-from utils import WriteTextMidiToFile, get_miditok
+from utils import get_miditok
 from load import LoadModel
 from decoder import TextDecoder
 from playback import get_music
@@ -35,7 +35,7 @@ else:
     pass
 
 # define generation directory
-generated_sequence_files_path = define_generation_dir(model_repo)
+generated_sequence_files_path = define_generation_dir(f"midi/generated/{model_repo}")
 
 # load model and tokenizer
 model, tokenizer = LoadModel(
@@ -63,11 +63,11 @@ for temperature in Temperatures_to_try:
             [temperature for _ in density_list],
         )
         # 3 - force the model to improvise
-        generate_midi.set_improvisation_level(6)
-        # 4 - generate the next 4 bars for each instrument
-        generate_midi.generate_n_more_bars(2)
-        generate_midi.set_improvisation_level(12)
-        generate_midi.generate_n_more_bars(16)
+        # generate_midi.set_improvisation_level(6)
+        # # 4 - generate the next 4 bars for each instrument
+        # generate_midi.generate_n_more_bars(2)
+        # generate_midi.set_improvisation_level(12)
+        # generate_midi.generate_n_more_bars(16)
 
         generate_midi.generated_piece = generate_midi.get_whole_piece_from_bar_dict()
 
