@@ -116,6 +116,14 @@
       "program": "source/playground.py",
       "console": "integratedTerminal",
       "justMyCode": false
+    },
+    {
+      "name": "test",
+      "type": "python",
+      "request": "launch",
+      "program": "source/test.py",
+      "console": "integratedTerminal",
+      "justMyCode": false
     }
   ]
 }
