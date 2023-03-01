@@ -262,34 +262,6 @@ def copy_file(input_file, output_dir):
     shutil.copy(input_file, output_file)
 
 
-class WriteTextMidiToFile:  # utils saving to file
-    def __init__(self, generate_midi, output_path):
-        self.generated_midi = generate_midi.generated_piece
-        self.output_path = output_path
-        self.hyperparameter_and_bars = generate_midi.piece_by_track
-
-    def hashing_seq(self):
-        self.current_time = get_datetime()
-        self.output_path_filename = f"{self.output_path}/{self.current_time}.json"
-
-    def wrapping_seq_hyperparameters_in_dict(self):
-        # assert type(self.generated_midi) is str, "error: generate_midi must be a string"
-        # assert (
-        #     type(self.hyperparameter_dict) is dict
-        # ), "error: feature_dict must be a dictionnary"
-        return {
-            "generated_midi": self.generated_midi,
-            "hyperparameters_and_bars": self.hyperparameter_and_bars,
-        }
-
-    def text_midi_to_file(self):
-        self.hashing_seq()
-        output_dict = self.wrapping_seq_hyperparameters_in_dict()
-        print(f"Token generate_midi written: {self.output_path_filename}")
-        writeToFile(self.output_path_filename, output_dict)
-        return self.output_path_filename
-
-
 class FileCompressor:
     def __init__(self, input_directory, output_directory, n_jobs=-1):
         self.input_directory = input_directory
