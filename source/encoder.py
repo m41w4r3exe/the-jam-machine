@@ -54,7 +54,7 @@ class MIDIEncoder:
         new_midi_events = []
         for inst_events in midi_events:
             new_inst_events = [Event("Bar-Start", 0)]
-            bar_count, beat_count = 1, 0
+            bar_index, beat_count = 0, 0
             bar_end, remainder_ts = False, None
             for i, event in enumerate(inst_events):
 
@@ -64,15 +64,15 @@ class MIDIEncoder:
                         if (
                             i == len(inst_events) - 1
                         ):  # if is the last event, bar end needs to be added here
-                            new_inst_events.append(Event("Bar-End", bar_count - 1))
+                            new_inst_events.append(Event("Bar-End", bar_index))
                         continue
 
                     else:
                         bar_end = False
-                        new_inst_events.append(Event("Bar-End", bar_count - 1))
+                        new_inst_events.append(Event("Bar-End", bar_index))
                         if i != len(inst_events) - 1:  ## Why this condition here?
-                            bar_count += 1
-                            new_inst_events.append(Event("Bar-Start", bar_count - 1))
+                            bar_index += 1
+                            new_inst_events.append(Event("Bar-Start", bar_index))
                             if remainder_ts is not None:
                                 # adding the previous bar remainder at the beginning of the new bar
                                 new_inst_events.append(remainder_ts)
