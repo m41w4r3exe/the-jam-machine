@@ -5,7 +5,6 @@ import numpy as np
 from scipy import stats
 from constants import BEATS_PER_BAR
 
-# TODO: Move remainder_ts logic to divide_timeshift method
 # TODO: Add method comments
 # TODO: Make instruments family while encoding
 # TODO: Density Bins - (Done)
@@ -14,7 +13,6 @@ from constants import BEATS_PER_BAR
 # TODO: Data augmentation: octave or pitch shift? both?
 # TODO: Solve the one-instrument tracks problem - > needs a external function that converts the one track midi to multi-track midi based on the "channel information"
 # TODO: Solve the one instrument spread to many channels problem -> it creates several intruments instead of one
-# TODO: keep track of bar count and track count when encoding (at least in initial steps)
 # TODO: Add seperate encoding methods:
 #               - track by track, so each instrument is one after the other,
 #               - section by section for training
@@ -38,7 +36,7 @@ class MIDIEncoder:
         In the later stage, when two time-shifts are added within the same bar,
         it might overflow in the next bar, but will never spead accross multiple bars
         c.f. remainder_ts in add_bars method: remainder_ts will never exceed BEATS_PER_BAR
-        NOT USED ANYMORE -> used divide_timeshifts_by_minimal_resolution instead"""
+        NOT USED ANYMORE -> used set_timeshifts_to_min_length instead"""
 
         new_midi_events = []
         for inst_events in midi_events:
@@ -57,8 +55,10 @@ class MIDIEncoder:
         return new_midi_events
 
     @staticmethod
-    def divide_timeshifts_by_minimal_resolution(midi_events):
-        """Dividing time-shifts by minimal resolution in order to simplify the bar encoding process"""
+    def set_timeshifts_to_min_length(midi_events):
+        """convert existing time-shifts events to multiple time-shift events,
+        which sum equals the original time shift event
+        --> Simplifies the bar encoding process"""
 
         new_midi_events = []
         for inst_events in midi_events:
@@ -83,7 +83,9 @@ class MIDIEncoder:
 
     @staticmethod
     def add_bars(midi_events):
-        # too much complexity, needs to be simplified
+        """Adding bar-start and bar-end events to the midi events
+        Uses BEATS_PER_BAR constant to determine the bar length
+        """
         new_midi_events = []
         for inst_events in midi_events:
             new_inst_events = [Event("Bar-Start", 0)]
@@ -91,6 +93,9 @@ class MIDIEncoder:
             bar_end = False
             for i, event in enumerate(inst_events):
 
+                # when bar_end reached, adding the remainder note-off events
+                # adding bar end event and bar start event
+                # only if event is not the last event of the track
                 if bar_end and i != len(inst_events) - 1:
                     if event.type == "Note-Off":
                         new_inst_events.append(event)
@@ -102,44 +107,43 @@ class MIDIEncoder:
                         new_inst_events.append(Event("Bar-Start", bar_index))
                         bar_end = False
 
+                # keeping track of the beat count within the bar
                 if event.type == "Time-Shift":
-                    timeshift_in_beats = int_dec_base_to_beat(event.value)
-                    beat_count += timeshift_in_beats
-
+                    beat_count += int_dec_base_to_beat(event.value)
                     if beat_count == BEATS_PER_BAR:
                         beat_count = 0
                         bar_end = True
-
+                # default
                 new_inst_events.append(event)
-
-                # Adding the last bar-end event
-                # This works in both cases that bar_end == True or bar_end == False
-                if i == len(inst_events) - 1:  # and new_inst_events[-1] != "Bar-End":
+                # adding the last bar-end event
+                if i == len(inst_events) - 1:
                     new_inst_events.append(Event("Bar-End", bar_index))
 
             new_midi_events.append(new_inst_events)
-
         return new_midi_events
 
     @staticmethod
-    def combine_in_bar_adjacent_timeshifts(midi_events):
-        # for i, inst_events in enumerate(midi_events):
-        #     new_inst_events = []
-        #     aggregated_beats = None
-        #     for i, event in enumerate(inst_events):
-        #         if event.type == "Time-Shift":
-        #             aggregated_beats += int_dec_base_to_beat(event.value)
-        #             continue
-
-        #         if aggregated_beats is not None:
-        #             new_inst_events.append(
-        #                 Event("Time-Shift", beat_to_int_dec_base(aggregated_beats))
-        #             )
-
-        #         new_inst_events.append(event)  # default case
-
-        #     midi_events[i] = new_inst_events
-        return midi_events
+    def combine_timeshifts_in_bar(midi_events):
+        """Combining adjacent time-shifts within the same bar"""
+        new_midi_events = []
+        for inst_events in midi_events:
+            new_inst_events = []
+            aggregated_beats = 0
+            for event in inst_events:
+                # aggregating adjacent time-shifts and skipping them
+                if event.type == "Time-Shift":
+                    aggregated_beats += int_dec_base_to_beat(event.value)
+                    continue
+                # writting the aggregating time shift as a new event
+                if aggregated_beats > 0:
+                    new_inst_events.append(
+                        Event("Time-Shift", beat_to_int_dec_base(aggregated_beats))
+                    )
+                    aggregated_beats = 0
+                # default
+                new_inst_events.append(event)
+            new_midi_events.append(new_inst_events)
+        return new_midi_events
 
     @staticmethod
     def add_density_to_bar(midi_events):
@@ -296,10 +300,9 @@ class MIDIEncoder:
             midi_events,
             [
                 self.remove_velocity,
-                # self.divide_timeshifts_by_bar,
-                self.divide_timeshifts_by_minimal_resolution,
+                self.set_timeshifts_to_min_length,
                 self.add_bars,
-                self.combine_in_bar_adjacent_timeshifts,
+                self.combine_timeshifts_in_bar,
                 self.add_density_to_bar,
                 self.make_sections,
                 self.add_density_to_sections,
