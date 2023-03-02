@@ -85,11 +85,28 @@ def test_encode(midi_filename):
     return piece_text
 
 
+def test_compare_generated_encoded(generated_text, encoded_text):
+    """Compare the generated MIDI_text sequence and the encoded MIDI_text sequence"""
+    if generated_text == encoded_text:
+        print("Generated and encoded MIDI_text sequences are the same")
+    else:
+        len(generated_text)
+        len(encoded_text)
+        print("Generated and encoded MIDI_text sequences are different")
+        print("Generated sequence:")
+        print(generated_text)
+        print("Encoded sequence:")
+        print(encoded_text)
+
+
 def check_encoder_decoder_consistency():
     midi_text_generated = test_generate()
     midi_file = test_decode(midi_text_generated)
     midi_text_from_file = test_encode(midi_file)
-    midi_text_from_file
+
+    test_compare_generated_encoded(
+        midi_text_generated.generated_piece, midi_text_from_file
+    )
 
 
 if __name__ == "__main__":
