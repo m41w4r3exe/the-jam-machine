@@ -103,7 +103,10 @@ def get_text(event, instrument="drums"):
         case "Track-End":
             return "TRACK_END "
         case "Instrument":
-            return f"INST={event.value} "
+            if str(event.value).lower() == "drums":
+                return f"INST=DRUMS "
+            else:
+                return f"INST={event.value} "
         case "Density":
             return f"DENSITY={event.value} "
         case "Bar-Start":
@@ -178,6 +181,8 @@ def get_event(text, value=None, instrument="drums"):
         case "TRACK_END":
             return Event("Track-End", value)
         case "INST":
+            if value == "DRUMS":
+                value = "Drums"
             return Event("Instrument", value)
         case "BAR_START":
             return Event("Bar-Start", value)
