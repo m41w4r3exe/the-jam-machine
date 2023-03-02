@@ -88,28 +88,19 @@ class MIDIEncoder:
         for inst_events in midi_events:
             new_inst_events = [Event("Bar-Start", 0)]
             bar_index, beat_count = 0, 0
-            bar_end, remainder_ts = False, None
+            bar_end = False
             for i, event in enumerate(inst_events):
 
-                if bar_end:
-                    if event.type == "Note-Off" and remainder_ts is None:
+                if bar_end and i != len(inst_events) - 1:
+                    if event.type == "Note-Off":
                         new_inst_events.append(event)
-                        if (
-                            i == len(inst_events) - 1
-                        ):  # if is the last event, bar end needs to be added here
-                            new_inst_events.append(Event("Bar-End", bar_index))
                         continue
 
                     else:
-                        bar_end = False
                         new_inst_events.append(Event("Bar-End", bar_index))
-                        if i != len(inst_events) - 1:  ## Why this condition here?
-                            bar_index += 1
-                            new_inst_events.append(Event("Bar-Start", bar_index))
-                            if remainder_ts is not None:
-                                # adding the previous bar remainder at the beginning of the new bar
-                                new_inst_events.append(remainder_ts)
-                                remainder_ts = None
+                        bar_index += 1
+                        new_inst_events.append(Event("Bar-Start", bar_index))
+                        bar_end = False
 
                 if event.type == "Time-Shift":
                     timeshift_in_beats = int_dec_base_to_beat(event.value)
@@ -119,18 +110,12 @@ class MIDIEncoder:
                         beat_count = 0
                         bar_end = True
 
-                    if beat_count > BEATS_PER_BAR:
-                        beat_count -= BEATS_PER_BAR
-                        event.value = beat_to_int_dec_base(
-                            timeshift_in_beats - beat_count
-                        )
-                        bar_end = True
-                        # saving the remainder as an event for the next bar
-                        remainder_ts = Event(
-                            "Time-Shift", beat_to_int_dec_base(beat_count)
-                        )
-
                 new_inst_events.append(event)
+
+                # Adding the last bar-end event
+                # This works in both cases that bar_end == True or bar_end == False
+                if i == len(inst_events) - 1:  # and new_inst_events[-1] != "Bar-End":
+                    new_inst_events.append(Event("Bar-End", bar_index))
 
             new_midi_events.append(new_inst_events)
 
@@ -138,7 +123,23 @@ class MIDIEncoder:
 
     @staticmethod
     def combine_in_bar_adjacent_timeshifts(midi_events):
-        pass
+        # for i, inst_events in enumerate(midi_events):
+        #     new_inst_events = []
+        #     aggregated_beats = None
+        #     for i, event in enumerate(inst_events):
+        #         if event.type == "Time-Shift":
+        #             aggregated_beats += int_dec_base_to_beat(event.value)
+        #             continue
+
+        #         if aggregated_beats is not None:
+        #             new_inst_events.append(
+        #                 Event("Time-Shift", beat_to_int_dec_base(aggregated_beats))
+        #             )
+
+        #         new_inst_events.append(event)  # default case
+
+        #     midi_events[i] = new_inst_events
+        return midi_events
 
     @staticmethod
     def add_density_to_bar(midi_events):
