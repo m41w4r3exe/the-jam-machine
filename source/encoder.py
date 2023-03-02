@@ -3,6 +3,7 @@ from miditok import Event
 from utils import *
 import numpy as np
 from scipy import stats
+from constants import BEATS_PER_BAR
 
 # TODO: Move remainder_ts logic to divide_timeshift method
 # TODO: Add method comments
@@ -33,16 +34,22 @@ class MIDIEncoder:
 
     @staticmethod
     def divide_timeshifts_by_bar(midi_events):
+        """Dividing time-shifts by BEATS_PER_BAR bars, so that each time-shift is less than 4 beats
+        In the later stage, when two time-shifts are added within the same bar,
+        it might overflow in the next bar, but will never spead accross multiple bars
+        c.f. remainder_ts in add_bars method: remainder_ts will never exceed BEATS_PER_BAR
+        NOT USED ANYMORE -> used divide_timeshifts_by_minimal_resolution instead"""
+
         new_midi_events = []
         for inst_events in midi_events:
             new_inst_events = []
             for event in inst_events:
                 if event.type == "Time-Shift":
                     values = split_dots(event.value)
-                    while values[0] > 4:
-                        values[0] -= 4
+                    while values[0] > BEATS_PER_BAR:
+                        values[0] -= BEATS_PER_BAR
                         new_inst_events.append(
-                            Event("Time-Shift", "4.0." + str(values[2]))
+                            Event("Time-Shift", f"{BEATS_PER_BAR}.0.{values[2]}")
                         )
                     event.value = ".".join(map(str, values))
                 new_inst_events.append(event)
@@ -50,7 +57,33 @@ class MIDIEncoder:
         return new_midi_events
 
     @staticmethod
+    def divide_timeshifts_by_minimal_resolution(midi_events):
+        """Dividing time-shifts by minimal resolution in order to simplify the bar encoding process"""
+
+        new_midi_events = []
+        for inst_events in midi_events:
+            new_inst_events = []
+            for event in inst_events:
+                if event.type == "Time-Shift":
+                    values = split_dots(event.value)
+                    # transfer values[0] to values[1]
+                    values[1] += values[0] * values[2]
+                    values[0] = 0
+                    # generating and appending new time-shift events
+                    while values[1] > 1:
+                        values[1] -= 1
+                        new_inst_events.append(
+                            Event("Time-Shift", "0.1." + str(values[2]))
+                        )
+                    event.value = ".".join(map(str, values))
+
+                new_inst_events.append(event)
+            new_midi_events.append(new_inst_events)
+        return new_midi_events
+
+    @staticmethod
     def add_bars(midi_events):
+        # too much complexity, needs to be simplified
         new_midi_events = []
         for inst_events in midi_events:
             new_inst_events = [Event("Bar-Start", 0)]
@@ -82,12 +115,12 @@ class MIDIEncoder:
                     timeshift_in_beats = int_dec_base_to_beat(event.value)
                     beat_count += timeshift_in_beats
 
-                    if beat_count == 4:
+                    if beat_count == BEATS_PER_BAR:
                         beat_count = 0
                         bar_end = True
 
-                    if beat_count > 4:
-                        beat_count -= 4
+                    if beat_count > BEATS_PER_BAR:
+                        beat_count -= BEATS_PER_BAR
                         event.value = beat_to_int_dec_base(
                             timeshift_in_beats - beat_count
                         )
@@ -104,13 +137,16 @@ class MIDIEncoder:
         return new_midi_events
 
     @staticmethod
+    def combine_in_bar_adjacent_timeshifts(midi_events):
+        pass
+
+    @staticmethod
     def add_density_to_bar(midi_events):
         """
         For each bar:
         - calculate the note density as the number of note onset divided by the number of beats per bar
         - add the note density as a new event type "Bar-Density"
         """
-        beats_per_bar = 4
         new_midi_events = []
         for inst_events in midi_events:
             new_inst_events = []
@@ -130,7 +166,7 @@ class MIDIEncoder:
                     new_inst_events.append(
                         Event(
                             "Bar-Density",
-                            round(note_onset_count_in_bar / beats_per_bar),
+                            round(note_onset_count_in_bar / BEATS_PER_BAR),
                         )
                     )
                     [
@@ -259,8 +295,10 @@ class MIDIEncoder:
             midi_events,
             [
                 self.remove_velocity,
-                self.divide_timeshifts_by_bar,
+                # self.divide_timeshifts_by_bar,
+                self.divide_timeshifts_by_minimal_resolution,
                 self.add_bars,
+                self.combine_in_bar_adjacent_timeshifts,
                 self.add_density_to_bar,
                 self.make_sections,
                 self.add_density_to_sections,
