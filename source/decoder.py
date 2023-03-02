@@ -75,8 +75,8 @@ class TextDecoder:
     @staticmethod
     def text_to_events(text, verbose=True):
         events = []
-        intrument = "Drums"
-        track_value = -1
+        instrument = "drums"
+        track_index = -1
         # bar_value = 0
         cumul_time_delta = 0
         max_cumul_time_delta = 0
@@ -87,15 +87,15 @@ class TextDecoder:
             beyond_quantization = False  # needs to be reset for each event
 
             if _event[0] == "INST":
-                track_value += 1
+                track_index += 1
                 bar_value = 0
                 # get the instrument for passing in get_event when time_delta for proper quantization
-                intrument = get_event(_event[0], value).value
+                instrument = get_event(_event[0], value).value
 
                 # how much delta can be added before over quantization
                 max_cumul_time_delta = (
                     DRUMS_BEAT_QUANTIZATION * 4
-                    if intrument == "Drums"
+                    if instrument.lower() == "drums"
                     else NONE_DRUMS_BEAT_QUANTIZATION * 4
                 )
 
@@ -117,16 +117,16 @@ class TextDecoder:
 
             if beyond_quantization:
                 print(
-                    f"Intrument {intrument} - bar {bar_value} - skipping {_event[0]} because of over quantization"
+                    f"instrument {instrument} - bar {bar_value} - skipping {_event[0]} because of over quantization"
                 ) if verbose else None
             # ---------------------------------------------------------------------------------------------``
 
             # getting event
-            event = get_event(_event[0], value, intrument)
+            event = get_event(_event[0], value, instrument)
             if event and not beyond_quantization:
                 if event.type == "Bar-End":
                     print(
-                        f"Intrument {intrument} - bar {bar_value} - Cumulated TIME_DELTA = {cumul_time_delta}"
+                        f"instrument {instrument} - bar {bar_value} - Cumulated TIME_DELTA = {cumul_time_delta}"
                     ) if verbose else None
                     cumul_time_delta = 0
 
@@ -179,7 +179,7 @@ class TextDecoder:
 
     @staticmethod
     def get_bar_ids(inst_events):
-        """tracking bar index for each intrument and saving them in the miditok Events"""
+        """tracking bar index for each instrument and saving them in the miditok Events"""
         for inst_index, inst_event in enumerate(inst_events):
             bar_idx = 0
             for event_index, event in enumerate(inst_event["events"]):
@@ -225,6 +225,14 @@ class TextDecoder:
                     )
                 new_inst_events[index]["events"].append(event)
 
+        return new_inst_events
+
+    # TODO
+    @staticmethod
+    def check_bar_count_in_section(inst_events, bars_in_sections=8):
+        new_inst_events = []
+        for index, inst_event in enumerate(inst_events):
+            pass
         return new_inst_events
 
     @staticmethod
@@ -304,10 +312,10 @@ class TextDecoder:
         instruments = []
         for track in events:
             is_drum = 0
-            if track["Instrument"] == "DRUMS":
+            if track["Instrument"].lower() == "drums":
                 track["Instrument"] = 0
                 is_drum = 1
-            if self.familized:
+            if self.familized and not is_drum:
                 track["Instrument"] = Familizer(arbitrary=True).get_program_number(
                     int(track["Instrument"])
                 )
