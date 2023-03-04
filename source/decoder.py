@@ -164,7 +164,7 @@ class TextDecoder:
             # creates a new entry in the dictionnary when "Track-Start" event is encountered
             if event.type == "Track-Start":
                 current_track = event.value
-                if len(inst_events) <= event.value:
+                if len(inst_events) == event.value:
                     inst_events.append({})
                     inst_events[current_track]["channel"] = current_track
                     inst_events[current_track]["events"] = []
