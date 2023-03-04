@@ -146,6 +146,20 @@ class MIDIEncoder:
         return new_midi_events
 
     @staticmethod
+    def remove_timeshifts_preceeding_bar_end(midi_events):
+        """Useless time-shift removed"""
+        new_midi_events = []
+        for inst_events in midi_events:
+            new_inst_events = []
+            for i, event in enumerate(inst_events[:-1]):
+                if event.type == "Time-Shift" and inst_events[i + 1].type == "Bar-End":
+                    continue
+                new_inst_events.append(event)
+            new_midi_events.append(new_inst_events)
+
+        return new_midi_events
+
+    @staticmethod
     def add_density_to_bar(midi_events):
         """
         For each bar:
@@ -273,6 +287,8 @@ class MIDIEncoder:
         current_instrument = "undefined"
         for event in events:
             if event.type == "Time-Shift" and event.value == "4.0.8":
+                # this should be redundant now
+                print("not redundant")
                 # if event.value == "4.0.8": then it means that it is just an empty bar
                 continue
 
@@ -306,6 +322,7 @@ class MIDIEncoder:
                 self.set_timeshifts_to_min_length,
                 self.add_bars,
                 self.combine_timeshifts_in_bar,
+                self.remove_timeshifts_preceeding_bar_end,
                 self.add_density_to_bar,
                 self.make_sections,
                 self.add_density_to_sections,
