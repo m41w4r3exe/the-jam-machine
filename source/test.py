@@ -85,18 +85,59 @@ def test_encode(midi_filename):
     return piece_text
 
 
+def simplify_events_for_comparison(generated_event, encoded_event):
+    """Simplifies the 'NOTE' events, byt getting rid of the level of the note (e.g. 'NOTE=60' becomes 'NOTE')
+    Why: because when the sequence is encoded as midi with pretty midi, the order of sequences of NOTE_OFF or NOTE_ON can be changed
+    This does not changes the music, but then the text sequences will be different and won't match"""
+    if "NOTE" in generated_event:
+        generated_word = generated_event.split("=")[0]
+    else:
+        generated_word = generated_event
+
+    if "NOTE" in encoded_event:
+        encoded_word = encoded_event.split("=")[0]
+    else:
+        encoded_word = encoded_event
+
+    return generated_word, encoded_word
+
+
+def check_sequence_word_by_word(generated_text, encoded_text):
+    """Check if the generated MIDI_text sequence and the encoded MIDI_text sequence are the same word by word"""
+    generated_text = generated_text.split(" ")
+    encoded_text = encoded_text.split(" ")
+    for i in range(len(generated_text)):
+        generated_word, encoded_word = simplify_events_for_comparison(
+            generated_text[i], encoded_text[i]
+        )
+        if generated_word != encoded_word:
+            print(
+                f"Word {i} is different - Generated: {generated_text[i]} vs Encoded: {encoded_text[i]}"
+            )
+            # raise ValueError("Generated and encoded MIDI_text sequences are different")
+
+
 def test_compare_generated_encoded(generated_text, encoded_text):
     """Compare the generated MIDI_text sequence and the encoded MIDI_text sequence"""
     if generated_text == encoded_text:
         print("Generated and encoded MIDI_text sequences are the same")
+        absolutely_similar = True
     else:
-        len(generated_text)
-        len(encoded_text)
-        print("Generated and encoded MIDI_text sequences are different")
-        print("Generated sequence:")
-        print(generated_text)
-        print("Encoded sequence:")
-        print(encoded_text)
+        absolutely_similar = False
+        similar_length = len(generated_text.split(" ")) == len(encoded_text.split(" "))
+
+    if not absolutely_similar and similar_length:
+        print(
+            f"Lengths of generated and encoded sequences are the same: {len(encoded_text.split(' '))} words"
+        )
+
+    if not absolutely_similar and not similar_length:
+        print(
+            f"Lengths of generated and encoded sequences are different: {len(generated_text.split(' '))} vs {len(encoded_text.split(' '))} words"
+        )
+        # raise ValueError("Generated and encoded MIDI_text sequences are different")
+
+    check_sequence_word_by_word(generated_text, encoded_text)
 
 
 def check_encoder_decoder_consistency():
