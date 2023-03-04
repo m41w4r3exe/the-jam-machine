@@ -151,10 +151,16 @@ class MIDIEncoder:
         new_midi_events = []
         for inst_events in midi_events:
             new_inst_events = []
-            for i, event in enumerate(inst_events[:-1]):
-                if event.type == "Time-Shift" and inst_events[i + 1].type == "Bar-End":
+            for i, event in enumerate(inst_events):
+                if (
+                    i <= len(inst_events) - 1
+                    and event.type == "Time-Shift"
+                    and inst_events[i + 1].type == "Bar-End"
+                ):
                     continue
+
                 new_inst_events.append(event)
+            inst_events
             new_midi_events.append(new_inst_events)
 
         return new_midi_events
