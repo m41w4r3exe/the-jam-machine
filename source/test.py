@@ -22,9 +22,9 @@ def test_generate():
     # define generation parameters
     temperature = 0.7
 
-    instrument_promt_list = ["DRUMS", "4", "3"]
+    instrument_promt_list = ["DRUMS", "4"]
     # DRUMS = drums, 0 = piano, 1 = chromatic percussion, 2 = organ, 3 = guitar, 4 = bass, 5 = strings, 6 = ensemble, 7 = brass, 8 = reed, 9 = pipe, 10 = synth lead, 11 = synth pad, 12 = synth effects, 13 = ethnic, 14 = percussive, 15 = sound effects
-    density_list = [3, 2, 2]
+    density_list = [3, 2]
 
     # load model and tokenizer
     model, tokenizer = LoadModel(
@@ -55,6 +55,17 @@ def test_generate():
     print(generate_midi.generated_piece)
     print("=========================================")
     return generate_midi
+
+
+def check_for_duplicated_subsequent_tokens(generated_text):
+    """Check if there are duplicated tokens in the generated sequence"""
+    for i, text in enumerate(generated_text.split(" ")):
+        if (
+            i < len(generated_text.split(" ")) - 1
+            and text == generated_text.split(" ")[i + 1]
+        ):
+            print(f"DUPLICATED TOKENS {text} in position {i}")
+            print(f"{generated_text.split(' ')[i - min([i,3]): i + 3]}")
 
 
 def test_decode(generate_midi):
@@ -114,6 +125,9 @@ def check_sequence_word_by_word(generated_text, encoded_text):
             print(
                 f"Word {i} is different - Generated: {generated_text[i]} vs Encoded: {encoded_text[i]}"
             )
+            print(f"generated: {generated_text[i - min([i, 4]) : i + 3]}")
+            print(f"encoded: {encoded_text[i - min([i, 4]) : i + 3]}")
+            print("------------------")
             # raise ValueError("Generated and encoded MIDI_text sequences are different")
 
 
@@ -142,6 +156,7 @@ def test_compare_generated_encoded(generated_text, encoded_text):
 
 def check_encoder_decoder_consistency():
     midi_text_generated = test_generate()
+    check_for_duplicated_subsequent_tokens(midi_text_generated.generated_piece)
     midi_file = test_decode(midi_text_generated)
     midi_text_from_file = test_encode(midi_file)
 

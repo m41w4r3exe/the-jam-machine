@@ -32,6 +32,7 @@ class TextDecoder:
         """
         piece_events = self.text_to_events(text)
         piece_events = self.get_track_ids(piece_events)
+        self.check_for_duplicated_events(piece_events)
         inst_events = self.piece_to_inst_events(piece_events)
         inst_events = self.get_bar_ids(inst_events)
         events = self.add_missing_timeshifts_in_a_bar(inst_events)
@@ -254,6 +255,16 @@ class TextDecoder:
         return events
 
     @staticmethod
+    def check_for_duplicated_events(event_list):
+        for i, event in enumerate(event_list):
+            if (
+                i < len(event_list) - 1
+                and event.type == event_list[i + 1].type
+                and event.value == event_list[i + 1].value
+            ):
+                print(f"Duplicate event found at index {i} : {event}")
+
+    @staticmethod
     def add_timeshifts(beat_values1, beat_values2):
         """Adds two beat values
 
@@ -325,7 +336,8 @@ class TextDecoder:
 
 if __name__ == "__main__":
 
-    filename = "midi/generated/JammyMachina/elec-gmusic-familized-model-13-12__17-35-53/20230221_235439"
+    # filename = "midi/generated/JammyMachina/elec-gmusic-familized-model-13-12__17-35-53/20230221_235439"
+    filename = "source/tests/20230305_150554"  # investigating the duplicates issues
     encoded_json = readFromFile(
         f"{filename}.json",
         True,

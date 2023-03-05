@@ -157,6 +157,8 @@ class MIDIEncoder:
                     and event.type == "Time-Shift"
                     and inst_events[i + 1].type == "Bar-End"
                 ):
+                    print(f"---- {i} - {event} ----")
+                    [print(a) for a in inst_events[i - 3 : i + 3]]
                     continue
 
                 new_inst_events.append(event)
@@ -292,12 +294,6 @@ class MIDIEncoder:
         text = ""
         current_instrument = "undefined"
         for event in events:
-            if event.type == "Time-Shift" and event.value == "4.0.8":
-                # this should be redundant now
-                print("not redundant")
-                # if event.value == "4.0.8": then it means that it is just an empty bar
-                continue
-
             # keeping track of the instrument to set the quantization in get_text()
             if event.type == "Instrument":
                 current_instrument = str(event.value)
@@ -390,6 +386,7 @@ def from_MIDI_to_sectionned_text(midi_filename):
 
 if __name__ == "__main__":
     # Encode Strokes for debugging purposes:
-    midi_filename = "the_strokes-reptilia"
-    piece_text = from_MIDI_to_sectionned_text(f"midi/{midi_filename}")
-    writeToFile(f"midi/encoded_txts/{midi_filename}.txt", piece_text)
+    # midi_filename = "midi/the_strokes-reptilia.mid"
+    midi_filename = "source/tests/20230305_142948"  # issue with double note_on in a row
+    piece_text = from_MIDI_to_sectionned_text(f"{midi_filename}")
+    writeToFile(f"{midi_filename}.txt", piece_text)
