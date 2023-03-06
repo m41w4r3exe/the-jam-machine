@@ -3,25 +3,35 @@ from miditok import Event
 from utils import *
 import numpy as np
 from scipy import stats
+from familizer import Familizer
 from constants import BEATS_PER_BAR
 
-# TODO: Add method comments
+# TODO HIGH PRIORITY
 # TODO: Make instruments family while encoding
-# TODO: Density Bins - (Done)
-# Question: How to determine difference between 8 very long notes in 8 bar and 6 empty bar + 8 very short notes in last 2 bar?
-# TODO: Data augmentation: hopping 4 bars and re-encode almost same notes
-# TODO: Data augmentation: octave or pitch shift? both?
+# TODO: Data augmentation:
+#   - hopping K bars and re-encode almost same notes: needs to keep track of sequence length
+#   - computing track key
+#       - octave shifting
+#       - pitch shifting
 # TODO: Solve the one-instrument tracks problem - > needs a external function that converts the one track midi to multi-track midi based on the "channel information"
 # TODO: Solve the one instrument spread to many channels problem -> it creates several intruments instead of one
-# TODO: Add seperate encoding methods:
-#               - track by track, so each instrument is one after the other,
-#               - section by section for training
-# TODO: empty sections should be filled with bar start and bar end events
+
+# LOW PRIORITY
+# TODO: Improve method comments
+# TODO: Density Bins - Calculation Done - Not sure if it the best way - MMM paper uses a normalized density based on the entire instrument density in the dataset.
+# They say that density for a given instrument does not mean the same for another. However, I am expecting that the instrument token is already implicitely taking care of that.
+# Question: How to determine difference between 8 very long notes in 8 bar and 6 empty bar + 8 very short notes in last 2 bar?
+# TODO: Should empty sections be filled with bar start and bar end events?
+# TODO: changing the methods to avoid explicit loops and use the map function instead?
+
+# NEW IDEAS
+# TODO: Changing Generation approach : encoding all tracks in the same key and choose the key while generating, so we just shift the key after generation.
 
 
 class MIDIEncoder:
-    def __init__(self, tokenizer):
+    def __init__(self, tokenizer, familized=False):
         self.tokenizer = tokenizer
+        self.familized = familized
 
     @staticmethod
     def remove_velocity(midi_events):
@@ -147,7 +157,8 @@ class MIDIEncoder:
 
     @staticmethod
     def remove_timeshifts_preceeding_bar_end(midi_events):
-        """Useless time-shift removed"""
+        """Useless time-shift removed, i.e. when bar are empty, or afgter the last event of a bar is there is a remainder time-shift
+        This helps reducing the sequence length"""
         new_midi_events = []
         for inst_events in midi_events:
             new_inst_events = []
@@ -239,6 +250,25 @@ class MIDIEncoder:
 
         return midi_sections
 
+    def familize_intruments(self, midi_sections, instruments):
+        if self.familized == False:
+            pass
+        else:
+            familizer = Familizer(n_jobs=1)
+            for inst_index, instrument in enumerate(instruments):
+                if not instrument.is_drum:
+                    familized_instrument = familizer.get_family_number(
+                        instrument.program
+                    )
+                    for sect_index, section in enumerate(midi_sections[inst_index]):
+                        for ev_index, event in enumerate(section):
+                            if event.type == "Instrument":
+                                midi_sections[inst_index][sect_index][
+                                    ev_index
+                                ].value = familized_instrument
+
+        return midi_sections
+
     @staticmethod
     def add_density_to_sections(midi_sections):
         """
@@ -270,7 +300,7 @@ class MIDIEncoder:
     def sections_to_piece(midi_events):
         """Combine all sections into one piece
         Section are combined in a string as follows:
-        'Piece_Start -
+        'Piece_Start
         Section 1 Instrument 1
         Section 1 Instrument 2
         Section 1 Instrument 3
@@ -327,6 +357,7 @@ class MIDIEncoder:
                 self.remove_timeshifts_preceeding_bar_end,
                 self.add_density_to_bar,
                 self.make_sections,
+                self.familize_intruments,
                 self.add_density_to_sections,
             ],
             midi.instruments,
@@ -379,14 +410,13 @@ def from_MIDI_to_sectionned_text(midi_filename):
     """convert a MIDI file to a MidiText input prompt"""
     midi = MidiFile(f"{midi_filename}.mid")
     midi_like = get_miditok()
-    piece_text = MIDIEncoder(midi_like).get_piece_text(midi)
+    piece_text = MIDIEncoder(midi_like, familized=True).get_piece_text(midi)
     piece_text_split_by_section = MIDIEncoder(midi_like).get_text_by_section(midi)
     return piece_text
 
 
 if __name__ == "__main__":
     # Encode Strokes for debugging purposes:
-    # midi_filename = "midi/the_strokes-reptilia.mid"
-    midi_filename = "source/tests/20230305_142948"  # issue with double note_on in a row
+    midi_filename = "midi/the_strokes-reptilia"
     piece_text = from_MIDI_to_sectionned_text(f"{midi_filename}")
     writeToFile(f"{midi_filename}.txt", piece_text)
