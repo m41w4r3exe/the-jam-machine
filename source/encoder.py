@@ -135,6 +135,7 @@ class MIDIEncoder:
     def remove_timeshifts_preceeding_bar_end(midi_events):
         """Useless time-shift removed, i.e. when bar are empty, or afgter the last event of a bar is there is a remainder time-shift
         This helps reducing the sequence length"""
+        verbose = False
         new_midi_events = []
         for inst_events in midi_events:
             new_inst_events = []
@@ -144,8 +145,9 @@ class MIDIEncoder:
                     and event.type == "Time-Shift"
                     and inst_events[i + 1].type == "Bar-End"
                 ):
-                    print(f"---- {i} - {event} ----")
-                    [print(a) for a in inst_events[i - 3 : i + 3]]
+                    if verbose:
+                        print(f"---- {i} - {event} ----")
+                        [print(a) for a in inst_events[i - 3 : i + 3]]
                     continue
 
                 new_inst_events.append(event)
@@ -193,7 +195,9 @@ class MIDIEncoder:
 
     @staticmethod
     def define_instrument(midi_tok_instrument, familize=False):
-        familize_instrument = False
+        familize_instrument = (
+            False  # TEMPORARY just to check if it works without familizing
+        )
         """Define the instrument token from the midi token instrument and whether the instrument needs to be famnilized"""
         # get program number
         instrument = (
@@ -389,11 +393,11 @@ class MIDIEncoder:
         return sections_as_text
 
 
-def from_MIDI_to_sectionned_text(midi_filename):
+def from_MIDI_to_sectionned_text(midi_filename, familized=False):
     """convert a MIDI file to a MidiText input prompt"""
     midi = MidiFile(f"{midi_filename}.mid")
     midi_like = get_miditok()
-    piece_text = MIDIEncoder(midi_like, familized=True).get_piece_text(midi)
+    piece_text = MIDIEncoder(midi_like, familized=familized).get_piece_text(midi)
     piece_text_split_by_section = MIDIEncoder(midi_like).get_text_by_section(midi)
     return piece_text
 
