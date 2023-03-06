@@ -41,30 +41,6 @@ class MIDIEncoder:
         ]
 
     @staticmethod
-    def divide_timeshifts_by_bar(midi_events):
-        """Dividing time-shifts by BEATS_PER_BAR bars, so that each time-shift is less than 4 beats
-        In the later stage, when two time-shifts are added within the same bar,
-        it might overflow in the next bar, but will never spead accross multiple bars
-        c.f. remainder_ts in add_bars method: remainder_ts will never exceed BEATS_PER_BAR
-        NOT USED ANYMORE -> used set_timeshifts_to_min_length instead"""
-
-        new_midi_events = []
-        for inst_events in midi_events:
-            new_inst_events = []
-            for event in inst_events:
-                if event.type == "Time-Shift":
-                    values = split_dots(event.value)
-                    while values[0] > BEATS_PER_BAR:
-                        values[0] -= BEATS_PER_BAR
-                        new_inst_events.append(
-                            Event("Time-Shift", f"{BEATS_PER_BAR}.0.{values[2]}")
-                        )
-                    event.value = ".".join(map(str, values))
-                new_inst_events.append(event)
-            new_midi_events.append(new_inst_events)
-        return new_midi_events
-
-    @staticmethod
     def set_timeshifts_to_min_length(midi_events):
         """convert existing time-shifts events to multiple time-shift events,
         which sum equals the original time shift event
@@ -216,7 +192,35 @@ class MIDIEncoder:
         return new_midi_events
 
     @staticmethod
-    def make_sections(midi_events, instruments, n_bar=8):
+    def define_instrument(midi_tok_instrument, familize=False):
+        familize_instrument = False
+        """Define the instrument token from the midi token instrument and whether the instrument needs to be famnilized"""
+        # get program number
+        instrument = (
+            midi_tok_instrument.program if not midi_tok_instrument.is_drum else "Drums"
+        )
+        # familize instrument
+        if familize_instrument and not midi_tok_instrument.is_drum:
+            familizer = Familizer()
+            instrument = familizer.get_family_number(instrument)
+
+        return instrument
+
+    @staticmethod
+    def initiate_track_in_section(instrument, track_index):
+        section = [
+            Event("Track-Start", track_index),
+            Event("Instrument", instrument),
+        ]
+        return section
+
+    @staticmethod
+    def terminate_track_in_section(section, track_index):
+        section.append(Event("Track-End", track_index))
+        track_index += 1
+        return section, track_index
+
+    def make_sections(self, midi_events, instruments, n_bar=8):
         """For each instrument, make sections of n_bar bars each
         --> midi_sections[inst_sections][sections]
         because files can be encoded in many sections of n_bar"""
@@ -224,48 +228,28 @@ class MIDIEncoder:
         midi_sections = []
         for i, inst_events in enumerate(midi_events):
             inst_section = []
-            instrument = (
-                instruments[i].program if not instruments[i].is_drum else "Drums"
-            )
             track_index = 0
-            section = [
-                Event("Track-Start", track_index),
-                Event("Instrument", instrument),
-            ]
-            for event in inst_events:
+            instrument = self.define_instrument(instruments[i], familize=self.familized)
+            section = self.initiate_track_in_section(instrument, track_index)
+            for ev_idx, event in enumerate(inst_events):
                 section.append(event)
-                if event.type == "Bar-End" and int(event.value + 1) % n_bar == 0:
+                if ev_idx == len(inst_events) - 1 or (
+                    event.type == "Bar-End" and int(event.value + 1) % n_bar == 0
+                ):
                     # finish the section with track-end event
-                    section.append(Event("Track-End", track_index))
+                    section, track_index = self.terminate_track_in_section(
+                        section, track_index
+                    )
                     # append the section to the section list
                     inst_section.append(section)
-                    track_index += 1
-                    # start new section
-                    section = [
-                        Event("Track-Start", track_index),
-                        Event("Instrument", instruments[i].program),
-                    ]
+
+                    # start new section if not the last event
+                    if ev_idx < len(inst_events) - 1:
+                        section = self.initiate_track_in_section(
+                            instrument, track_index
+                        )
 
             midi_sections.append(inst_section)
-
-        return midi_sections
-
-    def familize_intruments(self, midi_sections, instruments):
-        if self.familized == False:
-            pass
-        else:
-            familizer = Familizer(n_jobs=1)
-            for inst_index, instrument in enumerate(instruments):
-                if not instrument.is_drum:
-                    familized_instrument = familizer.get_family_number(
-                        instrument.program
-                    )
-                    for sect_index, section in enumerate(midi_sections[inst_index]):
-                        for ev_index, event in enumerate(section):
-                            if event.type == "Instrument":
-                                midi_sections[inst_index][sect_index][
-                                    ev_index
-                                ].value = familized_instrument
 
         return midi_sections
 
@@ -357,7 +341,6 @@ class MIDIEncoder:
                 self.remove_timeshifts_preceeding_bar_end,
                 self.add_density_to_bar,
                 self.make_sections,
-                self.familize_intruments,
                 self.add_density_to_sections,
             ],
             midi.instruments,
@@ -417,6 +400,7 @@ def from_MIDI_to_sectionned_text(midi_filename):
 
 if __name__ == "__main__":
     # Encode Strokes for debugging purposes:
-    midi_filename = "midi/the_strokes-reptilia"
+    # midi_filename = "midi/the_strokes-reptilia"
+    midi_filename = "source/tests/20230306_140430"
     piece_text = from_MIDI_to_sectionned_text(f"{midi_filename}")
     writeToFile(f"{midi_filename}.txt", piece_text)
