@@ -22,9 +22,9 @@ def test_generate():
     # define generation parameters
     temperature = 0.7
 
-    instrument_promt_list = ["DRUMS", "4"]
+    instrument_promt_list = ["DRUMS", "4", "3"]
     # DRUMS = drums, 0 = piano, 1 = chromatic percussion, 2 = organ, 3 = guitar, 4 = bass, 5 = strings, 6 = ensemble, 7 = brass, 8 = reed, 9 = pipe, 10 = synth lead, 11 = synth pad, 12 = synth effects, 13 = ethnic, 14 = percussive, 15 = sound effects
-    density_list = [3, 2]
+    density_list = [3, 2, 3]
 
     # load model and tokenizer
     model, tokenizer = LoadModel(
@@ -91,7 +91,9 @@ def test_decode(generate_midi):
 
 
 def test_encode(midi_filename):
-    piece_text = from_MIDI_to_sectionned_text(f"{midi_filename}")
+    piece_text = from_MIDI_to_sectionned_text(
+        f"{midi_filename}", familized=USE_FAMILIZED_MODEL
+    )
     writeToFile(f"{midi_filename}_from_midi.txt", piece_text)
     return piece_text
 
@@ -117,11 +119,14 @@ def check_sequence_word_by_word(generated_text, encoded_text):
     """Check if the generated MIDI_text sequence and the encoded MIDI_text sequence are the same word by word"""
     generated_text = generated_text.split(" ")
     encoded_text = encoded_text.split(" ")
+    absolutely_similar = True
     for i in range(len(generated_text)):
         generated_word, encoded_word = simplify_events_for_comparison(
             generated_text[i], encoded_text[i]
         )
+
         if generated_word != encoded_word:
+            absolutely_similar = False
             print(
                 f"Word {i} is different - Generated: {generated_text[i]} vs Encoded: {encoded_text[i]}"
             )
@@ -130,28 +135,38 @@ def check_sequence_word_by_word(generated_text, encoded_text):
             print("------------------")
             # raise ValueError("Generated and encoded MIDI_text sequences are different")
 
+    return absolutely_similar
+
 
 def test_compare_generated_encoded(generated_text, encoded_text):
     """Compare the generated MIDI_text sequence and the encoded MIDI_text sequence"""
+    absolutely_similar = False
     if generated_text == encoded_text:
-        print("Generated and encoded MIDI_text sequences are the same")
         absolutely_similar = True
     else:
-        absolutely_similar = False
         similar_length = len(generated_text.split(" ")) == len(encoded_text.split(" "))
 
     if not absolutely_similar and similar_length:
         print(
             f"Lengths of generated and encoded sequences are the same: {len(encoded_text.split(' '))} words"
         )
+        absolutely_similar = check_sequence_word_by_word(generated_text, encoded_text)
 
     if not absolutely_similar and not similar_length:
         print(
             f"Lengths of generated and encoded sequences are different: {len(generated_text.split(' '))} vs {len(encoded_text.split(' '))} words"
         )
+        print("generated:")
+        print(f"beginning: {generated_text[:120]}")
+        print(f"end: {generated_text[-120:]}")
+        print("encoded:")
+        print(f"beginning: {encoded_text[:120]}")
+        print(f"end: {encoded_text[-120:]}")
+        print("------------------")
         # raise ValueError("Generated and encoded MIDI_text sequences are different")
 
-    check_sequence_word_by_word(generated_text, encoded_text)
+    if absolutely_similar:
+        print("Generated and encoded MIDI_text sequences are the same")
 
 
 def check_encoder_decoder_consistency():
@@ -166,9 +181,30 @@ def check_encoder_decoder_consistency():
 
 
 if __name__ == "__main__":
-    """ " Test Run : 1 generate, 2 decode, 3 encode, compare 1 generated and 3 encoded"""
-    check_encoder_decoder_consistency()
+
+    # check encoding TODO
     try:
-        check_encoder_decoder_consistency()
+        test_generate()
     except:
-        print("Error in encoder-decoder consistency test")
+        print("Encoding failed")
+
+    # check generation TODO
+    try:
+        test_encode()
+    except:
+        print("Generation failed")
+
+    # launch gradio app TODO
+    try:
+        pass
+    except:
+        print("Gradio Initiation failed")
+
+    # check decoding TODO
+    try:
+        test_decode()
+    except:
+        print("Decoding failed")
+
+    # " Test Run : 1 generate, 2 decode, 3 encode, compare 1 generated and 3 encoded
+    check_encoder_decoder_consistency()
