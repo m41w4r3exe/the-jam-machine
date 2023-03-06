@@ -74,7 +74,7 @@ class TextDecoder:
         return midi
 
     @staticmethod
-    def text_to_events(text, verbose=True):
+    def text_to_events(text, verbose=False):
         events = []
         instrument = "drums"
         track_index = -1
@@ -191,7 +191,7 @@ class TextDecoder:
         return inst_events
 
     @staticmethod
-    def add_missing_timeshifts_in_a_bar(inst_events, beat_per_bar=4, verbose=True):
+    def add_missing_timeshifts_in_a_bar(inst_events, beat_per_bar=4, verbose=False):
         """Add missing time shifts in bar to make sure that each bar has 4 beats
         takes care of the problem of a missing time shift if notes do not last until the end of the bar
         takes care of the problem of empty bars that are only defined by "BAR_START BAR END"""
