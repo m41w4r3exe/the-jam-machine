@@ -44,10 +44,10 @@ class WriteTextMidiToFile:  # utils saving miditext from teh class GenerateMidiT
         return self.output_path_filename
 
 
-def define_generation_dir(model_repo_path):
-    if not os.path.exists(model_repo_path):
-        os.makedirs(model_repo_path)
-    return model_repo_path
+def define_generation_dir(generation_dir):
+    if not os.path.exists(generation_dir):
+        os.makedirs(generation_dir)
+    return generation_dir
 
 
 def bar_count_check(sequence, n_bars):
