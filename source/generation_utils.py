@@ -2,6 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
+from utils import writeToFile, get_datetime
 
 from constants import INSTRUMENT_CLASSES
 from playback import get_music, show_piano_roll
@@ -14,11 +15,39 @@ matplotlib.rcParams["axes.facecolor"] = "none"
 matplotlib.rcParams["axes.edgecolor"] = "grey"
 
 
+class WriteTextMidiToFile:  # utils saving miditext from teh class GenerateMidiText to file
+    def __init__(self, generate_midi, output_path):
+
+        self.generated_midi = generate_midi.generated_piece
+        self.output_path = output_path
+        self.hyperparameter_and_bars = generate_midi.piece_by_track
+
+    def hashing_seq(self):
+        self.current_time = get_datetime()
+        self.output_path_filename = f"{self.output_path}/{self.current_time}.json"
+
+    def wrapping_seq_hyperparameters_in_dict(self):
+        # assert type(self.generated_midi) is str, "error: generate_midi must be a string"
+        # assert (
+        #     type(self.hyperparameter_dict) is dict
+        # ), "error: feature_dict must be a dictionnary"
+        return {
+            "generated_midi": self.generated_midi,
+            "hyperparameters_and_bars": self.hyperparameter_and_bars,
+        }
+
+    def text_midi_to_file(self):
+        self.hashing_seq()
+        output_dict = self.wrapping_seq_hyperparameters_in_dict()
+        print(f"Token generate_midi written: {self.output_path_filename}")
+        writeToFile(self.output_path_filename, output_dict)
+        return self.output_path_filename
+
+
 def define_generation_dir(model_repo_path):
-    generated_sequence_files_path = f"midi/generated/{model_repo_path}"
-    if not os.path.exists(generated_sequence_files_path):
-        os.makedirs(generated_sequence_files_path)
-    return generated_sequence_files_path
+    if not os.path.exists(model_repo_path):
+        os.makedirs(model_repo_path)
+    return model_repo_path
 
 
 def bar_count_check(sequence, n_bars):

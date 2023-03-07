@@ -96,7 +96,7 @@ def generator(
     decoder.get_midi(generated_text, "mixed.mid")
     mixed_inst_midi, mixed_audio = get_music("mixed.mid")
     # get the instrument text MIDI
-    inst_text = genesis.get_selected_track_as_text(inst_index)
+    inst_text = genesis.get_whole_track_from_bar_dict(inst_index)
     # save the instrument midi and get the instrument audio
     decoder.get_midi(inst_text, f"{instrument}.mid")
     _, inst_audio = get_music(f"{instrument}.mid")

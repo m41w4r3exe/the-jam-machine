@@ -145,6 +145,7 @@ notebooks/collab_notebook_model
 # generated files
 midi/generated
 midi/worked
+source/tests
 # VSCode
 .vscode
 
