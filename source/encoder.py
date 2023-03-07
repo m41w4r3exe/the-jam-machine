@@ -7,7 +7,7 @@ from familizer import Familizer
 from constants import BEATS_PER_BAR
 
 # TODO HIGH PRIORITY
-# TODO: Make instruments family while encoding
+# TODO: The Density calculation does not match that of Tristan's Encoding. Ask Tristan about it.
 # TODO: Data augmentation:
 #   - hopping K bars and re-encode almost same notes: needs to keep track of sequence length
 #   - computing track key
@@ -195,16 +195,14 @@ class MIDIEncoder:
 
     @staticmethod
     def define_instrument(midi_tok_instrument, familize=False):
-        familize_instrument = (
-            False  # TEMPORARY just to check if it works without familizing
-        )
+
         """Define the instrument token from the midi token instrument and whether the instrument needs to be famnilized"""
         # get program number
         instrument = (
             midi_tok_instrument.program if not midi_tok_instrument.is_drum else "Drums"
         )
         # familize instrument
-        if familize_instrument and not midi_tok_instrument.is_drum:
+        if familize and not midi_tok_instrument.is_drum:
             familizer = Familizer()
             instrument = familizer.get_family_number(instrument)
 
@@ -398,7 +396,7 @@ def from_MIDI_to_sectionned_text(midi_filename, familized=False):
     midi = MidiFile(f"{midi_filename}.mid")
     midi_like = get_miditok()
     piece_text = MIDIEncoder(midi_like, familized=familized).get_piece_text(midi)
-    piece_text_split_by_section = MIDIEncoder(midi_like).get_text_by_section(midi)
+    # piece_text_split_by_section = MIDIEncoder(midi_like).get_text_by_section(midi)
     return piece_text
 
 
