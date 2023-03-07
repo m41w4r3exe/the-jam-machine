@@ -2,9 +2,6 @@ from utils import *
 from familizer import Familizer
 from miditok import Event
 
-# TODO: Decode quantized time properly
-# TODO: how to decode 2 similar instrument sinto 2 tracks.
-
 
 class TextDecoder:
     """Decodes text into:
