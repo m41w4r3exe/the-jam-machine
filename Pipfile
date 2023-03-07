@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-miditok = "1.3.2"
+miditok = "== 1.3.2"
 miditoolkit = "*"
 scikit-learn = "*"
 pylab-sdk = "*"
@@ -23,13 +23,14 @@ pip = "*"
 ffmpeg = "*"
 wandb = "*"
 tokenizers = "*"
-huggingface_hub = "*"
 datetime = "*"
 datasets = "== 2.6.1"
-gradio = "3.13.1"
+gradio = "== 3.13.1"
 transformers = "*"
 torch = "*"
 torchvision = "*"
+accelerate = "*"
+bertviz = "*"
 
 [dev-packages]
 black = "*"

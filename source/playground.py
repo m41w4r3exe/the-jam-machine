@@ -179,7 +179,8 @@ with gr.Blocks() as demo:
         Then, hit the **Generate** Button, and after a few seconds a track should have been generated. 
         Check the **piano roll** and listen to the TRACK! If you don't like it, hit the generate button to regenerate it. 
         You can then generate more tracks and listen to the **mixed audio**! \n
-        Does it sound nice? Maybe a little robotic and laking some depth... Well, you can download the MIDI file and import it in your favorite DAW to edit the instruments and add some effects!
+        Does it sound nice? Maybe a little robotic and laking some depth... Well, you can download the MIDI file and import it in your favorite DAW to edit the instruments and add some effects!\
+        Note: do not click on the **Generate** button too fast, it might crash the app. Wait for one track to be generated before generating another one.    
         """
     )
 
