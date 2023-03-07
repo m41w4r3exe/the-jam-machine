@@ -1,3 +1,6 @@
+import logging
+import gradio
+import subprocess
 from generate import *
 from generation_utils import WriteTextMidiToFile
 from utils import get_miditok
@@ -5,6 +8,8 @@ from load import LoadModel
 from decoder import TextDecoder
 from encoder import *
 from playback import get_music
+
+# TODO Use logging to create a log file
 
 USE_FAMILIZED_MODEL = True
 force_sequence_length = True
@@ -54,7 +59,13 @@ def test_generate():
     print("=========================================")
     print(generate_midi.generated_piece)
     print("=========================================")
-    return generate_midi
+
+    filename = WriteTextMidiToFile(
+        generate_midi,
+        test_dir,
+    ).text_midi_to_file()
+
+    return generate_midi, filename
 
 
 def check_for_duplicated_subsequent_tokens(generated_text):
@@ -68,32 +79,35 @@ def check_for_duplicated_subsequent_tokens(generated_text):
             print(f"{generated_text.split(' ')[i - min([i,3]): i + 3]}")
 
 
-def test_decode(generate_midi):
-    """Write the generated MIDI_text sequence to a file and decode it to MIDI"""
-    filename = WriteTextMidiToFile(
-        generate_midi,
-        test_dir,
-    ).text_midi_to_file()
+def test_decode(filename=None):
+    if filename is None:
+        filename = "source/tests/test_decode.json"
+
+    filename = filename.split(".")[0]  # remove extension
+
+    generated_piece = readFromFile(f"{filename}.json", isJSON=True)["generated_midi"]
 
     decode_tokenizer = get_miditok()
     TextDecoder(decode_tokenizer, USE_FAMILIZED_MODEL).get_midi(
-        generate_midi.generated_piece, filename=filename.split(".")[0] + ".mid"
+        generated_piece, filename=f"{filename}.mid"
     )
-    inst_midi, mixed_audio = get_music(filename.split(".")[0] + ".mid")
-    max_time = get_max_time(inst_midi)
+    inst_midi, _ = get_music(f"{filename}.mid")
     piano_roll_fig = plot_piano_roll(inst_midi)
-    piano_roll_fig.savefig(
-        filename.split(".")[0] + "_piano_roll.png", bbox_inches="tight"
-    )
+    piano_roll_fig.savefig(f"{filename}_piano_roll.png", bbox_inches="tight")
     piano_roll_fig.clear()
 
-    return filename.split(".")[0]
+    return filename
 
 
-def test_encode(midi_filename):
+def test_encode(midi_filename=None):
+    if midi_filename is None:
+        midi_filename = "midi/the_strokes-reptilia"
+
     piece_text = from_MIDI_to_sectionned_text(
         f"{midi_filename}", familized=USE_FAMILIZED_MODEL
     )
+    print("=========================================")
+    print(piece_text)
     writeToFile(f"{midi_filename}_from_midi.txt", piece_text)
     return piece_text
 
@@ -170,9 +184,9 @@ def test_compare_generated_encoded(generated_text, encoded_text):
 
 
 def check_encoder_decoder_consistency():
-    midi_text_generated = test_generate()
+    midi_text_generated, filename = test_generate()
     check_for_duplicated_subsequent_tokens(midi_text_generated.generated_piece)
-    midi_file = test_decode(midi_text_generated)
+    midi_file = test_decode(filename)
     midi_text_from_file = test_encode(midi_file)
 
     test_compare_generated_encoded(
@@ -180,31 +194,50 @@ def check_encoder_decoder_consistency():
     )
 
 
+def test_gradio():
+    current_wd = os.getcwd()
+    os.chdir("./source")
+    # start subprocess
+    p = subprocess.run(["gradio playground.py"], shell=True)
+    # os.chdir(current_wd)
+
+
+def run_test(func, *args, **kwargs):
+    for kwarg in kwargs:
+        match kwarg:
+            case "tested_process":
+                testing_process = kwargs[kwarg]
+    # func(*args)
+    try:
+        print("==================================")
+        print(f"Testing: {testing_process}")
+        func(*args)
+        print("----------------------------------")
+        print(f"{testing_process} successful")
+    except:
+        print("----------------------------------")
+        print(f"{testing_process} failed")
+
+    print("----------------------------------")
+
+
 if __name__ == "__main__":
 
-    # check encoding TODO
-    try:
-        test_generate()
-    except:
-        print("Encoding failed")
+    # test encoding
+    run_test(test_encode, "midi/the_strokes-reptilia", tested_process="Encoding")
 
-    # check generation TODO
-    try:
-        test_encode()
-    except:
-        print("Generation failed")
+    # test generation
+    run_test(test_generate, tested_process="Generation")
 
-    # launch gradio app TODO
-    try:
-        pass
-    except:
-        print("Gradio Initiation failed")
-
-    # check decoding TODO
-    try:
-        test_decode()
-    except:
-        print("Decoding failed")
+    # test decoding
+    run_test(test_decode, tested_process="Decoding")
 
     # " Test Run : 1 generate, 2 decode, 3 encode, compare 1 generated and 3 encoded
-    check_encoder_decoder_consistency()
+    run_test(
+        check_encoder_decoder_consistency, tested_process="Encoder-Decoder Consistency"
+    )
+
+    # test launch gradio app
+    run_test(test_gradio, tested_process="Launching Gradio App")
+    # Here the radio app will be started and needs to be tested manually, then closed
+    # The message will report that the test failed because the process was killed, but this can be ignored
