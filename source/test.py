@@ -197,8 +197,7 @@ def check_encoder_decoder_consistency():
 def test_gradio():
     current_wd = os.getcwd()
     os.chdir("./source")
-    # start subprocess
-    p = subprocess.run(["gradio playground.py"], shell=True)
+    subprocess.run(["gradio playground.py"], shell=True)
     # os.chdir(current_wd)
 
 
