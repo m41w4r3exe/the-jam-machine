@@ -70,7 +70,7 @@ else:
             pad_token_id=tokenizer.pad_token_id,
             n_embd=512,
             n_head=8,
-            n_layer=8,
+            n_layer=6,
             n_positions=2048,
         )
     )
